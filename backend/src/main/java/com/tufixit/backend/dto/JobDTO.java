@@ -1,3 +1,5 @@
+package com.tufixit.backend.dto;
+
 import com.tufixit.backend.entity.Bid;
 import com.tufixit.backend.entity.Job;
 import com.tufixit.backend.entity.WorkerSkill;
@@ -152,8 +154,24 @@ public class JobDTO {
     public static class ReviewRequest {
         @NotNull(message = "Rating is required")
         private Integer rating; // 1-5
-        
+
         private String comment;
         private Boolean isClientReview;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ReviewResponse {
+        private Long id;
+        private Long jobId;
+        private String jobTitle;
+        private Long reviewerId;
+        private String reviewerName;
+        private Integer rating;
+        private String comment;
+        private Boolean isClientReview;
+        private LocalDateTime createdAt;
     }
 }

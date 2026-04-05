@@ -111,6 +111,74 @@ public class Job {
     @Column(columnDefinition = "TEXT")
     private String afterImages; // JSON array of image URLs
 
+    // ── Booking-specific fields ──────────────────────────────────────────────
+
+    /** Public tracking ID shown to customers, e.g. TUF-123456 */
+    @Column(name = "booking_code", length = 20, unique = true)
+    private String bookingCode;
+
+    /** Customer full name (no-login bookings) */
+    @Column(name = "customer_name", length = 100)
+    private String customerName;
+
+    /** Customer phone number */
+    @Column(name = "customer_phone", length = 15)
+    private String customerPhone;
+
+    /** Customer location/address text */
+    @Column(name = "customer_location", columnDefinition = "TEXT")
+    private String customerLocation;
+
+    /** Detailed job description from customer */
+    @Column(name = "job_description", columnDefinition = "TEXT")
+    private String jobDescription;
+
+    /** Urgency level: NOW, TODAY, TOMORROW, SCHEDULED */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "urgency", length = 20)
+    private UrgencyLevel urgency;
+
+    /** Scheduled datetime when urgency = SCHEDULED */
+    @Column(name = "scheduled_time")
+    private LocalDateTime scheduledTime;
+
+    /** Customer's budget hint (optional) */
+    @Column(name = "customer_budget")
+    private Integer customerBudget;
+
+    /** Whether the artisan has recorded the payment */
+    @Column(name = "payment_recorded")
+    private Boolean paymentRecorded = false;
+
+    /** Payment method used: MPESA, CASH, BANK_TRANSFER */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20)
+    private PaymentMethod paymentMethod;
+
+    /** M-Pesa receipt number or bank reference */
+    @Column(name = "payment_transaction_id", length = 100)
+    private String paymentTransactionId;
+
+    /** Amount artisan received (from payment recording) */
+    @Column(name = "payment_amount")
+    private Integer paymentAmount;
+
+    /** Reason given when job is declined or cancelled */
+    @Column(name = "decline_reason", length = 200)
+    private String declineReason;
+
+    /** Counter-offer price from artisan */
+    @Column(name = "counter_price")
+    private Integer counterPrice;
+
+    /** When artisan accepted the job */
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
+    /** When artisan marked arrived */
+    @Column(name = "arrived_at")
+    private LocalDateTime arrivedAt;
+
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Bid> bids = new ArrayList<>();
@@ -127,7 +195,15 @@ public class Job {
     private LocalDateTime updatedAt;
 
     public enum JobStatus {
-        PENDING, BIDDING, ACCEPTED, WORKER_EN_ROUTE, IN_PROGRESS, 
+        PENDING, BIDDING, ACCEPTED, DECLINED, ARRIVED, IN_PROGRESS,
         COMPLETED, CANCELLED, DISPUTED, REFUNDED
+    }
+
+    public enum UrgencyLevel {
+        NOW, TODAY, TOMORROW, SCHEDULED
+    }
+
+    public enum PaymentMethod {
+        MPESA, CASH, BANK_TRANSFER
     }
 }

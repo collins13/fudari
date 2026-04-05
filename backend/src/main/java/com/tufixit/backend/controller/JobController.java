@@ -96,4 +96,24 @@ public class JobController {
             @Valid @RequestBody JobDTO.ReviewRequest request) {
         return ResponseEntity.ok(jobService.addReview(jobId, request));
     }
+
+    @PatchMapping("/{jobId}/status")
+    public ResponseEntity<JobDTO.JobResponse> updateJobStatus(
+            @PathVariable Long jobId,
+            @RequestBody Map<String, String> body) {
+        String status = body.get("status");
+        return ResponseEntity.ok(jobService.updateJobStatus(jobId, status));
+    }
+
+    @GetMapping("/admin/pending")
+    public ResponseEntity<Page<JobDTO.JobResponse>> getAdminPendingJobs(
+            @PageableDefault(size = 50) Pageable pageable) {
+        return ResponseEntity.ok(jobService.getAdminPendingJobs(pageable));
+    }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<Page<JobDTO.JobResponse>> getAllJobsAdmin(
+            @PageableDefault(size = 50) Pageable pageable) {
+        return ResponseEntity.ok(jobService.getAllJobsAdmin(pageable));
+    }
 }

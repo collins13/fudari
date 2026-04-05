@@ -26,7 +26,7 @@ public class WorkerService {
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm) {
         List<User> workers;
-        
+
         if (latitude != null && longitude != null) {
             workers = userRepository.findNearbyWorkers(latitude, longitude, radiusKm != null ? radiusKm : 25.0);
         } else {
@@ -36,17 +36,26 @@ public class WorkerService {
         if (skillType != null && !skillType.isEmpty()) {
             try {
                 WorkerSkill.SkillType skill = WorkerSkill.SkillType.valueOf(skillType.toUpperCase());
+                List<Long> workerIdsWithSkill = workerSkillRepository.findBySkillType(skill)
+                        .stream().map(s -> s.getWorker().getId()).collect(Collectors.toList());
                 workers = workers.stream()
-                        .filter(w -> w.getSkills() != null && w.getSkills().stream()
-                                .anyMatch(s -> s.getSkillType() == skill))
+                        .filter(w -> workerIdsWithSkill.contains(w.getId()))
                         .collect(Collectors.toList());
             } catch (IllegalArgumentException e) {
                 log.warn("Invalid skill type: {}", skillType);
             }
         }
 
+        // Sort: PRO first, then VERIFIED, then STANDARD, then by trust score
+        workers.sort((a, b) -> {
+            int levelA = a.getVettingLevel() == User.VettingLevel.PRO ? 0 : a.getVettingLevel() == User.VettingLevel.VERIFIED ? 1 : 2;
+            int levelB = b.getVettingLevel() == User.VettingLevel.PRO ? 0 : b.getVettingLevel() == User.VettingLevel.VERIFIED ? 1 : 2;
+            if (levelA != levelB) return Integer.compare(levelA, levelB);
+            return Double.compare(b.getTrustScore(), a.getTrustScore());
+        });
+
         return workers.stream()
-                .map(this::mapToUserDTO)
+                .map(this::mapToUserDTOWithSkills)
                 .collect(Collectors.toList());
     }
 
@@ -58,7 +67,7 @@ public class WorkerService {
             throw new RuntimeException("User is not a worker");
         }
 
-        return mapToUserDTO(worker);
+        return mapToUserDTOWithSkills(worker);
     }
 
     public List<WorkerSkill> getWorkerSkills(Long workerId) {
@@ -139,6 +148,22 @@ public class WorkerService {
     }
 
     private AuthDTO.UserDTO mapToUserDTO(User user) {
+        return mapToUserDTOWithSkills(user);
+    }
+
+    private AuthDTO.UserDTO mapToUserDTOWithSkills(User user) {
+        List<AuthDTO.WorkerSkillInfo> skillInfos = workerSkillRepository.findByWorkerId(user.getId())
+                .stream()
+                .map(s -> AuthDTO.WorkerSkillInfo.builder()
+                        .id(s.getId())
+                        .skillType(s.getSkillType().name())
+                        .description(s.getDescription())
+                        .experienceYears(s.getExperienceYears())
+                        .hourlyRate(s.getHourlyRate())
+                        .isVerified(s.getIsVerified())
+                        .build())
+                .collect(Collectors.toList());
+
         return AuthDTO.UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -155,6 +180,7 @@ public class WorkerService {
                 .longitude(user.getLongitude())
                 .locationName(user.getLocationName())
                 .isVerified(user.getIsVerified())
+                .skills(skillInfos)
                 .build();
     }
 }

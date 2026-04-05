@@ -23,8 +23,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseGet(() -> userRepository.findByPhoneNumber(username)
                         .orElseThrow(() -> new UsernameNotFoundException("User not found with: " + username)));
 
+        String principal = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                principal,
                 user.getPassword(),
                 user.getIsActive(),
                 true,

@@ -51,6 +51,17 @@ public class AuthController {
         return ResponseEntity.ok(authService.updateUserProfile(firstName, lastName, profileImage));
     }
 
+    @PutMapping("/full-profile")
+    public ResponseEntity<AuthDTO.UserDTO> updateFullProfile(@RequestBody Map<String, Object> data) {
+        return ResponseEntity.ok(authService.updateFullProfile(data));
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
+        authService.changePassword(request.get("currentPassword"), request.get("newPassword"));
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
     @GetMapping("/users/{userId}")
     public ResponseEntity<AuthDTO.UserDTO> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(authService.getUserById(userId));

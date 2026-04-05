@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9f646174-11ff-44ea-a2b1-b325472e70e0" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/JobController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/JobController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/WorkerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/controller/WorkerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/dto/AuthDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/dto/AuthDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/dto/JobDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/dto/JobDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/entity/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/entity/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/security/CustomUserDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/security/CustomUserDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/JobService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/JobService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/PaymentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/PaymentService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/WorkerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/tufixit/backend/service/WorkerService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/TufixitBackendApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/TufixitBackendApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/config/SecurityConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/config/SecurityConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/AuthController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/AuthController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/JobController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/JobController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/PaymentController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/PaymentController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/WorkerController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/controller/WorkerController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$AuthResponse$AuthResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$AuthResponse$AuthResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$AuthResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$AuthResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$LoginRequest$LoginRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$LoginRequest$LoginRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$LoginRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$LoginRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$RegisterRequest$RegisterRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$RegisterRequest$RegisterRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$RegisterRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$RegisterRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$UserDTO$UserDTOBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$UserDTO$UserDTOBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$UserDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO$UserDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/AuthDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$AcceptBidRequest$AcceptBidRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$AcceptBidRequest$AcceptBidRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$AcceptBidRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$AcceptBidRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidRequest$BidRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidRequest$BidRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidResponse$BidResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidResponse$BidResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$BidResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CompleteJobRequest$CompleteJobRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CompleteJobRequest$CompleteJobRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CompleteJobRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CompleteJobRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CreateJobRequest$CreateJobRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CreateJobRequest$CreateJobRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CreateJobRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$CreateJobRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$JobResponse$JobResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$JobResponse$JobResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$JobResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$JobResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$ReviewRequest$ReviewRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$ReviewRequest$ReviewRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$ReviewRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$ReviewRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$StartJobRequest$StartJobRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$StartJobRequest$StartJobRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$StartJobRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO$StartJobRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/JobDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$CreateEscrowRequest$CreateEscrowRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$CreateEscrowRequest$CreateEscrowRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$CreateEscrowRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$CreateEscrowRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$EscrowResponse$EscrowResponseBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$EscrowResponse$EscrowResponseBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$EscrowResponse.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$EscrowResponse.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$InitiatePaymentRequest$InitiatePaymentRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$InitiatePaymentRequest$InitiatePaymentRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$InitiatePaymentRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$InitiatePaymentRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$MpesaCallbackRequest$MpesaCallbackRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$MpesaCallbackRequest$MpesaCallbackRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$MpesaCallbackRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$MpesaCallbackRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest$ReleaseLaborRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest$ReleaseLaborRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseMaterialRequest$ReleaseMaterialRequestBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseMaterialRequest$ReleaseMaterialRequestBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseMaterialRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO$ReleaseMaterialRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/dto/PaymentDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid$BidBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid$BidBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid$BidStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid$BidStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Bid.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$EscrowTransactionBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$EscrowTransactionBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$PaymentType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$PaymentType.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$TransactionStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction$TransactionStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/EscrowTransaction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job$JobBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job$JobBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job$JobStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job$JobStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Job.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Review$ReviewBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Review$ReviewBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Review.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/Review.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$UserBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$UserBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$UserRole.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$UserRole.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$VettingLevel.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User$VettingLevel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/User.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill$SkillType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill$SkillType.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill$WorkerSkillBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill$WorkerSkillBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/entity/WorkerSkill.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/BidRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/BidRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/EscrowTransactionRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/EscrowTransactionRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/JobRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/JobRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/ReviewRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/ReviewRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/UserRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/UserRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/WorkerSkillRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/repository/WorkerSkillRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/CustomUserDetailsService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/CustomUserDetailsService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/JwtAuthenticationFilter.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/JwtAuthenticationFilter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/JwtTokenProvider.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/security/JwtTokenProvider.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/AuthService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/AuthService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/JobService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/JobService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/PaymentService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/PaymentService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/WorkerService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/tufixit/backend/service/WorkerService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 6
+}]]></component>
+  <component name="ProjectId" id="3B1fBG4vwkI3SQRmuVGUMPuQO8M" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9f646174-11ff-44ea-a2b1-b325472e70e0" name="Changes" comment="" />
+      <created>1773661360021</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1773661360021</updated>
+    </task>
+    <servers />
+  </component>
+</project>

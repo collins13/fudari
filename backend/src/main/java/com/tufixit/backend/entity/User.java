@@ -1,5 +1,6 @@
 package com.tufixit.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -7,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -20,7 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     @Column(nullable = false, unique = true)
@@ -35,7 +37,7 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String profileImage;
 
     @Enumerated(EnumType.STRING)
@@ -81,6 +83,10 @@ public class User {
 
     @Column
     private String mpesaAccountNumber;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
+    private List<WorkerSkill> skills;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

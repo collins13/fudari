@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 public class AuthDTO {
 
     @Data
@@ -14,9 +16,8 @@ public class AuthDTO {
     @AllArgsConstructor
     @Builder
     public static class RegisterRequest {
-        @NotBlank(message = "Email is required")
-        private String email;
-        
+        private String email; // optional — phone is primary identifier
+
         @NotBlank(message = "Phone number is required")
         private String phoneNumber;
         
@@ -79,6 +80,20 @@ public class AuthDTO {
         private Double latitude;
         private Double longitude;
         private String locationName;
+        private Boolean isVerified;
+        private List<WorkerSkillInfo> skills;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class WorkerSkillInfo {
+        private Long id;
+        private String skillType;
+        private String description;
+        private Integer experienceYears;
+        private String hourlyRate;
         private Boolean isVerified;
     }
 }

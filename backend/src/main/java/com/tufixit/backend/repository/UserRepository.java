@@ -19,7 +19,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     boolean existsByPhoneNumber(String phoneNumber);
     
-    @Query("SELECT u FROM User u WHERE u.role = :role AND u.isActive = true")
+    @Query(value = "SELECT * FROM users u WHERE u.role = :#{#role.name()} AND u.is_active = true " +
+           "ORDER BY CASE u.vetting_level WHEN 'PRO' THEN 0 WHEN 'VERIFIED' THEN 1 ELSE 2 END ASC, " +
+           "u.trust_score DESC, u.total_jobs_completed DESC",
+           nativeQuery = true)
     List<User> findByRole(@Param("role") User.UserRole role);
     
     @Query("SELECT u FROM User u WHERE u.role = 'WORKER' AND u.vettingLevel = :level AND u.isActive = true")
@@ -28,7 +31,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "SELECT * FROM users u WHERE u.role = 'WORKER' AND u.is_active = true " +
            "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) * " +
            "cos(radians(u.longitude) - radians(:longitude)) + sin(radians(:latitude)) * " +
-           "sin(radians(u.latitude)))) < :radiusKm", nativeQuery = true)
+           "sin(radians(u.latitude)))) < :radiusKm " +
+           "ORDER BY CASE u.vetting_level WHEN 'PRO' THEN 0 WHEN 'VERIFIED' THEN 1 ELSE 2 END ASC, " +
+           "u.trust_score DESC", nativeQuery = true)
     List<User> findNearbyWorkers(@Param("latitude") Double latitude, 
                                   @Param("longitude") Double longitude, 
                                   @Param("radiusKm") Double radiusKm);

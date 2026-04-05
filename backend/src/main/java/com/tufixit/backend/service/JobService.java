@@ -75,7 +75,18 @@ public class JobService {
     }
 
     public Page<JobDTO.JobResponse> getOpenJobs(Pageable pageable) {
-        return jobRepository.findOpenJobs(Job.JobStatus.PENDING, pageable)
+        // Returns admin-approved (BIDDING) listings visible to public
+        return jobRepository.findByStatus(Job.JobStatus.BIDDING, pageable)
+                .map(this::mapToJobResponse);
+    }
+
+    public Page<JobDTO.JobResponse> getAdminPendingJobs(Pageable pageable) {
+        return jobRepository.findByStatus(Job.JobStatus.PENDING, pageable)
+                .map(this::mapToJobResponse);
+    }
+
+    public Page<JobDTO.JobResponse> getAllJobsAdmin(Pageable pageable) {
+        return jobRepository.findAll(pageable)
                 .map(this::mapToJobResponse);
     }
 
@@ -275,6 +286,20 @@ public class JobService {
         return mapToJobResponse(job);
     }
 
+    @Transactional
+    public JobDTO.JobResponse updateJobStatus(Long jobId, String statusStr) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+        try {
+            Job.JobStatus newStatus = Job.JobStatus.valueOf(statusStr.toUpperCase());
+            job.setStatus(newStatus);
+            job = jobRepository.save(job);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + statusStr);
+        }
+        return mapToJobResponse(job);
+    }
+
     private void updateTrustScore(Long userId) {
         Double avgRating = reviewRepository.getAverageRatingByUserId(userId);
         Integer reviewCount = reviewRepository.getReviewCountByUserId(userId);
@@ -289,9 +314,10 @@ public class JobService {
     }
 
     private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(principal)
+                .orElseGet(() -> userRepository.findByPhoneNumber(principal)
+                        .orElseThrow(() -> new RuntimeException("User not found")));
     }
 
     private JobDTO.JobResponse mapToJobResponse(Job job) {

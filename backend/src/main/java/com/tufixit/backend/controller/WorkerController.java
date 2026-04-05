@@ -1,8 +1,11 @@
 package com.tufixit.backend.controller;
 
 import com.tufixit.backend.dto.AuthDTO;
+import com.tufixit.backend.dto.JobDTO;
+import com.tufixit.backend.entity.Review;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
+import com.tufixit.backend.repository.ReviewRepository;
 import com.tufixit.backend.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/workers")
@@ -17,6 +21,7 @@ import java.util.Map;
 public class WorkerController {
 
     private final WorkerService workerService;
+    private final ReviewRepository reviewRepository;
 
     @GetMapping("/search")
     public ResponseEntity<List<AuthDTO.UserDTO>> searchWorkers(
@@ -67,6 +72,23 @@ public class WorkerController {
     public ResponseEntity<Void> deleteSkill(@PathVariable Long skillId) {
         workerService.deleteSkill(skillId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{workerId}/reviews")
+    public ResponseEntity<List<JobDTO.ReviewResponse>> getWorkerReviews(@PathVariable Long workerId) {
+        List<Review> reviews = reviewRepository.findByReviewedUserId(workerId);
+        List<JobDTO.ReviewResponse> responses = reviews.stream().map(r -> JobDTO.ReviewResponse.builder()
+                .id(r.getId())
+                .jobId(r.getJob().getId())
+                .jobTitle(r.getJob().getTitle())
+                .reviewerId(r.getReviewer().getId())
+                .reviewerName(r.getReviewer().getFirstName() + " " + r.getReviewer().getLastName())
+                .rating(r.getRating())
+                .comment(r.getComment())
+                .isClientReview(r.getIsClientReview())
+                .createdAt(r.getCreatedAt())
+                .build()).collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{workerId}/rating")

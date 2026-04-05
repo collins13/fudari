@@ -125,8 +125,10 @@ public class PaymentService {
         EscrowTransaction escrow = escrowRepository.findByJobId(jobId)
                 .orElseThrow(() -> new RuntimeException("Escrow not found"));
 
-        if (!escrow.getMaterialReleased()) {
-            throw new RuntimeException("Material must be released first");
+        boolean hasMaterialCost = escrow.getMaterialCost() != null
+                && escrow.getMaterialCost().compareTo(BigDecimal.ZERO) > 0;
+        if (hasMaterialCost && !escrow.getMaterialReleased()) {
+            throw new RuntimeException("Material cost must be released before labor");
         }
 
         escrow.setLaborReleased(true);
