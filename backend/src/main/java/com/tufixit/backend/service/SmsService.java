@@ -86,6 +86,27 @@ public class SmsService {
             "TUFIXIT: Job " + bookingCode + " has been cancelled. Reason: " + reason);
     }
 
+    public void notifyCustomerCounterOffer(String customerPhone, String artisanName,
+                                            String bookingCode, Integer counterPrice, String note) {
+        String extra = (note != null && !note.isBlank()) ? " Note: " + note + "." : "";
+        send(customerPhone,
+            "TUFIXIT: " + artisanName + " proposed a new price of KES " + counterPrice +
+            " for job " + bookingCode + "." + extra +
+            " Accept/reject: tufixit.com/track/" + bookingCode);
+    }
+
+    public void notifyArtisanCounterAccepted(String artisanPhone, String bookingCode, Integer price) {
+        send(artisanPhone,
+            "TUFIXIT: Customer accepted your counter-offer of KES " + price +
+            " for job " + bookingCode + ". Proceed to the customer location.");
+    }
+
+    public void notifyArtisanCounterRejected(String artisanPhone, String bookingCode) {
+        send(artisanPhone,
+            "TUFIXIT: Customer rejected your counter-offer for job " + bookingCode +
+            ". The booking has been declined.");
+    }
+
     // ── Africa's Talking HTTP call ────────────────────────────────────────────
 
     private void sendViaat(String phone, String message) throws Exception {

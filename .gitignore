@@ -1,0 +1,28 @@
+# Environment files — NEVER commit real credentials
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Local Spring Boot overrides (developer-specific credentials)
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-dev.properties
+
+# Build artifacts
+backend/target/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

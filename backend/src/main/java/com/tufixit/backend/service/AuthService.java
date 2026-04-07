@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +28,15 @@ import java.util.Map;
 @Slf4j
 public class AuthService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final UserRepository userRepository;
     private final WorkerSkillRepository workerSkillRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
+    private final SmsService smsService;
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
@@ -236,6 +240,99 @@ public class AuthService {
         }
 
         return mapToUserDTO(user);
+    }
+
+    // ── Forgot / Reset password ───────────────────────────────────────────────
+
+    @Transactional
+    public void forgotPassword(String phoneNumber) {
+        User user = userRepository.findByPhoneNumber(phoneNumber)
+                .or(() -> userRepository.findByEmail(phoneNumber))
+                .orElseThrow(() -> new IllegalArgumentException("No account found for this phone number"));
+
+        // Generate 6-digit OTP using SecureRandom
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        user.setResetOtp(passwordEncoder.encode(otp)); // store hashed
+        user.setResetOtpExpiresAt(LocalDateTime.now().plusMinutes(10));
+        userRepository.save(user);
+
+        smsService.send(user.getPhoneNumber(),
+                "TUFIXIT password reset code: " + otp + ". Valid for 10 minutes. Do not share this code.");
+        log.info("Password reset OTP sent to {}", user.getPhoneNumber());
+    }
+
+    @Transactional
+    public void resetPassword(String phoneNumber, String otp, String newPassword) {
+        User user = userRepository.findByPhoneNumber(phoneNumber)
+                .or(() -> userRepository.findByEmail(phoneNumber))
+                .orElseThrow(() -> new IllegalArgumentException("No account found for this phone number"));
+
+        if (user.getResetOtp() == null || user.getResetOtpExpiresAt() == null) {
+            throw new IllegalStateException("No password reset was requested for this account");
+        }
+        if (user.getResetOtpExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("OTP has expired. Please request a new one.");
+        }
+        if (!passwordEncoder.matches(otp, user.getResetOtp())) {
+            throw new IllegalArgumentException("Invalid OTP. Please check and try again.");
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("New password must be at least 8 characters");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetOtp(null);
+        user.setResetOtpExpiresAt(null);
+        userRepository.save(user);
+        log.info("Password reset successful for {}", user.getPhoneNumber());
+    }
+
+    /**
+     * Guest token: given a phone number, find-or-create a minimal CLIENT account
+     * and return a short-lived JWT (1 hour). No password required.
+     * Used so customers can chat with artisans without full registration.
+     */
+    @Transactional
+    public AuthDTO.AuthResponse guestToken(String phoneNumber, String name) {
+        String normalised = phoneNumber.trim();
+
+        User user = userRepository.findByPhoneNumber(normalised).orElseGet(() -> {
+            // Split name into first/last, defaulting gracefully
+            String[] parts = (name != null && !name.isBlank())
+                    ? name.trim().split("\\s+", 2)
+                    : new String[]{"Guest", ""};
+            User newUser = User.builder()
+                    .phoneNumber(normalised)
+                    .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                    .firstName(parts[0])
+                    .lastName(parts.length > 1 ? parts[1] : "")
+                    .role(User.UserRole.CLIENT)
+                    .vettingLevel(User.VettingLevel.STANDARD)
+                    .trustScore(0.0)
+                    .totalJobsCompleted(0)
+                    .totalReviews(0)
+                    .isActive(true)
+                    .isVerified(false)
+                    .build();
+            return userRepository.save(newUser);
+        });
+
+        // Issue token — principal must match email if set, else phone (mirrors login flow)
+        String principal = (user.getEmail() != null && !user.getEmail().isBlank())
+                ? user.getEmail() : user.getPhoneNumber();
+        String token = tokenProvider.generateTokenFromUsername(principal);
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .userId(user.getId())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .vettingLevel(user.getVettingLevel())
+                .build();
     }
 
     @Transactional

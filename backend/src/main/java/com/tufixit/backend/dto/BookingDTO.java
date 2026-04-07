@@ -62,6 +62,7 @@ public class BookingDTO {
         private Integer customerBudget;
 
         // Artisan info — only revealed after ACCEPTED
+        private Long artisanId;
         private String artisanName;
         private String artisanPhone;     // only shown when customer clicks "reveal"
         private String artisanLocation;

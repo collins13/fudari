@@ -18,17 +18,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BookingService {
+
+    /** Use SecureRandom for all code/PIN generation — java.util.Random is predictable */
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
@@ -301,18 +304,68 @@ public class BookingService {
         }
 
         job.setCounterPrice(req.getCounterPrice());
-        // Keep status PENDING until customer acknowledges — for MVP we auto-accept at counter price
-        job.setAgreedPrice(req.getCounterPrice().toString());
+        // Set to COUNTER_OFFERED — customer must explicitly accept or reject
+        job.setStatus(Job.JobStatus.COUNTER_OFFERED);
+        jobRepository.save(job);
+
+        // Notify customer via SMS with the counter price and booking code
+        String artisanName = artisan.getFirstName() + " " + artisan.getLastName();
+        String message = req.getMessage() != null ? req.getMessage() : "";
+        smsService.notifyCustomerCounterOffer(job.getCustomerPhone(), artisanName,
+                job.getBookingCode(), req.getCounterPrice(), message);
+
+        return BookingDTO.BookingResponse.builder()
+                .success(true)
+                .message("Counter-offer of KES " + req.getCounterPrice() + " sent to customer. Awaiting their response.")
+                .build();
+    }
+
+    // ── Customer: Accept counter-offer ───────────────────────────────────────
+
+    @Transactional
+    public BookingDTO.BookingResponse acceptCounterOffer(String bookingCode) {
+        Job job = findByCode(bookingCode);
+
+        if (job.getStatus() != Job.JobStatus.COUNTER_OFFERED) {
+            throw new IllegalStateException("No pending counter-offer on this booking.");
+        }
+
+        job.setAgreedPrice(job.getCounterPrice().toString());
         job.setStatus(Job.JobStatus.ACCEPTED);
         job.setAcceptedAt(LocalDateTime.now());
         jobRepository.save(job);
 
-        smsService.notifyCustomerAccepted(job.getCustomerPhone(),
-                artisan.getFirstName() + " " + artisan.getLastName(), job.getBookingCode());
+        User artisan = job.getAssignedWorker();
+        smsService.notifyArtisanCounterAccepted(artisan.getPhoneNumber(),
+                job.getBookingCode(), job.getCounterPrice());
 
         return BookingDTO.BookingResponse.builder()
                 .success(true)
-                .message("Counter-offer sent and job accepted at KES " + req.getCounterPrice() + ".")
+                .message("Counter-offer accepted. Booking confirmed at KES " + job.getCounterPrice() + ".")
+                .build();
+    }
+
+    // ── Customer: Reject counter-offer ───────────────────────────────────────
+
+    @Transactional
+    public BookingDTO.BookingResponse rejectCounterOffer(String bookingCode) {
+        Job job = findByCode(bookingCode);
+
+        if (job.getStatus() != Job.JobStatus.COUNTER_OFFERED) {
+            throw new IllegalStateException("No pending counter-offer on this booking.");
+        }
+
+        job.setStatus(Job.JobStatus.DECLINED);
+        job.setDeclineReason("Customer rejected counter-offer of KES " + job.getCounterPrice());
+        job.setCounterPrice(null);
+        jobRepository.save(job);
+
+        User artisan = job.getAssignedWorker();
+        smsService.notifyArtisanCounterRejected(artisan.getPhoneNumber(), job.getBookingCode());
+
+        return BookingDTO.BookingResponse.builder()
+                .success(true)
+                .message("Counter-offer rejected. The booking has been declined.")
                 .build();
     }
 
@@ -502,7 +555,8 @@ public class BookingService {
         String code;
         int attempts = 0;
         do {
-            long num = 100000 + new Random().nextInt(900000);
+            // SecureRandom — not predictable/enumerable like java.util.Random
+            long num = 100000L + SECURE_RANDOM.nextInt(900000);
             code = "TUF-" + num;
             attempts++;
             if (attempts > 20) throw new IllegalStateException("Could not generate unique booking code");
@@ -511,7 +565,7 @@ public class BookingService {
     }
 
     private String generatePin() {
-        int pin = new Random().nextInt(10000);
+        int pin = SECURE_RANDOM.nextInt(10000);
         return String.format("%04d", pin);
     }
 
@@ -521,10 +575,10 @@ public class BookingService {
         boolean isAccepted = job.getStatus() != Job.JobStatus.PENDING
                 && job.getStatus() != Job.JobStatus.DECLINED;
 
-        // Subscription tier label
+        // Subscription tier label — use the List-returning method to avoid Optional/List mismatch
         String subscriptionTier = "Bronze";
         try {
-            List<Subscription> subs = subscriptionRepository.findByArtisanIdAndStatus(
+            List<Subscription> subs = subscriptionRepository.findAllByArtisanIdAndStatus(
                     artisan.getId(), Subscription.SubscriptionStatus.ACTIVE);
             if (!subs.isEmpty()) {
                 subscriptionTier = switch (subs.get(0).getPlanType()) {
@@ -546,6 +600,7 @@ public class BookingService {
                 .scheduledTime(job.getScheduledTime())
                 .customerBudget(job.getCustomerBudget())
                 // Artisan info — only reveal after acceptance
+                .artisanId(isAccepted ? artisan.getId() : null)
                 .artisanName(isAccepted
                         ? artisan.getFirstName() + " " + artisan.getLastName() : null)
                 .artisanPhone(isAccepted && revealPhone ? artisan.getPhoneNumber() : null)
@@ -640,14 +695,16 @@ public class BookingService {
         User artisan = job.getAssignedWorker();
         String tier = "Bronze";
         try {
-            List<Subscription> subs = subscriptionRepository.findByArtisanIdAndStatus(
-                    artisan.getId(), Subscription.SubscriptionStatus.ACTIVE);
-            if (!subs.isEmpty()) {
-                tier = switch (subs.get(0).getPlanType()) {
-                    case PRO -> "Gold";
-                    case BASIC -> "Silver";
-                    default -> "Bronze";
-                };
+            if (artisan != null) {
+                List<Subscription> subs = subscriptionRepository.findAllByArtisanIdAndStatus(
+                        artisan.getId(), Subscription.SubscriptionStatus.ACTIVE);
+                if (!subs.isEmpty()) {
+                    tier = switch (subs.get(0).getPlanType()) {
+                        case PRO -> "Gold";
+                        case BASIC -> "Silver";
+                        default -> "Bronze";
+                    };
+                }
             }
         } catch (Exception ignored) {}
 
@@ -664,9 +721,9 @@ public class BookingService {
                 .scheduledTime(job.getScheduledTime())
                 .customerBudget(job.getCustomerBudget())
                 .agreedPrice(job.getAgreedPrice() != null ? parseIntSafe(job.getAgreedPrice()) : null)
-                .artisanId(artisan.getId())
-                .artisanName(artisan.getFirstName() + " " + artisan.getLastName())
-                .artisanPhone(artisan.getPhoneNumber())
+                .artisanId(artisan != null ? artisan.getId() : null)
+                .artisanName(artisan != null ? artisan.getFirstName() + " " + artisan.getLastName() : "Unknown")
+                .artisanPhone(artisan != null ? artisan.getPhoneNumber() : null)
                 .artisanSubscriptionTier(tier)
                 .paymentRecorded(Boolean.TRUE.equals(job.getPaymentRecorded()))
                 .paymentMethod(job.getPaymentMethod())
@@ -685,6 +742,7 @@ public class BookingService {
         if (status == null) return "Unknown";
         return switch (status) {
             case PENDING -> "Awaiting Response";
+            case COUNTER_OFFERED -> "Counter-Offer Pending";
             case ACCEPTED -> "Accepted";
             case DECLINED -> "Declined";
             case ARRIVED -> "Artisan Arrived";

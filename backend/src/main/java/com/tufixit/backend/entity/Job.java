@@ -195,7 +195,10 @@ public class Job {
     private LocalDateTime updatedAt;
 
     public enum JobStatus {
-        PENDING, BIDDING, ACCEPTED, DECLINED, ARRIVED, IN_PROGRESS,
+        PENDING, BIDDING,
+        /** Artisan proposed a revised price — awaiting customer accept/reject */
+        COUNTER_OFFERED,
+        ACCEPTED, DECLINED, ARRIVED, IN_PROGRESS,
         COMPLETED, CANCELLED, DISPUTED, REFUNDED
     }
 
