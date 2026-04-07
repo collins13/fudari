@@ -40,6 +40,10 @@ public class Subscription {
     @Column
     private Boolean autoRenew = false;
 
+    /** M-Pesa transaction reference — recorded for audit trail */
+    @Column(name = "mpesa_transaction_id", length = 50)
+    private String mpesaTransactionId;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

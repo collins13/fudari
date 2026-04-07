@@ -22,6 +22,18 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getActiveCategories());
     }
 
+    /** Public - get active categories WITH live artisan counts (fixes homepage zero-count bug) */
+    @GetMapping("/stats")
+    public ResponseEntity<List<CategoryDTO.CategoryResponse>> getActiveCategoriesWithStats() {
+        return ResponseEntity.ok(categoryService.getActiveCategoriesWithStats());
+    }
+
+    /** Public - platform-wide stats for the homepage stats banner */
+    @GetMapping("/platform-stats")
+    public ResponseEntity<CategoryDTO.PlatformStats> getPlatformStats() {
+        return ResponseEntity.ok(categoryService.getPlatformStats());
+    }
+
     /** Admin - get all categories */
     @GetMapping("/all")
     public ResponseEntity<List<CategoryDTO.CategoryResponse>> getAllCategories() {

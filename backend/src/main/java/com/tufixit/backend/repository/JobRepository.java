@@ -81,4 +81,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     /** Admin: completed payment records for artisan */
     @Query("SELECT j FROM Job j WHERE j.assignedWorker.id = :workerId AND j.status = 'COMPLETED' AND j.paymentRecorded = true ORDER BY j.completionTime DESC")
     List<Job> findCompletedPaymentsForArtisan(@Param("workerId") Long workerId);
+
+    /** Count jobs by status — used for platform stats */
+    long countByStatus(Job.JobStatus status);
 }

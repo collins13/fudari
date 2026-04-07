@@ -47,5 +47,18 @@ public class CategoryDTO {
         private Boolean isActive;
         private Integer sortOrder;
         private LocalDateTime createdAt;
+        /** Live count of active artisans in this category — populated by /api/categories/stats */
+        private Integer artisanCount;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PlatformStats {
+        private long totalArtisans;
+        private long totalCompletedJobs;
+        private long totalCategories;
+        private long totalListings;
     }
 }

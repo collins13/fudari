@@ -10,8 +10,10 @@ import java.util.List;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     
     List<Category> findByIsActiveTrueOrderBySortOrderAsc();
-    
+
     List<Category> findAllByOrderBySortOrderAsc();
-    
+
     boolean existsByName(String name);
+
+    long countByIsActiveTrue();
 }

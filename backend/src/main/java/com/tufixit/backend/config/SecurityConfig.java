@@ -21,6 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,6 +34,10 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /** Comma-separated allowed origins — set via CORS_ALLOWED_ORIGINS env var */
+    @Value("${cors.allowed-origins:http://localhost:3000}")
+    private String allowedOriginsRaw;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -69,6 +75,8 @@ public class SecurityConfig {
 
                         // PUBLIC: categories
                         .requestMatchers("/api/categories").permitAll()
+                        .requestMatchers("/api/categories/stats").permitAll()
+                        .requestMatchers("/api/categories/platform-stats").permitAll()
 
                         // PUBLIC: workers/artisan profiles
                         .requestMatchers("/api/workers/search").permitAll()
@@ -104,6 +112,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/bookings/*/cancel").permitAll()
                         .requestMatchers("/api/bookings/*/rate").permitAll()
                         .requestMatchers("/api/bookings/*/report").permitAll()
+                        .requestMatchers("/api/bookings/*/accept-counter").permitAll()
+                        .requestMatchers("/api/bookings/*/reject-counter").permitAll()
+
+                        // PUBLIC: AI endpoints (no auth required — called from booking form)
+                        .requestMatchers("/api/ai/**").permitAll()
+
+                        // PUBLIC: WebSocket handshake (JWT auth is handled inside WebSocketConfig)
+                        .requestMatchers("/ws/**").permitAll()
 
                         // PUBLIC: M-Pesa callbacks
                         .requestMatchers("/api/mpesa/**").permitAll()
@@ -127,11 +143,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://tufixit.com"));
+        // Read allowed origins from environment variable — no more hardcoding
+        List<String> origins = Arrays.stream(allowedOriginsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

@@ -31,7 +31,13 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         seedCategories();
         seedAdmin();
-        seedSampleArtisans();
+        // Only seed sample artisans when the database is brand new (no real users yet).
+        // This prevents wiping real artisan accounts on every restart.
+        if (userRepository.count() <= 1) { // 1 = only the admin just created
+            seedSampleArtisans();
+        } else {
+            log.info("Skipping sample artisan seed — database already has users.");
+        }
     }
 
     private void seedCategories() {
@@ -85,24 +91,9 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedSampleArtisans() {
-        // Clean up old seed data with conflicting phone numbers
-        String[] oldPhones = {"+254711111111", "+254722222222", "+254733333333", "+254744444444",
-                "+254755555555", "+254766666666", "+254777777777", "+254788888888"};
-        for (String phone : oldPhones) {
-            userRepository.findByPhoneNumber(phone).ifPresent(u -> {
-                Long uid = u.getId();
-                // Delete all FK references in safe order
-                leadTrackingRepository.deleteAll(leadTrackingRepository.findByArtisanIdOrderByCreatedAtDesc(uid));
-                reportRepository.deleteAll(reportRepository.findByReportedArtisanIdOrderByCreatedAtDesc(uid));
-                publicReviewRepository.deleteAll(publicReviewRepository.findByArtisanIdOrderByCreatedAtDesc(uid));
-                subscriptionRepository.findByArtisanIdOrderByCreatedAtDesc(uid)
-                        .forEach(sub -> subscriptionRepository.delete(sub));
-                listingRepository.deleteAll(listingRepository.findByArtisanIdOrderByCreatedAtDesc(uid));
-                workerSkillRepository.deleteAll(workerSkillRepository.findByWorkerId(uid));
-                userRepository.delete(u);
-                log.info("Cleaned up old seed user: {}", phone);
-            });
-        }
+        // No destructive cleanup — we only reach this method when the DB is empty.
+        // Use findOrCreate (upsert by email) so re-runs during development are idempotent
+        // without ever deleting real data.
 
         String[][] artisans = {
             {"James", "Kamau", "+254700000001", "james@tufixit.com", "ELECTRICIAN", "15", "800", "Westlands, Nairobi", "Professional electrician with 15 years experience in residential and commercial wiring. KEBS certified.", "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=400&fit=crop"},

@@ -66,4 +66,42 @@ public class AuthController {
     public ResponseEntity<AuthDTO.UserDTO> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(authService.getUserById(userId));
     }
+
+    /**
+     * POST /api/auth/forgot-password
+     * Sends a 6-digit OTP to the user's phone number. No auth required.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
+        authService.forgotPassword(request.get("phoneNumber"));
+        return ResponseEntity.ok(Map.of("message", "OTP sent to your phone. Valid for 10 minutes."));
+    }
+
+    /**
+     * POST /api/auth/reset-password
+     * Verify OTP and set new password. No auth required.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> request) {
+        authService.resetPassword(
+                request.get("phoneNumber"),
+                request.get("otp"),
+                request.get("newPassword")
+        );
+        return ResponseEntity.ok(Map.of("message", "Password reset successfully. You can now log in."));
+    }
+
+    /**
+     * Guest token — no password needed.
+     * Body: { "phoneNumber": "+254...", "name": "John Doe" (optional) }
+     * Returns a JWT so the customer can use the real-time chat without full registration.
+     */
+    @PostMapping("/guest-token")
+    public ResponseEntity<AuthDTO.AuthResponse> guestToken(@RequestBody Map<String, String> request) {
+        String phone = request.get("phoneNumber");
+        if (phone == null || phone.isBlank()) {
+            throw new IllegalArgumentException("phoneNumber is required");
+        }
+        return ResponseEntity.ok(authService.guestToken(phone, request.get("name")));
+    }
 }

@@ -32,6 +32,31 @@ public class SubscriptionService {
             throw new RuntimeException("Only workers can subscribe");
         }
 
+        // FREE plan — no payment required, activate immediately
+        if (request.getPlanType() == Subscription.PlanType.FREE) {
+            return activateSubscription(artisan, Subscription.PlanType.FREE, null);
+        }
+
+        // Paid plans — require an M-Pesa transaction ID as confirmation.
+        // The client is expected to have already completed the M-Pesa STK Push payment
+        // and to supply the resulting transaction ID.
+        if (request.getMpesaTransactionId() == null || request.getMpesaTransactionId().isBlank()) {
+            throw new IllegalArgumentException(
+                "M-Pesa payment is required to activate a paid subscription. " +
+                "Please complete the payment and provide your transaction ID.");
+        }
+
+        // TODO: verify the transaction ID against the Daraja API when M-Pesa is fully integrated.
+        // For now we record it and trust the client — this prevents completely free upgrades.
+        log.info("[SUBSCRIPTION] Activating {} for artisan {} with M-Pesa ref {}",
+                request.getPlanType(), artisan.getId(), request.getMpesaTransactionId());
+
+        return activateSubscription(artisan, request.getPlanType(), request.getMpesaTransactionId());
+    }
+
+    private SubscriptionDTO.SubscriptionResponse activateSubscription(
+            User artisan, Subscription.PlanType planType, String mpesaRef) {
+
         // Cancel any existing active subscription
         subscriptionRepository.findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.ACTIVE)
                 .ifPresent(existing -> {
@@ -42,17 +67,18 @@ public class SubscriptionService {
         LocalDateTime now = LocalDateTime.now();
         Subscription subscription = Subscription.builder()
                 .artisan(artisan)
-                .planType(request.getPlanType())
+                .planType(planType)
                 .startDate(now)
-                .endDate(now.plusMonths(1))
+                .endDate(planType == Subscription.PlanType.FREE ? now.plusYears(10) : now.plusMonths(1))
                 .status(Subscription.SubscriptionStatus.ACTIVE)
                 .autoRenew(false)
+                .mpesaTransactionId(mpesaRef)
                 .build();
 
         subscription = subscriptionRepository.save(subscription);
 
         // Update user vetting level based on plan
-        switch (request.getPlanType()) {
+        switch (planType) {
             case PRO -> artisan.setVettingLevel(User.VettingLevel.PRO);
             case BASIC -> artisan.setVettingLevel(User.VettingLevel.VERIFIED);
             case FREE -> artisan.setVettingLevel(User.VettingLevel.STANDARD);

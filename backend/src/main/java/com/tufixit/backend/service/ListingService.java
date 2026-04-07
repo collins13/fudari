@@ -172,11 +172,8 @@ public class ListingService {
 
     @Transactional
     public void incrementViewCount(Long listingId) {
-        Listing listing = listingRepository.findById(listingId).orElse(null);
-        if (listing != null) {
-            listing.setViewCount(listing.getViewCount() + 1);
-            listingRepository.save(listing);
-        }
+        // Atomic UPDATE avoids read-modify-write race condition under concurrent load
+        listingRepository.incrementViewCount(listingId);
     }
 
     private ListingDTO.ListingResponse mapToListingResponse(Listing listing) {

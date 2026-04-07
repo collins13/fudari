@@ -19,6 +19,12 @@ public class SubscriptionDTO {
     public static class CreateSubscriptionRequest {
         @NotNull(message = "Plan type is required")
         private Subscription.PlanType planType;
+
+        /**
+         * M-Pesa transaction ID — required for BASIC and PRO plans.
+         * The frontend must collect this from the user after they complete the STK Push payment.
+         */
+        private String mpesaTransactionId;
     }
 
     @Data

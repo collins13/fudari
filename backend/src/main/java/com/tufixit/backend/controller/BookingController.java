@@ -74,4 +74,22 @@ public class BookingController {
             @Valid @RequestBody BookingDTO.ReportIssueRequest request) {
         return ResponseEntity.ok(bookingService.reportIssue(code, request));
     }
+
+    /**
+     * POST /api/bookings/{code}/accept-counter
+     * Customer accepts the artisan's counter-offer price.
+     */
+    @PostMapping("/{code}/accept-counter")
+    public ResponseEntity<BookingDTO.BookingResponse> acceptCounterOffer(@PathVariable String code) {
+        return ResponseEntity.ok(bookingService.acceptCounterOffer(code));
+    }
+
+    /**
+     * POST /api/bookings/{code}/reject-counter
+     * Customer rejects the artisan's counter-offer price.
+     */
+    @PostMapping("/{code}/reject-counter")
+    public ResponseEntity<BookingDTO.BookingResponse> rejectCounterOffer(@PathVariable String code) {
+        return ResponseEntity.ok(bookingService.rejectCounterOffer(code));
+    }
 }

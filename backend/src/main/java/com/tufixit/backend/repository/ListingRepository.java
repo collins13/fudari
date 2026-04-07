@@ -5,6 +5,7 @@ import com.tufixit.backend.entity.WorkerSkill;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -35,6 +36,20 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
                         "WHERE l.status = 'APPROVED' AND l.is_active = true",
            nativeQuery = true)
     Page<Listing> findAllApprovedRanked(Pageable pageable);
+
+    long countByStatus(Listing.ListingStatus status);
+
+    /** Atomic view count increment — avoids read-modify-write race condition */
+    @Modifying
+    @Query("UPDATE Listing l SET l.viewCount = l.viewCount + 1 WHERE l.id = :id")
+    void incrementViewCount(@Param("id") Long id);
+
+    /** Count artisans per skill type for category stats */
+    @Query(value = "SELECT CAST(w.skill_type AS VARCHAR), COUNT(DISTINCT w.worker_id) " +
+                   "FROM worker_skills w JOIN users u ON w.worker_id = u.id " +
+                   "WHERE u.is_active = true AND u.role = 'WORKER' " +
+                   "GROUP BY w.skill_type", nativeQuery = true)
+    List<Object[]> countArtisansPerSkillType();
 
     // Ranked search with filters
     @Query(value = "SELECT l.* FROM listings l " +

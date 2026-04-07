@@ -84,6 +84,15 @@ public class User {
     @Column
     private String mpesaAccountNumber;
 
+    /** OTP for password reset — stored hashed, cleared after use */
+    @JsonIgnore
+    @Column(name = "reset_otp")
+    private String resetOtp;
+
+    /** When the OTP expires (10 minutes from issue) */
+    @Column(name = "reset_otp_expires_at")
+    private LocalDateTime resetOtpExpiresAt;
+
     @JsonIgnore
     @OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)
     private List<WorkerSkill> skills;

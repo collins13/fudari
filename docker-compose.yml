@@ -46,7 +46,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-tufixit-dev-secret-change-in-production}
-      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://tufixit-frontend:3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,7 +61,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+      # Use Docker service name "backend" — localhost would refer to the container itself
+      NEXT_PUBLIC_API_URL: http://backend:8080/api
     depends_on:
       - backend
 
