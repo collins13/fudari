@@ -6,11 +6,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Date;
 
 @Component
@@ -23,6 +25,12 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${jwt.expiration.admin:900000}")
+    private long adminExpiration;
+
+    @Value("${jwt.expiration.worker:900000}")
+    private long workerExpiration;
+
     private SecretKey key;
 
     @PostConstruct
@@ -32,11 +40,15 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String role = getRoleFromAuthorities(authentication.getAuthorities());
+        long expiration = getExpirationForRole(role);
+
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+        Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(userDetails.getUsername())
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
@@ -53,6 +65,42 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(key)
                 .compact();
+    }
+
+    public String generateTokenFromUsernameWithRole(String username, String role) {
+        long expiration = getExpirationForRole(role);
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
+
+        return Jwts.builder()
+                .subject(username)
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(key)
+                .compact();
+    }
+
+    private String getRoleFromAuthorities(Collection<? extends GrantedAuthority> authorities) {
+        for (GrantedAuthority authority : authorities) {
+            String role = authority.getAuthority();
+            if (role.startsWith("ROLE_")) {
+                return role.substring(5);
+            }
+        }
+        return "CLIENT";
+    }
+
+    private long getExpirationForRole(String role) {
+        return switch (role) {
+            case "ADMIN" -> adminExpiration;
+            case "WORKER" -> workerExpiration;
+            default -> jwtExpiration;
+        };
+    }
+
+    public long getDefaultExpiration() {
+        return jwtExpiration;
     }
 
     public String getUsernameFromToken(String token) {

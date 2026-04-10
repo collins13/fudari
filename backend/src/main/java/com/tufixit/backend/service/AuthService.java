@@ -66,13 +66,12 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        // Auto-create FREE subscription for workers
         if (user.getRole() == User.UserRole.WORKER) {
             Subscription subscription = Subscription.builder()
                     .artisan(user)
                     .planType(Subscription.PlanType.FREE)
                     .startDate(LocalDateTime.now())
-                    .endDate(LocalDateTime.now().plusYears(10)) // Free never expires
+                    .endDate(LocalDateTime.now().plusYears(10))
                     .status(Subscription.SubscriptionStatus.ACTIVE)
                     .autoRenew(false)
                     .build();
@@ -80,7 +79,7 @@ public class AuthService {
         }
 
         String principal = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
-        String token = tokenProvider.generateTokenFromUsername(principal);
+        String token = tokenProvider.generateTokenFromUsernameWithRole(principal, user.getRole().name());
 
         return AuthDTO.AuthResponse.builder()
                 .token(token)
@@ -95,6 +94,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword())
@@ -117,6 +117,29 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .role(user.getRole())
                 .vettingLevel(user.getVettingLevel())
+                .build();
+    }
+
+    public AuthDTO.AuthResponse refreshToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String principal = authentication.getName();
+        
+        String role = "CLIENT";
+        if (authentication.getAuthorities() != null) {
+            for (var authority : authentication.getAuthorities()) {
+                String auth = authority.getAuthority();
+                if (auth.startsWith("ROLE_")) {
+                    role = auth.substring(5);
+                    break;
+                }
+            }
+        }
+
+        String newToken = tokenProvider.generateTokenFromUsernameWithRole(principal, role);
+        
+        return AuthDTO.AuthResponse.builder()
+                .token(newToken)
+                .type("Bearer")
                 .build();
     }
 
@@ -207,7 +230,6 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        // Handle skill update
         if (data.get("skillType") != null) {
             try {
                 WorkerSkill.SkillType skillType = WorkerSkill.SkillType.valueOf(data.get("skillType").toString().toUpperCase());
@@ -242,17 +264,14 @@ public class AuthService {
         return mapToUserDTO(user);
     }
 
-    // ── Forgot / Reset password ───────────────────────────────────────────────
-
     @Transactional
     public void forgotPassword(String phoneNumber) {
         User user = userRepository.findByPhoneNumber(phoneNumber)
                 .or(() -> userRepository.findByEmail(phoneNumber))
                 .orElseThrow(() -> new IllegalArgumentException("No account found for this phone number"));
 
-        // Generate 6-digit OTP using SecureRandom
         String otp = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
-        user.setResetOtp(passwordEncoder.encode(otp)); // store hashed
+        user.setResetOtp(passwordEncoder.encode(otp));
         user.setResetOtpExpiresAt(LocalDateTime.now().plusMinutes(10));
         userRepository.save(user);
 
@@ -287,17 +306,11 @@ public class AuthService {
         log.info("Password reset successful for {}", user.getPhoneNumber());
     }
 
-    /**
-     * Guest token: given a phone number, find-or-create a minimal CLIENT account
-     * and return a short-lived JWT (1 hour). No password required.
-     * Used so customers can chat with artisans without full registration.
-     */
     @Transactional
     public AuthDTO.AuthResponse guestToken(String phoneNumber, String name) {
         String normalised = phoneNumber.trim();
 
         User user = userRepository.findByPhoneNumber(normalised).orElseGet(() -> {
-            // Split name into first/last, defaulting gracefully
             String[] parts = (name != null && !name.isBlank())
                     ? name.trim().split("\\s+", 2)
                     : new String[]{"Guest", ""};
@@ -317,10 +330,9 @@ public class AuthService {
             return userRepository.save(newUser);
         });
 
-        // Issue token — principal must match email if set, else phone (mirrors login flow)
         String principal = (user.getEmail() != null && !user.getEmail().isBlank())
                 ? user.getEmail() : user.getPhoneNumber();
-        String token = tokenProvider.generateTokenFromUsername(principal);
+        String token = tokenProvider.generateTokenFromUsernameWithRole(principal, "CLIENT");
 
         return AuthDTO.AuthResponse.builder()
                 .token(token)

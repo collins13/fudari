@@ -37,4 +37,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findNearbyWorkers(@Param("latitude") Double latitude, 
                                   @Param("longitude") Double longitude, 
                                   @Param("radiusKm") Double radiusKm);
+    
+    long countByRole(User.UserRole role);
 }

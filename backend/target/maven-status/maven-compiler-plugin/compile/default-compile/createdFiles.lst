@@ -215,7 +215,6 @@ com/tufixit/backend/security/JwtAuthenticationFilter.class
 com/tufixit/backend/dto/BookingDTO$ArtisanJobSummary.class
 com/tufixit/backend/service/ReportService.class
 com/tufixit/backend/dto/AuthDTO$AuthResponse.class
-com/tufixit/backend/controller/AdminController.class
 com/tufixit/backend/service/AuthService.class
 com/tufixit/backend/dto/BookingDTO$BookingResponse.class
 com/tufixit/backend/dto/AuthDTO$RegisterRequest$RegisterRequestBuilder.class

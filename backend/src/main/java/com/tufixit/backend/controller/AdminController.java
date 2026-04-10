@@ -73,7 +73,7 @@ public class AdminController {
     }
 
     /** Admin - update user role */
-    @PutMapping("/users/{id}/role")
+    @PutMapping("/users/{id:[0-9]+}/role")
     public ResponseEntity<AuthDTO.UserDTO> updateUserRole(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
@@ -85,7 +85,7 @@ public class AdminController {
     }
 
     /** Admin - activate/deactivate user */
-    @PutMapping("/users/{id}/status")
+    @PutMapping("/users/{id:[0-9]+}/status")
     public ResponseEntity<AuthDTO.UserDTO> updateUserStatus(
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> body) {
@@ -130,5 +130,13 @@ public class AdminController {
     @GetMapping("/payments/missing")
     public ResponseEntity<List<BookingDTO.AdminJobView>> getMissingPayments() {
         return ResponseEntity.ok(bookingService.getMissingPayments());
+    }
+
+    /** Admin - platform statistics */
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getPlatformStats() {
+        return ResponseEntity.ok(Map.of(
+            "message", "Use dashboard for stats"
+        ));
     }
 }
