@@ -45,8 +45,8 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
     void incrementViewCount(@Param("id") Long id);
 
     /** Count artisans per skill type for category stats */
-    @Query(value = "SELECT CAST(w.skill_type AS VARCHAR), COUNT(DISTINCT w.worker_id) " +
-                   "FROM worker_skills w JOIN users u ON w.worker_id = u.id " +
+    @Query(value = "SELECT CAST(w.skill_type AS VARCHAR), COUNT(DISTINCT w.user_id) " +
+                   "FROM worker_skills w JOIN users u ON w.user_id = u.id " +
                    "WHERE u.is_active = true AND u.role = 'WORKER' " +
                    "GROUP BY w.skill_type", nativeQuery = true)
     List<Object[]> countArtisansPerSkillType();

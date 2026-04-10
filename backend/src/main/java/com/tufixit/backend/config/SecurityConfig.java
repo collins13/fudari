@@ -1,7 +1,7 @@
 package com.tufixit.backend.config;
 
 import com.tufixit.backend.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,11 +28,16 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsService userDetailsService;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private UserDetailsService userDetailsService;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    public void setDependencies(UserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     /** Comma-separated allowed origins — set via CORS_ALLOWED_ORIGINS env var */
     @Value("${cors.allowed-origins:http://localhost:3000}")
@@ -61,7 +65,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Auth endpoints - public

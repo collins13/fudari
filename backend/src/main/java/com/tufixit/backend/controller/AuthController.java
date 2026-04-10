@@ -104,4 +104,14 @@ public class AuthController {
         }
         return ResponseEntity.ok(authService.guestToken(phone, request.get("name")));
     }
+
+    /**
+     * POST /api/auth/refresh
+     * Refresh the current JWT token. Extends session without re-login.
+     * Requires authentication.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthDTO.AuthResponse> refreshToken() {
+        return ResponseEntity.ok(authService.refreshToken());
+    }
 }
