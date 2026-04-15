@@ -81,8 +81,24 @@ public class User {
     @Column
     private Boolean isActive = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
+    /** Workers require admin approval before being visible to customers */
+    @Column
+    private Boolean isApproved = false;
+
     @Column
     private String mpesaAccountNumber;
+
+    /** Unique referral code generated at registration (e.g. "TFX-A1B2C3") */
+    @Column(unique = true)
+    private String referralCode;
+
+    /** ID of the user who referred this user (nullable) */
+    @Column
+    private Long referredBy;
 
     /** OTP for password reset — stored hashed, cleared after use */
     @JsonIgnore
@@ -110,5 +126,9 @@ public class User {
 
     public enum VettingLevel {
         STANDARD, VERIFIED, PRO
+    }
+
+    public enum AccountStatus {
+        ACTIVE, SUSPENDED, LOCKED, DISABLED, SOFT_DELETED
     }
 }

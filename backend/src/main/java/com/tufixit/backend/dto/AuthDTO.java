@@ -31,6 +31,9 @@ public class AuthDTO {
         private String lastName;
         
         private User.UserRole role; // CLIENT or WORKER
+
+        /** Optional referral code from an existing user */
+        private String referralCode;
     }
 
     @Data
@@ -81,7 +84,17 @@ public class AuthDTO {
         private Double longitude;
         private String locationName;
         private Boolean isVerified;
+        private Boolean isActive;
+        private String accountStatus;
+        private Boolean isApproved;
+        private String nationalId;
+        private String certificateOfGoodConduct;
+        private String tvetCertification;
         private List<WorkerSkillInfo> skills;
+        private String createdAt;
+        private Double rankingScore;
+        private Boolean isFeatured;
+        private String referralCode;
     }
 
     @Data
@@ -95,5 +108,28 @@ public class AuthDTO {
         private Integer experienceYears;
         private String hourlyRate;
         private Boolean isVerified;
+    }
+
+    /** Admin: create a user with pre-assigned role */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class AdminCreateUserRequest {
+        @NotBlank(message = "Phone number is required")
+        private String phoneNumber;
+
+        private String email;
+
+        @NotBlank(message = "First name is required")
+        private String firstName;
+
+        @NotBlank(message = "Last name is required")
+        private String lastName;
+
+        @NotBlank(message = "Password is required")
+        private String password;
+
+        private User.UserRole role; // defaults to CLIENT
     }
 }

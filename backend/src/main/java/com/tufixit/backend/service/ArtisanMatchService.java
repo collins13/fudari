@@ -163,4 +163,79 @@ public class ArtisanMatchService {
     // ── Internal record ───────────────────────────────────────────────────────
 
     private record ScoredArtisan(User artisan, WorkerSkill skill, double distanceKm, double score) {}
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── Feature 7: Predictive Multi-Category Match ───────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns three ranked lists:
+     *   - Best Match: highest overall score (quality + proximity + trust)
+     *   - Fastest Available: closest artisans (distance-weighted)
+     *   - Best Value: lowest starting rates among good artisans
+     */
+    public AiDTO.PredictiveMatchResponse findPredictiveMatches(
+            String skillTypeStr, Double latitude, Double longitude) {
+
+        WorkerSkill.SkillType skillType;
+        try {
+            skillType = WorkerSkill.SkillType.valueOf(skillTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            skillType = WorkerSkill.SkillType.OTHER;
+        }
+
+        List<WorkerSkill> skills = workerSkillRepository.findBySkillType(skillType);
+        List<ScoredArtisan> allScored = new ArrayList<>();
+
+        for (WorkerSkill skill : skills) {
+            User artisan = skill.getWorker();
+            if (artisan == null || !Boolean.TRUE.equals(artisan.getIsActive())) continue;
+
+            double distanceKm = Double.MAX_VALUE;
+            if (latitude != null && longitude != null
+                    && artisan.getLatitude() != null && artisan.getLongitude() != null) {
+                distanceKm = haversine(latitude, longitude, artisan.getLatitude(), artisan.getLongitude());
+                if (distanceKm > MAX_RADIUS_KM * 2) continue; // wider radius for more options
+            }
+
+            double score = computeScore(artisan, distanceKm);
+            allScored.add(new ScoredArtisan(artisan, skill, distanceKm, score));
+        }
+
+        // Best Match — highest overall score
+        List<AiDTO.MatchedArtisan> bestMatch = allScored.stream()
+                .sorted(Comparator.comparingDouble(ScoredArtisan::score).reversed())
+                .limit(TOP_N)
+                .map(this::toMatchedArtisan)
+                .collect(Collectors.toList());
+
+        // Fastest Available — closest distance (only those with known location)
+        List<AiDTO.MatchedArtisan> fastestAvailable = allScored.stream()
+                .filter(sa -> sa.distanceKm() != Double.MAX_VALUE)
+                .sorted(Comparator.comparingDouble(ScoredArtisan::distanceKm))
+                .limit(TOP_N)
+                .map(this::toMatchedArtisan)
+                .collect(Collectors.toList());
+
+        // Best Value — lowest hourly rate among artisans with rating >= 3.5
+        List<AiDTO.MatchedArtisan> bestValue = allScored.stream()
+                .filter(sa -> {
+                    Double ts = sa.artisan().getTrustScore();
+                    return ts != null && ts >= 3.5;
+                })
+                .filter(sa -> sa.skill().getHourlyRate() != null)
+                .sorted(Comparator.comparingInt(sa -> {
+                    try { return Integer.parseInt(sa.skill().getHourlyRate()); }
+                    catch (NumberFormatException e) { return Integer.MAX_VALUE; }
+                }))
+                .limit(TOP_N)
+                .map(this::toMatchedArtisan)
+                .collect(Collectors.toList());
+
+        return AiDTO.PredictiveMatchResponse.builder()
+                .bestMatch(bestMatch)
+                .fastestAvailable(fastestAvailable)
+                .bestValue(bestValue)
+                .build();
+    }
 }

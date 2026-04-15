@@ -9,10 +9,15 @@ import com.tufixit.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,19 +28,20 @@ public class ListingService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final RankingService rankingService;
 
     @Transactional
     public ListingDTO.ListingResponse createListing(ListingDTO.CreateListingRequest request) {
         User artisan = getCurrentUser();
         if (artisan.getRole() != User.UserRole.WORKER) {
-            throw new RuntimeException("Only workers can create listings");
+            throw new IllegalStateException("Only workers can create listings");
         }
 
         // Check subscription listing limit
         int currentCount = (int) listingRepository.countByArtisanId(artisan.getId());
         int maxListings = getMaxListingsForArtisan(artisan.getId());
         if (currentCount >= maxListings) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                 "You've reached your listing limit (" + maxListings + "). Upgrade your plan for more listings.");
         }
 
@@ -68,10 +74,10 @@ public class ListingService {
     public ListingDTO.ListingResponse updateListing(Long listingId, ListingDTO.UpdateListingRequest request) {
         User artisan = getCurrentUser();
         Listing listing = listingRepository.findById(listingId)
-                .orElseThrow(() -> new RuntimeException("Listing not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
         if (!listing.getArtisan().getId().equals(artisan.getId()) && artisan.getRole() != User.UserRole.ADMIN) {
-            throw new RuntimeException("You can only edit your own listings");
+            throw new IllegalStateException("You can only edit your own listings");
         }
 
         if (request.getTitle() != null) listing.setTitle(request.getTitle());
@@ -100,10 +106,10 @@ public class ListingService {
     public void deleteListing(Long listingId) {
         User user = getCurrentUser();
         Listing listing = listingRepository.findById(listingId)
-                .orElseThrow(() -> new RuntimeException("Listing not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
 
         if (!listing.getArtisan().getId().equals(user.getId()) && user.getRole() != User.UserRole.ADMIN) {
-            throw new RuntimeException("You can only delete your own listings");
+            throw new IllegalStateException("You can only delete your own listings");
         }
 
         listingRepository.delete(listing);
@@ -111,13 +117,20 @@ public class ListingService {
 
     public ListingDTO.ListingResponse getListingById(Long listingId) {
         Listing listing = listingRepository.findById(listingId)
-                .orElseThrow(() -> new RuntimeException("Listing not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
         return mapToListingResponse(listing);
     }
 
     public Page<ListingDTO.ListingResponse> getApprovedListings(Pageable pageable) {
-        return listingRepository.findAllApprovedRanked(pageable)
-                .map(this::mapToListingResponse);
+        Page<Listing> page = listingRepository.findAllApprovedRanked(pageable);
+        // Re-rank by composite score (application-level) for richer ordering
+        List<ListingDTO.ListingResponse> ranked = page.getContent().stream()
+                .map(this::mapToListingResponse)
+                .sorted((a, b) -> Double.compare(
+                        b.getRankingScore() != null ? b.getRankingScore() : 0,
+                        a.getRankingScore() != null ? a.getRankingScore() : 0))
+                .collect(Collectors.toList());
+        return new PageImpl<>(ranked, pageable, page.getTotalElements());
     }
 
     public Page<ListingDTO.ListingResponse> searchListings(
@@ -131,9 +144,15 @@ public class ListingService {
                 log.warn("Invalid skill type: {}", skillType);
             }
         }
-        return listingRepository.searchListingsRanked(
-                skillStr, categoryId, location, pageable)
-                .map(this::mapToListingResponse);
+        Page<Listing> page = listingRepository.searchListingsRanked(
+                skillStr, categoryId, location, pageable);
+        List<ListingDTO.ListingResponse> ranked = page.getContent().stream()
+                .map(this::mapToListingResponse)
+                .sorted((a, b) -> Double.compare(
+                        b.getRankingScore() != null ? b.getRankingScore() : 0,
+                        a.getRankingScore() != null ? a.getRankingScore() : 0))
+                .collect(Collectors.toList());
+        return new PageImpl<>(ranked, pageable, page.getTotalElements());
     }
 
     public Page<ListingDTO.ListingResponse> getMyListings(Pageable pageable) {
@@ -155,7 +174,7 @@ public class ListingService {
     @Transactional
     public ListingDTO.ListingResponse approveListing(Long listingId) {
         Listing listing = listingRepository.findById(listingId)
-                .orElseThrow(() -> new RuntimeException("Listing not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
         listing.setStatus(Listing.ListingStatus.APPROVED);
         listing = listingRepository.save(listing);
         return mapToListingResponse(listing);
@@ -164,8 +183,18 @@ public class ListingService {
     @Transactional
     public ListingDTO.ListingResponse rejectListing(Long listingId) {
         Listing listing = listingRepository.findById(listingId)
-                .orElseThrow(() -> new RuntimeException("Listing not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
         listing.setStatus(Listing.ListingStatus.REJECTED);
+        listing = listingRepository.save(listing);
+        return mapToListingResponse(listing);
+    }
+
+    @Transactional
+    public ListingDTO.ListingResponse revokeListing(Long listingId) {
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+        listing.setStatus(Listing.ListingStatus.REVOKED);
+        listing.setIsActive(false);
         listing = listingRepository.save(listing);
         return mapToListingResponse(listing);
     }
@@ -178,6 +207,9 @@ public class ListingService {
 
     private ListingDTO.ListingResponse mapToListingResponse(Listing listing) {
         User artisan = listing.getArtisan();
+        double listingScore = rankingService.computeListingScore(listing);
+        boolean featured = artisan.getVettingLevel() == User.VettingLevel.PRO;
+
         return ListingDTO.ListingResponse.builder()
                 .id(listing.getId())
                 .artisanId(artisan.getId())
@@ -205,6 +237,8 @@ public class ListingService {
                 .artisanJobsCompleted(artisan.getTotalJobsCompleted())
                 .createdAt(listing.getCreatedAt())
                 .updatedAt(listing.getUpdatedAt())
+                .rankingScore(Math.round(listingScore * 10) / 10.0)
+                .isFeatured(featured)
                 .build();
     }
 
@@ -232,7 +266,7 @@ public class ListingService {
         String principal = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(principal)
                 .or(() -> userRepository.findByPhoneNumber(principal))
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
     private int getMaxListingsForArtisan(Long artisanId) {

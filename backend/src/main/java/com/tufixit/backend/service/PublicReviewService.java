@@ -66,6 +66,15 @@ public class PublicReviewService {
                 .collect(Collectors.toList());
     }
 
+    /** Return all reviews across all artisans (admin use) */
+    public List<PublicReviewDTO.PublicReviewResponse> getAllReviews() {
+        return publicReviewRepository.findAll(
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::mapToResponseWithArtisan)
+                .collect(Collectors.toList());
+    }
+
     public Map<String, Object> getArtisanRatingSummary(Long artisanId) {
         Double avgRating = publicReviewRepository.getAverageRatingByArtisanId(artisanId);
         Integer count = publicReviewRepository.getReviewCountByArtisanId(artisanId);
@@ -94,11 +103,16 @@ public class PublicReviewService {
         return PublicReviewDTO.PublicReviewResponse.builder()
                 .id(review.getId())
                 .artisanId(review.getArtisan().getId())
+                .artisanName(review.getArtisan().getFirstName() + " " + review.getArtisan().getLastName())
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .reviewerName(review.getReviewerName())
                 .isVerified(review.getIsVerified())
                 .createdAt(review.getCreatedAt())
                 .build();
+    }
+
+    private PublicReviewDTO.PublicReviewResponse mapToResponseWithArtisan(PublicReview review) {
+        return mapToResponse(review);
     }
 }

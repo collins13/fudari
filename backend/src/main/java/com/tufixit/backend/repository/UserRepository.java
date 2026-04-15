@@ -39,4 +39,42 @@ public interface UserRepository extends JpaRepository<User, Long> {
                                   @Param("radiusKm") Double radiusKm);
     
     long countByRole(User.UserRole role);
+
+    /** Active + approved workers only — used in public search */
+    @Query(value = "SELECT * FROM users u WHERE u.role = 'WORKER' AND u.is_active = true " +
+           "AND u.account_status = 'ACTIVE' AND u.is_approved = true " +
+           "ORDER BY CASE u.vetting_level WHEN 'PRO' THEN 0 WHEN 'VERIFIED' THEN 1 ELSE 2 END ASC, " +
+           "u.trust_score DESC, u.total_jobs_completed DESC",
+           nativeQuery = true)
+    List<User> findApprovedActiveWorkers();
+
+    /** Active + approved nearby workers only — used in public search */
+    @Query(value = "SELECT * FROM users u WHERE u.role = 'WORKER' AND u.is_active = true " +
+           "AND u.account_status = 'ACTIVE' AND u.is_approved = true " +
+           "AND (6371 * acos(cos(radians(:latitude)) * cos(radians(u.latitude)) * " +
+           "cos(radians(u.longitude) - radians(:longitude)) + sin(radians(:latitude)) * " +
+           "sin(radians(u.latitude)))) < :radiusKm " +
+           "ORDER BY CASE u.vetting_level WHEN 'PRO' THEN 0 WHEN 'VERIFIED' THEN 1 ELSE 2 END ASC, " +
+           "u.trust_score DESC", nativeQuery = true)
+    List<User> findApprovedNearbyWorkers(@Param("latitude") Double latitude,
+                                          @Param("longitude") Double longitude,
+                                          @Param("radiusKm") Double radiusKm);
+
+    /** Admin: count workers by approval status */
+    long countByRoleAndIsApproved(User.UserRole role, Boolean isApproved);
+
+    /** Admin: count by account status */
+    long countByAccountStatus(User.AccountStatus status);
+
+    /** All users excluding soft-deleted — for admin listing */
+    @Query("SELECT u FROM User u WHERE u.accountStatus <> 'SOFT_DELETED' ORDER BY u.createdAt DESC")
+    List<User> findAllExcludingDeleted();
+
+    // ── Referral system ───────────────────────────────────────────────────
+
+    Optional<User> findByReferralCode(String referralCode);
+
+    boolean existsByReferralCode(String referralCode);
+
+    long countByReferredBy(Long referrerId);
 }

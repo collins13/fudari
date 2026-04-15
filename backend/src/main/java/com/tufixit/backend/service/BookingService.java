@@ -44,6 +44,11 @@ public class BookingService {
     @Transactional
     public BookingDTO.BookingTrackResponse createBooking(BookingDTO.CreateBookingRequest req) {
 
+        // 0. Validate customer phone is a valid Kenyan number
+        if (!smsService.isValidKenyanPhone(req.getCustomerPhone())) {
+            throw new IllegalArgumentException("Please provide a valid Kenyan phone number (e.g. 0712345678)");
+        }
+
         // 1. Validate artisan exists and is active
         User artisan = userRepository.findById(req.getArtisanId())
                 .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
@@ -301,6 +306,13 @@ public class BookingService {
 
         if (job.getStatus() != Job.JobStatus.PENDING) {
             throw new IllegalStateException("Can only counter-offer on PENDING jobs.");
+        }
+
+        if (req.getCounterPrice() == null || req.getCounterPrice() <= 0) {
+            throw new IllegalArgumentException("Counter-offer price must be a positive amount in KES.");
+        }
+        if (req.getCounterPrice() > 500_000) {
+            throw new IllegalArgumentException("Counter-offer price exceeds maximum allowed (KES 500,000).");
         }
 
         job.setCounterPrice(req.getCounterPrice());

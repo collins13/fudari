@@ -86,5 +86,7 @@ public class ListingDTO {
         private Integer artisanJobsCompleted;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private Double rankingScore;
+        private Boolean isFeatured;
     }
 }

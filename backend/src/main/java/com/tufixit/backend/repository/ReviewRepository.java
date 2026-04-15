@@ -20,4 +20,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     @Query("SELECT COUNT(r) FROM Review r WHERE r.reviewedUser.id = :userId")
     Integer getReviewCountByUserId(@Param("userId") Long userId);
+
+    /** Trust Score AI: all reviews for an artisan with comments, sorted newest first */
+    @Query("SELECT r FROM Review r WHERE r.reviewedUser.id = :userId AND r.comment IS NOT NULL ORDER BY r.createdAt DESC")
+    List<Review> findReviewsWithComments(@Param("userId") Long userId);
+
+    /** Trust Score AI: rating distribution */
+    @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.reviewedUser.id = :userId GROUP BY r.rating")
+    List<Object[]> getRatingDistribution(@Param("userId") Long userId);
 }

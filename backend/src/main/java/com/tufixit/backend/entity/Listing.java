@@ -71,6 +71,6 @@ public class Listing {
     private LocalDateTime updatedAt;
 
     public enum ListingStatus {
-        PENDING, APPROVED, REJECTED
+        PENDING, APPROVED, REJECTED, REVOKED
     }
 }

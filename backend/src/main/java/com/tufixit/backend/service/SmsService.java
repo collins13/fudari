@@ -136,16 +136,36 @@ public class SmsService {
         }
     }
 
-    // ── Normalise Kenyan phone to +254 format ─────────────────────────────────
+    // ── Normalise & validate Kenyan phone to +254 format ──────────────────────
 
-    private String normalise(String phone) {
-        phone = phone.trim().replaceAll("\\s+", "");
+    private static final java.util.regex.Pattern KENYAN_PHONE =
+            java.util.regex.Pattern.compile("^\\+254[17]\\d{8}$");
+
+    /**
+     * Normalise a Kenyan phone number to international +254… format.
+     * Accepts: 0712345678, 254712345678, +254712345678
+     * Rejects anything that doesn't resolve to a valid Kenyan mobile/landline.
+     */
+    String normalise(String phone) {
+        if (phone == null) return null;
+        // Strip spaces, dashes, parentheses
+        phone = phone.trim().replaceAll("[\\s\\-()]+", "");
         if (phone.startsWith("0") && phone.length() == 10) {
-            return "+254" + phone.substring(1);
+            phone = "+254" + phone.substring(1);
+        } else if (phone.startsWith("254") && !phone.startsWith("+")) {
+            phone = "+" + phone;
         }
-        if (phone.startsWith("254") && !phone.startsWith("+")) {
-            return "+" + phone;
+        if (!KENYAN_PHONE.matcher(phone).matches()) {
+            log.warn("[SMS] Invalid Kenyan phone rejected: {}", phone);
+            return null;
         }
         return phone;
+    }
+
+    /**
+     * Validate phone number format without sending. Useful for pre-send checks.
+     */
+    public boolean isValidKenyanPhone(String phone) {
+        return normalise(phone) != null;
     }
 }

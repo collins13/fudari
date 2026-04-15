@@ -4,21 +4,28 @@ import com.tufixit.backend.dto.BookingDTO;
 import com.tufixit.backend.dto.ListingDTO;
 import com.tufixit.backend.dto.AuthDTO;
 import com.tufixit.backend.entity.Job;
+import com.tufixit.backend.entity.Listing;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.repository.UserRepository;
+import com.tufixit.backend.repository.JobRepository;
+import com.tufixit.backend.repository.ListingRepository;
+import com.tufixit.backend.repository.EscrowTransactionRepository;
 import com.tufixit.backend.service.BookingService;
 import com.tufixit.backend.service.ListingService;
 import com.tufixit.backend.service.AuthService;
+import com.tufixit.backend.service.PublicReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,6 +37,11 @@ public class AdminController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final BookingService bookingService;
+    private final JobRepository jobRepository;
+    private final ListingRepository listingRepository;
+    private final EscrowTransactionRepository escrowRepository;
+    private final PublicReviewService publicReviewService;
+    private final PasswordEncoder passwordEncoder;
 
     /** Admin - get pending listings for approval */
     @GetMapping("/listings/pending")
@@ -63,13 +75,46 @@ public class AdminController {
         return ResponseEntity.ok(authService.getUserById(id));
     }
 
-    /** Admin - list all users */
+    /** Admin - list all users (excluding soft-deleted) */
     @GetMapping("/users")
     public ResponseEntity<List<AuthDTO.UserDTO>> getAllUsers() {
-        List<AuthDTO.UserDTO> users = userRepository.findAll().stream()
+        List<AuthDTO.UserDTO> users = userRepository.findAllExcludingDeleted().stream()
                 .map(u -> authService.getUserById(u.getId()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(users);
+    }
+
+    /** Admin - create a new user */
+    @PostMapping("/users")
+    public ResponseEntity<AuthDTO.UserDTO> createUser(@Valid @RequestBody AuthDTO.AdminCreateUserRequest request) {
+        if (request.getPhoneNumber() != null && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && userRepository.existsByEmail(request.getEmail())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        User.UserRole role = request.getRole() != null ? request.getRole() : User.UserRole.CLIENT;
+        User user = User.builder()
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .vettingLevel(User.VettingLevel.STANDARD)
+                .accountStatus(User.AccountStatus.ACTIVE)
+                .trustScore(0.0)
+                .totalJobsCompleted(0)
+                .totalReviews(0)
+                .isActive(true)
+                .isVerified(false)
+                // Admin-created users are auto-approved
+                .isApproved(true)
+                .build();
+        user = userRepository.save(user);
+        return ResponseEntity.ok(authService.getUserById(user.getId()));
     }
 
     /** Admin - update user role */
@@ -77,23 +122,106 @@ public class AdminController {
     public ResponseEntity<AuthDTO.UserDTO> updateUserRole(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
+        String roleStr = body.get("role");
+        if (roleStr == null || roleStr.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        User.UserRole newRole;
+        try {
+            newRole = User.UserRole.valueOf(roleStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setRole(User.UserRole.valueOf(body.get("role").toUpperCase()));
+        user.setRole(newRole);
         userRepository.save(user);
         return ResponseEntity.ok(authService.getUserById(id));
     }
 
-    /** Admin - activate/deactivate user */
+    /** Admin - activate/deactivate user (legacy toggle) */
     @PutMapping("/users/{id:[0-9]+}/status")
     public ResponseEntity<AuthDTO.UserDTO> updateUserStatus(
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> body) {
+        Boolean isActive = body.get("isActive");
+        if (isActive == null) {
+            return ResponseEntity.badRequest().build();
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setIsActive(body.get("isActive"));
+        user.setIsActive(isActive);
+        user.setAccountStatus(isActive ? User.AccountStatus.ACTIVE : User.AccountStatus.SUSPENDED);
         userRepository.save(user);
         return ResponseEntity.ok(authService.getUserById(id));
+    }
+
+    /** Admin - set account status (ACTIVE, SUSPENDED, LOCKED, DISABLED, SOFT_DELETED) */
+    @PutMapping("/users/{id:[0-9]+}/account-status")
+    public ResponseEntity<AuthDTO.UserDTO> updateAccountStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String statusStr = body.get("accountStatus");
+        if (statusStr == null || statusStr.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        User.AccountStatus newStatus;
+        try {
+            newStatus = User.AccountStatus.valueOf(statusStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAccountStatus(newStatus);
+        // Sync isActive flag
+        user.setIsActive(newStatus == User.AccountStatus.ACTIVE);
+        userRepository.save(user);
+        return ResponseEntity.ok(authService.getUserById(id));
+    }
+
+    /** Admin - approve an artisan (makes them visible to customers) */
+    @PutMapping("/users/{id:[0-9]+}/approve")
+    public ResponseEntity<AuthDTO.UserDTO> approveUser(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsApproved(true);
+        userRepository.save(user);
+        return ResponseEntity.ok(authService.getUserById(id));
+    }
+
+    /** Admin - revoke approval from an artisan */
+    @PutMapping("/users/{id:[0-9]+}/revoke-approval")
+    public ResponseEntity<AuthDTO.UserDTO> revokeApproval(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsApproved(false);
+        userRepository.save(user);
+        return ResponseEntity.ok(authService.getUserById(id));
+    }
+
+    /** Admin - soft delete a user */
+    @DeleteMapping("/users/{id:[0-9]+}")
+    public ResponseEntity<Map<String, String>> softDeleteUser(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAccountStatus(User.AccountStatus.SOFT_DELETED);
+        user.setIsActive(false);
+        userRepository.save(user);
+        // Also deactivate all their listings
+        listingRepository.findByArtisanIdOrderByCreatedAtDesc(id, Pageable.unpaged())
+                .forEach(listing -> {
+                    listing.setIsActive(false);
+                    listing.setStatus(Listing.ListingStatus.REVOKED);
+                    listingRepository.save(listing);
+                });
+        return ResponseEntity.ok(Map.of("message", "User soft-deleted"));
+    }
+
+    /** Admin - revoke a listing (different from reject — forces it off after previously approved) */
+    @PutMapping("/listings/{id}/revoke")
+    public ResponseEntity<ListingDTO.ListingResponse> revokeListing(@PathVariable Long id) {
+        return ResponseEntity.ok(listingService.revokeListing(id));
     }
 
     // ── Booking / Jobs management ─────────────────────────────────────────────
@@ -135,8 +263,29 @@ public class AdminController {
     /** Admin - platform statistics */
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getPlatformStats() {
-        return ResponseEntity.ok(Map.of(
-            "message", "Use dashboard for stats"
-        ));
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", userRepository.count());
+        stats.put("totalWorkers", userRepository.countByRole(User.UserRole.WORKER));
+        stats.put("totalClients", userRepository.countByRole(User.UserRole.CLIENT));
+        stats.put("totalAdmins", userRepository.countByRole(User.UserRole.ADMIN));
+        stats.put("approvedWorkers", userRepository.countByRoleAndIsApproved(User.UserRole.WORKER, true));
+        stats.put("pendingWorkers", userRepository.countByRoleAndIsApproved(User.UserRole.WORKER, false));
+        stats.put("suspendedUsers", userRepository.countByAccountStatus(User.AccountStatus.SUSPENDED));
+        stats.put("totalListings", listingRepository.count());
+        stats.put("pendingListings", listingRepository.countByStatus(Listing.ListingStatus.PENDING));
+        stats.put("approvedListings", listingRepository.countByStatus(Listing.ListingStatus.APPROVED));
+        stats.put("totalJobs", jobRepository.count());
+        stats.put("completedJobs", jobRepository.countByStatus(Job.JobStatus.COMPLETED));
+        stats.put("pendingJobs", jobRepository.countByStatus(Job.JobStatus.PENDING));
+        stats.put("activeJobs", jobRepository.countByStatusIn(List.of(
+            Job.JobStatus.ACCEPTED, Job.JobStatus.ARRIVED, Job.JobStatus.IN_PROGRESS)));
+        stats.put("totalEscrows", escrowRepository.count());
+        return ResponseEntity.ok(stats);
+    }
+
+    /** Admin - list all public reviews across all artisans */
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews() {
+        return ResponseEntity.ok(publicReviewService.getAllReviews());
     }
 }

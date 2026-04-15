@@ -24,4 +24,12 @@ public interface PublicReviewRepository extends JpaRepository<PublicReview, Long
     boolean existsByArtisanIdAndReviewerPhone(Long artisanId, String reviewerPhone);
     
     boolean existsByArtisanIdAndReviewerEmail(Long artisanId, String reviewerEmail);
+
+    /** Trust Score AI: public reviews with comments for sentiment analysis */
+    @Query("SELECT r FROM PublicReview r WHERE r.artisan.id = :artisanId AND r.comment IS NOT NULL ORDER BY r.createdAt DESC")
+    List<PublicReview> findReviewsWithComments(@Param("artisanId") Long artisanId);
+
+    /** Trust Score AI: rating distribution for public reviews */
+    @Query("SELECT r.rating, COUNT(r) FROM PublicReview r WHERE r.artisan.id = :artisanId GROUP BY r.rating")
+    List<Object[]> getRatingDistribution(@Param("artisanId") Long artisanId);
 }
