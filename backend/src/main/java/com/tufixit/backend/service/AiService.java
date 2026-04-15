@@ -36,7 +36,10 @@ public class AiService {
     private static final List<String> VALID_SKILL_TYPES = List.of(
             "ELECTRICIAN", "PLUMBER", "MECHANIC", "CARPENTER", "PAINTER",
             "WELDER", "HVAC_TECHNICIAN", "APPLIANCE_REPAIR", "ROOFING",
-            "TILING", "MASON", "GARDENER", "CLEANER", "SECURITY", "OTHER"
+            "TILING", "MASON", "GARDENER", "CLEANER", "SECURITY",
+            "SOLAR_TECHNICIAN", "BOREHOLE_DRILLING", "FUMIGATION",
+            "WATER_TANK_CLEANING", "GLASS_FITTER", "CEILING_BOARD",
+            "LOCKSMITH", "CCTV_INSTALLER", "INTERIOR_DESIGNER", "OTHER"
     );
 
     @Value("${openai.api-key:}")
@@ -60,6 +63,17 @@ public class AiService {
      *  - 3 clarifying questions the artisan might ask
      */
     public AiDTO.EnhanceDescriptionResponse enhanceDescription(String rawDescription, String location) {
+        // Input length guard — prevent abuse and excessive OpenAI token spend
+        if (rawDescription == null || rawDescription.isBlank()) {
+            throw new IllegalArgumentException("Job description cannot be empty.");
+        }
+        if (rawDescription.length() > 5000) {
+            throw new IllegalArgumentException("Job description is too long (max 5,000 characters).");
+        }
+        if (location != null && location.length() > 200) {
+            throw new IllegalArgumentException("Location is too long (max 200 characters).");
+        }
+
         if (isStubMode()) {
             return stubEnhanceDescription(rawDescription);
         }
@@ -74,7 +88,9 @@ public class AiService {
             - Give a realistic time estimate for Nairobi/Kenya context
             - Suggest the single most appropriate skill category from this list ONLY:
               ELECTRICIAN, PLUMBER, MECHANIC, CARPENTER, PAINTER, WELDER, HVAC_TECHNICIAN,
-              APPLIANCE_REPAIR, ROOFING, TILING, MASON, GARDENER, CLEANER, SECURITY, OTHER
+              APPLIANCE_REPAIR, ROOFING, TILING, MASON, GARDENER, CLEANER, SECURITY,
+              SOLAR_TECHNICIAN, BOREHOLE_DRILLING, FUMIGATION, WATER_TANK_CLEANING,
+              GLASS_FITTER, CEILING_BOARD, LOCKSMITH, CCTV_INSTALLER, INTERIOR_DESIGNER, OTHER
             - Return ONLY valid JSON, no markdown, no explanation
             
             JSON format:

@@ -146,13 +146,30 @@ public class PaymentService {
     public PaymentDTO.EscrowResponse processMpesaCallback(PaymentDTO.MpesaCallbackRequest callback) {
         log.info("Processing M-Pesa callback: {}", callback);
 
+        // Validate callback has required fields
+        if (callback.getTransactionId() == null || callback.getTransactionId().isBlank()) {
+            log.warn("[M-Pesa] Callback rejected: missing transactionId");
+            return null;
+        }
+
+        // TODO: Verify callback authenticity via M-Pesa HMAC signature
+        // In production, validate: HMAC-SHA256(body, MPESA_PASSKEY) == X-Signature header
+        // Reject all callbacks that fail signature verification to prevent spoofing
+
         EscrowTransaction escrow = escrowRepository.findByMpesaTransactionId(callback.getTransactionId())
                 .orElse(null);
 
         if (escrow != null) {
+            // Idempotency: skip if already deposited
+            if (escrow.getStatus() == EscrowTransaction.TransactionStatus.DEPOSITED) {
+                log.info("[M-Pesa] Duplicate callback for txn {} — already deposited", callback.getTransactionId());
+                return mapToEscrowResponse(escrow);
+            }
             escrow.setMpesaReceiptNumber(callback.getBillRefNumber());
             escrow.setStatus(EscrowTransaction.TransactionStatus.DEPOSITED);
             escrow = escrowRepository.save(escrow);
+        } else {
+            log.warn("[M-Pesa] No escrow found for transactionId: {}", callback.getTransactionId());
         }
 
         return escrow != null ? mapToEscrowResponse(escrow) : null;

@@ -25,6 +25,7 @@ public class JobService {
     private final BidRepository bidRepository;
     private final ReviewRepository reviewRepository;
     private final EscrowTransactionRepository escrowRepository;
+    private final SmsService smsService;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -180,6 +181,12 @@ public class JobService {
         job.setCompletionPin(completionPin);
 
         job = jobRepository.save(job);
+
+        // SMS: notify artisan their bid was accepted
+        smsService.send(bid.getWorker().getPhoneNumber(),
+                "TUFIXIT: Your bid on \"" + job.getTitle() + "\" was accepted! " +
+                "Agreed price: KES " + request.getAgreedPrice() + ". " +
+                "Check your dashboard for details.");
 
         return mapToJobResponse(job);
     }

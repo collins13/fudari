@@ -114,4 +114,33 @@ public class AuthController {
     public ResponseEntity<AuthDTO.AuthResponse> refreshToken() {
         return ResponseEntity.ok(authService.refreshToken());
     }
+
+    /**
+     * GET /api/auth/check-phone?phone=+254...
+     * Returns { available: true/false }. Publicly accessible (no auth required).
+     */
+    @GetMapping("/check-phone")
+    public ResponseEntity<Map<String, Boolean>> checkPhone(@RequestParam String phone) {
+        return ResponseEntity.ok(Map.of("available", authService.isPhoneAvailable(phone)));
+    }
+
+    /**
+     * DELETE /api/auth/account
+     * Soft-deletes the currently authenticated user's account.
+     */
+    @DeleteMapping("/account")
+    public ResponseEntity<Map<String, String>> deleteOwnAccount() {
+        authService.deleteOwnAccount();
+        return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
+    }
+
+    /**
+     * GET /api/auth/referral-info
+     * Returns the current user's referral code, count of successful referrals,
+     * and reward description. Requires authentication.
+     */
+    @GetMapping("/referral-info")
+    public ResponseEntity<Map<String, Object>> getReferralInfo() {
+        return ResponseEntity.ok(authService.getReferralInfo());
+    }
 }

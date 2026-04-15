@@ -40,6 +40,7 @@ public class PublicReviewDTO {
     public static class PublicReviewResponse {
         private Long id;
         private Long artisanId;
+        private String artisanName;
         private Integer rating;
         private String comment;
         private String reviewerName;

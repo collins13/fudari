@@ -138,7 +138,7 @@ public class SubscriptionService {
                         .build(),
                 SubscriptionDTO.PlanInfo.builder()
                         .name("BASIC")
-                        .price(500)
+                        .price(300)
                         .maxListings(3)
                         .featured(false)
                         .rankingPriority(2)
@@ -146,7 +146,7 @@ public class SubscriptionService {
                         .build(),
                 SubscriptionDTO.PlanInfo.builder()
                         .name("PRO")
-                        .price(3000)
+                        .price(1500)
                         .maxListings(999)
                         .featured(true)
                         .rankingPriority(3)

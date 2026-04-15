@@ -84,4 +84,60 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     /** Count jobs by status — used for platform stats */
     long countByStatus(Job.JobStatus status);
+
+    long countByStatusIn(java.util.List<Job.JobStatus> statuses);
+
+    // ── AI Feature queries ──────────────────────────────────────────────────
+
+    /** Smart Pricing: completed jobs for a skill type + location-area, most recent first */
+    @Query("SELECT j FROM Job j WHERE j.status = 'COMPLETED' AND j.skillType = :skillType " +
+           "AND j.agreedPrice IS NOT NULL AND j.completionTime >= :since ORDER BY j.completionTime DESC")
+    List<Job> findCompletedJobsForPricing(@Param("skillType") WorkerSkill.SkillType skillType,
+                                           @Param("since") LocalDateTime since);
+
+    /** Smart Pricing: completed jobs by urgency for surge analysis */
+    @Query("SELECT j.urgency, COUNT(j) FROM Job j WHERE j.status = 'COMPLETED' AND j.skillType = :skillType " +
+           "AND j.completionTime >= :since GROUP BY j.urgency")
+    List<Object[]> countCompletedByUrgency(@Param("skillType") WorkerSkill.SkillType skillType,
+                                            @Param("since") LocalDateTime since);
+
+    /** Demand Forecasting: jobs created in a date range for a skill type */
+    @Query("SELECT j FROM Job j WHERE j.skillType = :skillType AND j.createdAt >= :start AND j.createdAt < :end")
+    List<Job> findJobsInDateRange(@Param("skillType") WorkerSkill.SkillType skillType,
+                                   @Param("start") LocalDateTime start,
+                                   @Param("end") LocalDateTime end);
+
+    /** Demand Forecasting: count jobs by skill type for date range */
+    @Query("SELECT j.skillType, COUNT(j) FROM Job j WHERE j.createdAt >= :start AND j.createdAt < :end GROUP BY j.skillType")
+    List<Object[]> countJobsBySkillTypeInRange(@Param("start") LocalDateTime start,
+                                                @Param("end") LocalDateTime end);
+
+    /** Trust Score: dispute rate for a worker */
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.assignedWorker.id = :workerId AND j.status = 'DISPUTED'")
+    long countDisputedJobsForWorker(@Param("workerId") Long workerId);
+
+    /** Trust Score: total assigned jobs for a worker */
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.assignedWorker.id = :workerId AND j.status IN ('COMPLETED','DISPUTED','CANCELLED')")
+    long countTotalAssignedJobs(@Param("workerId") Long workerId);
+
+    /** Trust Score: on-time completion rate (arrived within estimate) */
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.assignedWorker.id = :workerId AND j.status = 'COMPLETED' " +
+           "AND j.arrivedAt IS NOT NULL AND j.acceptedAt IS NOT NULL")
+    long countJobsWithArrivalTracking(@Param("workerId") Long workerId);
+
+    /** Quality Verification: find job with images */
+    @Query("SELECT j FROM Job j WHERE j.id = :jobId AND j.beforeImages IS NOT NULL AND j.afterImages IS NOT NULL")
+    Optional<Job> findJobWithImages(@Param("jobId") Long jobId);
+
+    /** Demand: location-based job count */
+    @Query("SELECT j.locationName, COUNT(j) FROM Job j WHERE j.skillType = :skillType " +
+           "AND j.createdAt >= :since GROUP BY j.locationName ORDER BY COUNT(j) DESC")
+    List<Object[]> countJobsByLocationForSkill(@Param("skillType") WorkerSkill.SkillType skillType,
+                                                @Param("since") LocalDateTime since);
+
+    /** Average agreed price for skill type in recent window */
+    @Query("SELECT AVG(CAST(j.agreedPrice AS int)) FROM Job j WHERE j.status = 'COMPLETED' " +
+           "AND j.skillType = :skillType AND j.agreedPrice IS NOT NULL AND j.completionTime >= :since")
+    Double getAverageAgreedPrice(@Param("skillType") WorkerSkill.SkillType skillType,
+                                  @Param("since") LocalDateTime since);
 }

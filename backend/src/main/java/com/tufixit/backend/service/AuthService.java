@@ -49,26 +49,45 @@ public class AuthService {
             throw new RuntimeException("Phone number already exists");
         }
 
+        User.UserRole assignedRole = request.getRole() != null ? request.getRole() : User.UserRole.CLIENT;
+        if (assignedRole != User.UserRole.CLIENT && assignedRole != User.UserRole.WORKER) {
+            throw new RuntimeException("Invalid role. Only CLIENT or WORKER registration is allowed.");
+        }
+
         User user = User.builder()
                 .email(request.getEmail())
                 .phoneNumber(request.getPhoneNumber())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .role(request.getRole() != null ? request.getRole() : User.UserRole.CLIENT)
+                .role(assignedRole)
                 .vettingLevel(User.VettingLevel.STANDARD)
+                .accountStatus(User.AccountStatus.ACTIVE)
                 .trustScore(0.0)
                 .totalJobsCompleted(0)
                 .totalReviews(0)
                 .isActive(true)
                 .isVerified(false)
+                // Clients and admins are auto-approved; workers require admin approval
+                .isApproved(assignedRole != User.UserRole.WORKER)
+                .referralCode(generateReferralCode())
                 .build();
 
-        user = userRepository.save(user);
+        // Process incoming referral code (if any)
+        if (request.getReferralCode() != null && !request.getReferralCode().isBlank()) {
+            userRepository.findByReferralCode(request.getReferralCode().trim().toUpperCase())
+                    .ifPresent(referrer -> {
+                        user.setReferredBy(referrer.getId());
+                        log.info("[REFERRAL] User {} referred by {} (code: {})",
+                                request.getPhoneNumber(), referrer.getId(), request.getReferralCode());
+                    });
+        }
 
-        if (user.getRole() == User.UserRole.WORKER) {
+        User savedUser = userRepository.save(user);
+
+        if (savedUser.getRole() == User.UserRole.WORKER) {
             Subscription subscription = Subscription.builder()
-                    .artisan(user)
+                    .artisan(savedUser)
                     .planType(Subscription.PlanType.FREE)
                     .startDate(LocalDateTime.now())
                     .endDate(LocalDateTime.now().plusYears(10))
@@ -78,19 +97,24 @@ public class AuthService {
             subscriptionRepository.save(subscription);
         }
 
-        String principal = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
-        String token = tokenProvider.generateTokenFromUsernameWithRole(principal, user.getRole().name());
+        // Reward referrer with 1 month free BASIC when a WORKER signs up via their code
+        if (savedUser.getReferredBy() != null && savedUser.getRole() == User.UserRole.WORKER) {
+            rewardReferrer(savedUser.getReferredBy());
+        }
+
+        String principal = savedUser.getEmail() != null ? savedUser.getEmail() : savedUser.getPhoneNumber();
+        String token = tokenProvider.generateTokenFromUsernameWithRole(principal, savedUser.getRole().name());
 
         return AuthDTO.AuthResponse.builder()
                 .token(token)
                 .type("Bearer")
-                .userId(user.getId())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole())
-                .vettingLevel(user.getVettingLevel())
+                .userId(savedUser.getId())
+                .email(savedUser.getEmail())
+                .phoneNumber(savedUser.getPhoneNumber())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .role(savedUser.getRole())
+                .vettingLevel(savedUser.getVettingLevel())
                 .build();
     }
 
@@ -162,6 +186,18 @@ public class AuthService {
     }
 
     private AuthDTO.UserDTO mapToUserDTO(User user) {
+        List<AuthDTO.WorkerSkillInfo> skillInfos = null;
+        if (user.getRole() == User.UserRole.WORKER) {
+            List<WorkerSkill> skills = workerSkillRepository.findByWorkerId(user.getId());
+            skillInfos = skills.stream().map(s -> AuthDTO.WorkerSkillInfo.builder()
+                    .id(s.getId())
+                    .skillType(s.getSkillType() != null ? s.getSkillType().name() : null)
+                    .description(s.getDescription())
+                    .experienceYears(s.getExperienceYears())
+                    .hourlyRate(s.getHourlyRate())
+                    .isVerified(s.getIsVerified())
+                    .build()).collect(java.util.stream.Collectors.toList());
+        }
         return AuthDTO.UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -178,6 +214,15 @@ public class AuthService {
                 .longitude(user.getLongitude())
                 .locationName(user.getLocationName())
                 .isVerified(user.getIsVerified())
+                .isActive(user.getIsActive())
+                .accountStatus(user.getAccountStatus() != null ? user.getAccountStatus().name() : "ACTIVE")
+                .isApproved(user.getIsApproved())
+                .nationalId(user.getNationalId())
+                .certificateOfGoodConduct(user.getCertificateOfGoodConduct())
+                .tvetCertification(user.getTvetCertification())
+                .skills(skillInfos)
+                .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null)
+                .referralCode(user.getReferralCode())
                 .build();
     }
 
@@ -227,6 +272,9 @@ public class AuthService {
         if (data.get("locationName") != null) user.setLocationName((String) data.get("locationName"));
         if (data.get("latitude") != null) user.setLatitude(Double.parseDouble(data.get("latitude").toString()));
         if (data.get("longitude") != null) user.setLongitude(Double.parseDouble(data.get("longitude").toString()));
+        if (data.get("nationalId") != null) user.setNationalId((String) data.get("nationalId"));
+        if (data.get("certificateOfGoodConduct") != null) user.setCertificateOfGoodConduct((String) data.get("certificateOfGoodConduct"));
+        if (data.get("tvetCertification") != null) user.setTvetCertification((String) data.get("tvetCertification"));
 
         user = userRepository.save(user);
 
@@ -347,6 +395,25 @@ public class AuthService {
                 .build();
     }
 
+    public boolean isPhoneAvailable(String phone) {
+        return !userRepository.existsByPhoneNumber(phone);
+    }
+
+    @Transactional
+    public void deleteOwnAccount() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String principal = authentication.getName();
+
+        User user = userRepository.findByEmail(principal)
+                .or(() -> userRepository.findByPhoneNumber(principal))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(User.AccountStatus.SOFT_DELETED);
+        user.setIsActive(false);
+        userRepository.save(user);
+        log.info("User {} soft-deleted their own account", user.getId());
+    }
+
     @Transactional
     public AuthDTO.UserDTO updateUserProfile(String firstName, String lastName, String profileImage) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -363,5 +430,91 @@ public class AuthService {
         user = userRepository.save(user);
         
         return mapToUserDTO(user);
+    }
+
+    // ── Referral helpers ────────────────────────────────────────────────────
+
+    /**
+     * Generate a unique 8-char referral code: TFX-XXXXXX (uppercase alphanumeric).
+     */
+    private String generateReferralCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I to avoid confusion
+        for (int attempt = 0; attempt < 10; attempt++) {
+            StringBuilder sb = new StringBuilder("TFX-");
+            for (int i = 0; i < 6; i++) {
+                sb.append(chars.charAt(SECURE_RANDOM.nextInt(chars.length())));
+            }
+            String code = sb.toString();
+            if (!userRepository.existsByReferralCode(code)) {
+                return code;
+            }
+        }
+        // Fallback: use timestamp-based code
+        return "TFX-" + Long.toString(System.currentTimeMillis() % 1_000_000, 36).toUpperCase();
+    }
+
+    /**
+     * Reward the referrer with 1 month free BASIC subscription.
+     */
+    private void rewardReferrer(Long referrerId) {
+        try {
+            User referrer = userRepository.findById(referrerId).orElse(null);
+            if (referrer == null || referrer.getRole() != User.UserRole.WORKER) {
+                return;
+            }
+
+            // Cancel existing active subscription (if any)
+            subscriptionRepository.findByArtisanIdAndStatus(referrer.getId(),
+                    Subscription.SubscriptionStatus.ACTIVE).ifPresent(existing -> {
+                // Only upgrade if referrer is currently on FREE plan
+                if (existing.getPlanType() == Subscription.PlanType.FREE) {
+                    existing.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    subscriptionRepository.save(existing);
+                } else {
+                    // Already on a paid plan — don't downgrade
+                    log.info("[REFERRAL] Referrer {} already on {} plan, skipping reward",
+                            referrerId, existing.getPlanType());
+                    return;
+                }
+            });
+
+            Subscription reward = Subscription.builder()
+                    .artisan(referrer)
+                    .planType(Subscription.PlanType.BASIC)
+                    .startDate(LocalDateTime.now())
+                    .endDate(LocalDateTime.now().plusMonths(1))
+                    .status(Subscription.SubscriptionStatus.ACTIVE)
+                    .autoRenew(false)
+                    .mpesaTransactionId("REFERRAL-REWARD")
+                    .build();
+            subscriptionRepository.save(reward);
+
+            referrer.setVettingLevel(User.VettingLevel.VERIFIED);
+            userRepository.save(referrer);
+
+            log.info("[REFERRAL] Rewarded referrer {} with 1 month free BASIC", referrerId);
+        } catch (Exception e) {
+            log.error("[REFERRAL] Failed to reward referrer {}: {}", referrerId, e.getMessage());
+        }
+    }
+
+    /**
+     * Get referral stats for the current user.
+     */
+    public Map<String, Object> getReferralInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String principal = authentication.getName();
+
+        User user = userRepository.findByEmail(principal)
+                .or(() -> userRepository.findByPhoneNumber(principal))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        long referralCount = userRepository.countByReferredBy(user.getId());
+
+        return Map.of(
+                "referralCode", user.getReferralCode() != null ? user.getReferralCode() : "",
+                "referralCount", referralCount,
+                "rewardDescription", "Invite a fundi — get 1 month free BASIC plan"
+        );
     }
 }

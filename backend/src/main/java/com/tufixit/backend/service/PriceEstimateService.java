@@ -31,21 +31,31 @@ public class PriceEstimateService {
     // Curated Kenya market floor/ceiling rates by skill (KES)
     // Source: Jua Kali Federation / Nairobi market surveys
     private static final Map<String, int[]> MARKET_RATES = Map.ofEntries(
-            Map.entry("ELECTRICIAN",     new int[]{800,  5000}),
-            Map.entry("PLUMBER",         new int[]{600,  4000}),
-            Map.entry("MECHANIC",        new int[]{500,  8000}),
-            Map.entry("CARPENTER",       new int[]{700,  6000}),
-            Map.entry("PAINTER",         new int[]{400,  3000}),
-            Map.entry("WELDER",          new int[]{600,  5000}),
-            Map.entry("HVAC_TECHNICIAN", new int[]{1000, 8000}),
-            Map.entry("APPLIANCE_REPAIR",new int[]{500,  4000}),
-            Map.entry("ROOFING",         new int[]{1000, 10000}),
-            Map.entry("TILING",          new int[]{700,  5000}),
-            Map.entry("MASON",           new int[]{800,  7000}),
-            Map.entry("GARDENER",        new int[]{300,  2000}),
-            Map.entry("CLEANER",         new int[]{300,  2500}),
-            Map.entry("SECURITY",        new int[]{500,  3000}),
-            Map.entry("OTHER",           new int[]{400,  4000})
+            Map.entry("ELECTRICIAN",       new int[]{800,  5000}),
+            Map.entry("PLUMBER",           new int[]{600,  4000}),
+            Map.entry("MECHANIC",          new int[]{500,  8000}),
+            Map.entry("CARPENTER",         new int[]{700,  6000}),
+            Map.entry("PAINTER",           new int[]{400,  3000}),
+            Map.entry("WELDER",            new int[]{600,  5000}),
+            Map.entry("HVAC_TECHNICIAN",   new int[]{1000, 8000}),
+            Map.entry("APPLIANCE_REPAIR",  new int[]{500,  4000}),
+            Map.entry("ROOFING",           new int[]{1000, 10000}),
+            Map.entry("TILING",            new int[]{700,  5000}),
+            Map.entry("MASON",             new int[]{800,  7000}),
+            Map.entry("GARDENER",          new int[]{300,  2000}),
+            Map.entry("CLEANER",           new int[]{300,  2500}),
+            Map.entry("SECURITY",          new int[]{500,  3000}),
+            // Kenya-specific popular services
+            Map.entry("SOLAR_TECHNICIAN",      new int[]{1500, 15000}),
+            Map.entry("BOREHOLE_DRILLING",     new int[]{5000, 50000}),
+            Map.entry("FUMIGATION",            new int[]{1500, 8000}),
+            Map.entry("WATER_TANK_CLEANING",   new int[]{1000, 5000}),
+            Map.entry("GLASS_FITTER",          new int[]{800,  6000}),
+            Map.entry("CEILING_BOARD",         new int[]{600,  4000}),
+            Map.entry("LOCKSMITH",             new int[]{500,  3000}),
+            Map.entry("CCTV_INSTALLER",        new int[]{2000, 15000}),
+            Map.entry("INTERIOR_DESIGNER",     new int[]{3000, 25000}),
+            Map.entry("OTHER",             new int[]{400,  4000})
     );
 
     public AiDTO.PriceEstimateResponse estimate(String skillTypeStr, String location) {
@@ -93,8 +103,8 @@ public class PriceEstimateService {
         int median = prices.get(prices.size() / 2);
 
         // Trim outliers: use 10th–90th percentile for the range
-        int p10idx = Math.max(0, (int)(prices.size() * 0.10));
-        int p90idx = Math.min(prices.size() - 1, (int)(prices.size() * 0.90));
+        int p10idx = Math.max(0, (int) Math.ceil(prices.size() * 0.10) - 1);
+        int p90idx = Math.min(prices.size() - 1, (int) Math.ceil(prices.size() * 0.90) - 1);
         int rangeMin = prices.get(p10idx);
         int rangeMax = prices.get(p90idx);
 

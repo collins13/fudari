@@ -122,6 +122,9 @@ public class SecurityConfig {
                         // PUBLIC: AI endpoints (no auth required — called from booking form)
                         .requestMatchers("/api/ai/**").permitAll()
 
+                        // PUBLIC: ranking scores (artisan profiles)
+                        .requestMatchers("/api/ranking/{artisanId:[0-9]+}").permitAll()
+
                         // PUBLIC: WebSocket handshake (JWT auth is handled inside WebSocketConfig)
                         .requestMatchers("/ws/**").permitAll()
 

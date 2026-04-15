@@ -23,14 +23,15 @@ public class WorkerService {
     private final UserRepository userRepository;
     private final WorkerSkillRepository workerSkillRepository;
     private final ReviewRepository reviewRepository;
+    private final RankingService rankingService;
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm) {
         List<User> workers;
 
         if (latitude != null && longitude != null) {
-            workers = userRepository.findNearbyWorkers(latitude, longitude, radiusKm != null ? radiusKm : 25.0);
+            workers = userRepository.findApprovedNearbyWorkers(latitude, longitude, radiusKm != null ? radiusKm : 25.0);
         } else {
-            workers = userRepository.findByRole(User.UserRole.WORKER);
+            workers = userRepository.findApprovedActiveWorkers();
         }
 
         if (skillType != null && !skillType.isEmpty()) {
@@ -46,13 +47,10 @@ public class WorkerService {
             }
         }
 
-        // Sort: PRO first, then VERIFIED, then STANDARD, then by trust score
-        workers.sort((a, b) -> {
-            int levelA = a.getVettingLevel() == User.VettingLevel.PRO ? 0 : a.getVettingLevel() == User.VettingLevel.VERIFIED ? 1 : 2;
-            int levelB = b.getVettingLevel() == User.VettingLevel.PRO ? 0 : b.getVettingLevel() == User.VettingLevel.VERIFIED ? 1 : 2;
-            if (levelA != levelB) return Integer.compare(levelA, levelB);
-            return Double.compare(b.getTrustScore(), a.getTrustScore());
-        });
+        // Sort by composite ranking score (subscription-weighted algorithm)
+        workers.sort((a, b) -> Double.compare(
+                rankingService.computeArtisanScore(b),
+                rankingService.computeArtisanScore(a)));
 
         return workers.stream()
                 .map(this::mapToUserDTOWithSkills)
@@ -164,6 +162,9 @@ public class WorkerService {
                         .build())
                 .collect(Collectors.toList());
 
+        double score = rankingService.computeArtisanScore(user);
+        boolean featured = user.getVettingLevel() == User.VettingLevel.PRO;
+
         return AuthDTO.UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -181,6 +182,8 @@ public class WorkerService {
                 .locationName(user.getLocationName())
                 .isVerified(user.getIsVerified())
                 .skills(skillInfos)
+                .rankingScore(Math.round(score * 10) / 10.0)
+                .isFeatured(featured)
                 .build();
     }
 }

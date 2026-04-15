@@ -25,10 +25,10 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
-    @Value("${jwt.expiration.admin:900000}")
+    @Value("${jwt.expiration.admin:1800000}")
     private long adminExpiration;
 
-    @Value("${jwt.expiration.worker:900000}")
+    @Value("${jwt.expiration.worker:1800000}")
     private long workerExpiration;
 
     private SecretKey key;
