@@ -514,7 +514,7 @@ public class AuthService {
         return Map.of(
                 "referralCode", user.getReferralCode() != null ? user.getReferralCode() : "",
                 "referralCount", referralCount,
-                "rewardDescription", "Invite a fundi — get 1 month free BASIC plan"
+                "rewardDescription", "Invite a pro — get 1 month free BASIC plan"
         );
     }
 }
