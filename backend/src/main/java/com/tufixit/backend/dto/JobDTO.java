@@ -5,6 +5,7 @@ import com.tufixit.backend.entity.Job;
 import com.tufixit.backend.entity.WorkerSkill;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +22,11 @@ public class JobDTO {
     @Builder
     public static class CreateJobRequest {
         @NotBlank(message = "Title is required")
+        @Size(max = 200, message = "Title must not exceed 200 characters")
         private String title;
         
         @NotBlank(message = "Description is required")
+        @Size(min = 10, max = 2000, message = "Description must be 10-2000 characters")
         private String description;
         
         @NotNull(message = "Skill type is required")

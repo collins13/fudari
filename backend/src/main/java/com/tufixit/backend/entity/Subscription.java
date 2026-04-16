@@ -37,6 +37,17 @@ public class Subscription {
     @Column(nullable = false)
     private SubscriptionStatus status;
 
+    /**
+     * MONTHLY — standard 30-day cycle (KES 500 BASIC / KES 3,000 PRO).
+     * WEEKLY  — 7-day cycle (KES 150 BASIC / KES 800 PRO).
+     *           Matches informal-sector income patterns where artisans
+     *           are paid weekly or per-job rather than monthly.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_cycle", nullable = false)
+    @Builder.Default
+    private BillingCycle billingCycle = BillingCycle.MONTHLY;
+
     @Column
     private Boolean autoRenew = false;
 
@@ -53,7 +64,32 @@ public class Subscription {
     }
 
     public enum SubscriptionStatus {
-        ACTIVE, EXPIRED, CANCELLED
+        ACTIVE,
+        /** 48-hour window after expiry — artisan retains ranking during this period. */
+        GRACE_PERIOD,
+        EXPIRED,
+        CANCELLED
+    }
+
+    public enum BillingCycle {
+        MONTHLY,
+        WEEKLY
+    }
+
+    // ── Pricing constants (KES) ──────────────────────────────────────────────
+
+    public static final int BASIC_MONTHLY_PRICE = 500;
+    public static final int BASIC_WEEKLY_PRICE  = 150;   // ≈ KES 600/month — slight premium for flexibility
+    public static final int PRO_MONTHLY_PRICE   = 3000;
+    public static final int PRO_WEEKLY_PRICE    = 800;   // ≈ KES 3,200/month — slight premium for flexibility
+
+    /** Returns the price in KES for this subscription's plan + billing cycle. */
+    public int getPriceKes() {
+        return switch (planType) {
+            case FREE  -> 0;
+            case BASIC -> billingCycle == BillingCycle.WEEKLY ? BASIC_WEEKLY_PRICE : BASIC_MONTHLY_PRICE;
+            case PRO   -> billingCycle == BillingCycle.WEEKLY ? PRO_WEEKLY_PRICE   : PRO_MONTHLY_PRICE;
+        };
     }
 
     public int getMaxListings() {
@@ -69,10 +105,16 @@ public class Subscription {
     }
 
     public int getRankingPriority() {
+        // GRACE_PERIOD maintains ranking as if still ACTIVE
         return switch (planType) {
             case PRO -> 3;
             case BASIC -> 2;
             case FREE -> 1;
         };
+    }
+
+    /** True if this subscription grants ranking benefits (ACTIVE or in grace period). */
+    public boolean isRankingActive() {
+        return status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.GRACE_PERIOD;
     }
 }

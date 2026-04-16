@@ -20,6 +20,13 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     List<Subscription> findByArtisanIdOrderByCreatedAtDesc(Long artisanId);
     
     List<Subscription> findByStatusAndEndDateBefore(Subscription.SubscriptionStatus status, LocalDateTime date);
-    
+
+    /**
+     * Find ACTIVE subscriptions expiring between now and the given cutoff.
+     * Used by SubscriptionRenewalScheduler to send 24-hour renewal reminder SMS.
+     */
+    List<Subscription> findByStatusAndEndDateBetween(
+            Subscription.SubscriptionStatus status, LocalDateTime from, LocalDateTime to);
+
     long countByArtisanIdAndStatus(Long artisanId, Subscription.SubscriptionStatus status);
 }

@@ -4,6 +4,7 @@ import com.tufixit.backend.entity.Listing;
 import com.tufixit.backend.entity.WorkerSkill;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class ListingDTO {
     @Builder
     public static class CreateListingRequest {
         @NotBlank(message = "Title is required")
+        @Size(max = 200, message = "Title must not exceed 200 characters")
         private String title;
 
         private Long categoryId;
@@ -26,6 +28,7 @@ public class ListingDTO {
         @NotNull(message = "Skill type is required")
         private WorkerSkill.SkillType skillType;
 
+        @Size(max = 2000, message = "Description must not exceed 2000 characters")
         private String description;
 
         private String priceStart;

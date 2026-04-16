@@ -1,9 +1,11 @@
 package com.tufixit.backend.controller;
 
 import com.tufixit.backend.dto.PaymentDTO;
+import com.tufixit.backend.service.MpesaDarajaService;
 import com.tufixit.backend.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +15,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final MpesaDarajaService mpesaService;
 
     @PostMapping("/escrow")
     public ResponseEntity<PaymentDTO.EscrowResponse> createEscrow(
@@ -57,11 +61,38 @@ public class PaymentController {
     }
 
     @PostMapping("/initiate")
-    public ResponseEntity<PaymentDTO.EscrowResponse> initiatePayment(
+    public ResponseEntity<PaymentDTO.StkPushResponse> initiatePayment(
             @Valid @RequestBody PaymentDTO.InitiatePaymentRequest request) {
         return ResponseEntity.ok(paymentService.initiatePayment(request));
     }
 
+    /**
+     * STK Push callback — called by Safaricom after customer completes/cancels the STK prompt.
+     * Verifies HMAC signature before processing.
+     */
+    @PostMapping("/mpesa/stk-callback")
+    public ResponseEntity<String> stkPushCallback(
+            @RequestBody byte[] rawBody,
+            @RequestHeader(value = "X-Signature", required = false) String signature) {
+        // Always return 200 to Safaricom (they retry on non-200)
+        if (!mpesaService.verifyCallbackSignature(rawBody, signature)) {
+            log.warn("[M-Pesa] STK callback rejected: invalid HMAC signature");
+            return ResponseEntity.ok("OK");
+        }
+
+        try {
+            MpesaDarajaService.StkCallbackData data = mpesaService.parseCallback(new String(rawBody));
+            paymentService.processStkCallback(data);
+        } catch (Exception e) {
+            log.error("[M-Pesa] Error processing STK callback", e);
+        }
+
+        return ResponseEntity.ok("OK");
+    }
+
+    /**
+     * Legacy C2B callback — kept for backward compatibility with existing Paybill config.
+     */
     @PostMapping("/mpesa/callback")
     public ResponseEntity<String> mpesaCallback(@RequestBody PaymentDTO.MpesaCallbackRequest callback) {
         paymentService.processMpesaCallback(callback);

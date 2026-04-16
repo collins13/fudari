@@ -29,6 +29,7 @@ public class RankingService {
     private final JobRepository jobRepository;
     private final LeadTrackingRepository leadTrackingRepository;
     private final ListingRepository listingRepository;
+    private final EstateArtisanApprovalRepository estateApprovalRepository;
 
     // ── Weights ─────────────────────────────────────────────────────────────
     private static final double W_SUBSCRIPTION  = 0.40;
@@ -76,6 +77,26 @@ public class RankingService {
 
         scoreCache.put(artisan.getId(), new CachedScore(finalScore, System.currentTimeMillis()));
         return finalScore;
+    }
+
+    /**
+     * Estate-boosted ranking: base artisan score + 10 bonus points if the artisan
+     * is approved for the given estate. This shifts the weights slightly:
+     *
+     *   effectiveScore = baseScore * 0.90 + estateBonus * 0.10
+     *
+     * where estateBonus = 100 if approved, 0 otherwise.
+     * Net effect: an approved artisan gets +10 points, pushing them above
+     * similarly-ranked non-approved artisans without creating a walled garden.
+     */
+    public double computeArtisanScoreForEstate(User artisan, Long estateId) {
+        double baseScore = computeArtisanScore(artisan);
+        if (estateId == null) return baseScore;
+
+        boolean approved = estateApprovalRepository.existsByEstateIdAndArtisanId(estateId, artisan.getId());
+        double estateBonus = approved ? 100.0 : 0.0;
+
+        return Math.max(0, Math.min(100, (baseScore * 0.90) + (estateBonus * 0.10)));
     }
 
     /** Compute ranking score for a listing (combines artisan score + listing-specific signals). */
@@ -237,9 +258,16 @@ public class RankingService {
     // ════════════════════════════════════════════════════════════════════════
 
     private Subscription.PlanType getActivePlan(User artisan) {
-        return subscriptionRepository
-                .findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.ACTIVE)
-                .map(Subscription::getPlanType)
-                .orElse(Subscription.PlanType.FREE);
+        // ACTIVE takes priority
+        Optional<Subscription> active = subscriptionRepository
+                .findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.ACTIVE);
+        if (active.isPresent()) return active.get().getPlanType();
+
+        // Artisan is in grace period — retain ranking as if still ACTIVE
+        Optional<Subscription> grace = subscriptionRepository
+                .findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.GRACE_PERIOD);
+        if (grace.isPresent()) return grace.get().getPlanType();
+
+        return Subscription.PlanType.FREE;
     }
 }

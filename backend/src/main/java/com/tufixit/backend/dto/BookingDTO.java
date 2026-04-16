@@ -45,6 +45,12 @@ public class BookingDTO {
 
         /** Optional customer budget hint in KES */
         private Integer budget;
+
+        /**
+         * Estate slug — set when booking originates from an estate branded link.
+         * e.g. "greenpark-athi-river". Used for attribution and estate analytics.
+         */
+        private String estateSlug;
     }
 
     // ── Customer: Track Booking ───────────────────────────────────────────────
@@ -100,8 +106,11 @@ public class BookingDTO {
     public static class RateBookingRequest {
 
         @NotNull(message = "Rating is required")
+        @jakarta.validation.constraints.Min(value = 1, message = "Rating must be between 1 and 5")
+        @jakarta.validation.constraints.Max(value = 5, message = "Rating must be between 1 and 5")
         private Integer rating; // 1-5
 
+        @Size(max = 1000, message = "Comment must not exceed 1000 characters")
         private String comment;
         private Boolean onTime;
         private Boolean priceFair;
@@ -113,7 +122,9 @@ public class BookingDTO {
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class ReportIssueRequest {
         @NotBlank(message = "Reason is required")
+        @Size(max = 100)
         private String reason;
+        @Size(max = 2000, message = "Description must not exceed 2000 characters")
         private String description;
     }
 

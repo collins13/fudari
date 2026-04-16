@@ -47,4 +47,18 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionDTO.SubscriptionResponse> cancelSubscription() {
         return ResponseEntity.ok(subscriptionService.cancelSubscription());
     }
+
+    /** Initiate M-Pesa STK Push for subscription payment */
+    @PostMapping("/initiate-payment")
+    public ResponseEntity<SubscriptionDTO.StkInitiateResponse> initiatePayment(
+            @Valid @RequestBody SubscriptionDTO.InitiatePaymentRequest request) {
+        return ResponseEntity.ok(subscriptionService.initiateSubscriptionPayment(request));
+    }
+
+    /** Verify payment via Daraja and activate subscription */
+    @PostMapping("/verify-payment")
+    public ResponseEntity<SubscriptionDTO.SubscriptionResponse> verifyPayment(
+            @Valid @RequestBody SubscriptionDTO.VerifyPaymentRequest request) {
+        return ResponseEntity.ok(subscriptionService.verifyAndActivate(request));
+    }
 }

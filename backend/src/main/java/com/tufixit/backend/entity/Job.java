@@ -179,6 +179,19 @@ public class Job {
     @Column(name = "arrived_at")
     private LocalDateTime arrivedAt;
 
+    // ── Referral / estate tracking ───────────────────────────────────────────
+
+    /**
+     * Origin of this booking — used for attribution analytics.
+     * Values: "web", "whatsapp", "estate:{slug}", "referral:{code}"
+     */
+    @Column(name = "referral_source", length = 100)
+    private String referralSource;
+
+    /** FK to estates table — set when booking originated from an estate link. */
+    @Column(name = "estate_id")
+    private Long estateId;
+
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Bid> bids = new ArrayList<>();

@@ -103,4 +103,15 @@ public class PaymentDTO {
         
         private String transactionDesc;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StkPushResponse {
+        private String checkoutRequestId;
+        private String merchantRequestId;
+        private String responseCode;
+        private String responseDescription;
+    }
 }
