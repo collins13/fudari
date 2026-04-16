@@ -140,4 +140,13 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "AND j.skillType = :skillType AND j.agreedPrice IS NOT NULL AND j.completionTime >= :since")
     Double getAverageAgreedPrice(@Param("skillType") WorkerSkill.SkillType skillType,
                                   @Param("since") LocalDateTime since);
+
+    // ── Estate analytics queries ─────────────────────────────────────────────
+
+    long countByEstateIdAndStatus(Long estateId, Job.JobStatus status);
+
+    long countByEstateId(Long estateId);
+
+    @Query("SELECT j FROM Job j WHERE j.estateId = :estateId AND j.status = 'COMPLETED' ORDER BY j.completionTime DESC")
+    List<Job> findCompletedByEstateId(@Param("estateId") Long estateId);
 }

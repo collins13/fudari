@@ -2,6 +2,8 @@ package com.tufixit.backend.dto;
 
 import com.tufixit.backend.entity.User;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,18 +18,24 @@ public class AuthDTO {
     @AllArgsConstructor
     @Builder
     public static class RegisterRequest {
+        @Email(message = "Invalid email format")
+        @Size(max = 150)
         private String email; // optional — phone is primary identifier
 
         @NotBlank(message = "Phone number is required")
+        @Size(min = 10, max = 15, message = "Phone number must be 10-15 characters")
         private String phoneNumber;
         
         @NotBlank(message = "Password is required")
+        @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
         private String password;
         
         @NotBlank(message = "First name is required")
+        @Size(max = 50)
         private String firstName;
         
         @NotBlank(message = "Last name is required")
+        @Size(max = 50)
         private String lastName;
         
         private User.UserRole role; // CLIENT or WORKER
@@ -42,9 +50,11 @@ public class AuthDTO {
     @Builder
     public static class LoginRequest {
         @NotBlank(message = "Email or phone is required")
+        @Size(max = 150)
         private String emailOrPhone;
         
         @NotBlank(message = "Password is required")
+        @Size(max = 100)
         private String password;
     }
 

@@ -130,6 +130,16 @@ public class SecurityConfig {
 
                         // PUBLIC: M-Pesa callbacks
                         .requestMatchers("/api/mpesa/**").permitAll()
+                        .requestMatchers("/api/payments/mpesa/**").permitAll()
+
+                        // PUBLIC: WhatsApp webhook (Meta verifies via GET, delivers via POST)
+                        .requestMatchers("/api/whatsapp/webhook").permitAll()
+
+                        // PUBLIC: Estate slug resolution (branded booking pages)
+                        .requestMatchers("/api/estates/resolve/**").permitAll()
+
+                        // PUBLIC: Health check
+                        .requestMatchers("/api/health").permitAll()
 
                         // ADMIN only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -23,6 +23,7 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
+    private final MpesaDarajaService mpesaService;
 
     @Transactional
     public SubscriptionDTO.SubscriptionResponse createSubscription(SubscriptionDTO.CreateSubscriptionRequest request) {
@@ -34,28 +35,111 @@ public class SubscriptionService {
 
         // FREE plan — no payment required, activate immediately
         if (request.getPlanType() == Subscription.PlanType.FREE) {
-            return activateSubscription(artisan, Subscription.PlanType.FREE, null);
+            return activateSubscription(artisan, Subscription.PlanType.FREE,
+                    Subscription.BillingCycle.MONTHLY, null);
         }
 
-        // Paid plans — require an M-Pesa transaction ID as confirmation.
-        // The client is expected to have already completed the M-Pesa STK Push payment
-        // and to supply the resulting transaction ID.
+        // Paid plans — require an M-Pesa transaction ID.
         if (request.getMpesaTransactionId() == null || request.getMpesaTransactionId().isBlank()) {
             throw new IllegalArgumentException(
                 "M-Pesa payment is required to activate a paid subscription. " +
                 "Please complete the payment and provide your transaction ID.");
         }
 
-        // TODO: verify the transaction ID against the Daraja API when M-Pesa is fully integrated.
-        // For now we record it and trust the client — this prevents completely free upgrades.
-        log.info("[SUBSCRIPTION] Activating {} for artisan {} with M-Pesa ref {}",
-                request.getPlanType(), artisan.getId(), request.getMpesaTransactionId());
+        Subscription.BillingCycle cycle = request.getBillingCycle() != null
+                ? request.getBillingCycle()
+                : Subscription.BillingCycle.MONTHLY;
 
-        return activateSubscription(artisan, request.getPlanType(), request.getMpesaTransactionId());
+        log.info("[SUBSCRIPTION] Activating {} ({}) for artisan {} with M-Pesa ref {}",
+                request.getPlanType(), cycle, artisan.getId(), request.getMpesaTransactionId());
+
+        return activateSubscription(artisan, request.getPlanType(), cycle, request.getMpesaTransactionId());
+    }
+
+    /**
+     * Initiates an M-Pesa STK Push for subscription payment.
+     * Returns the checkoutRequestId so the frontend can poll for confirmation.
+     */
+    public SubscriptionDTO.StkInitiateResponse initiateSubscriptionPayment(
+            SubscriptionDTO.InitiatePaymentRequest request) {
+        User artisan = getCurrentUser();
+
+        if (artisan.getRole() != User.UserRole.WORKER) {
+            throw new RuntimeException("Only workers can subscribe");
+        }
+        if (request.getPlanType() == Subscription.PlanType.FREE) {
+            throw new IllegalArgumentException("FREE plan does not require payment");
+        }
+
+        Subscription.BillingCycle cycle = request.getBillingCycle() != null
+                ? request.getBillingCycle()
+                : Subscription.BillingCycle.MONTHLY;
+
+        // Calculate price
+        int price = switch (request.getPlanType()) {
+            case BASIC -> cycle == Subscription.BillingCycle.WEEKLY
+                    ? Subscription.BASIC_WEEKLY_PRICE : Subscription.BASIC_MONTHLY_PRICE;
+            case PRO -> cycle == Subscription.BillingCycle.WEEKLY
+                    ? Subscription.PRO_WEEKLY_PRICE : Subscription.PRO_MONTHLY_PRICE;
+            case FREE -> 0;
+        };
+
+        String accountRef = "TUFIXIT-" + request.getPlanType().name();
+        String phone = request.getPhoneNumber() != null ? request.getPhoneNumber() : artisan.getPhoneNumber();
+
+        try {
+            MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
+                    phone, price, accountRef,
+                    "TuFixIt " + request.getPlanType() + " subscription (" + cycle + ")");
+
+            return SubscriptionDTO.StkInitiateResponse.builder()
+                    .checkoutRequestId(result.checkoutRequestId())
+                    .merchantRequestId(result.merchantRequestId())
+                    .amount(price)
+                    .phoneNumber(phone)
+                    .build();
+        } catch (Exception e) {
+            log.error("[SUBSCRIPTION] STK Push failed for artisan {}", artisan.getId(), e);
+            throw new RuntimeException("M-Pesa payment initiation failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Verifies a subscription payment via Daraja STK query.
+     * Called by frontend after STK Push prompt is acknowledged by user.
+     */
+    @Transactional
+    public SubscriptionDTO.SubscriptionResponse verifyAndActivate(
+            SubscriptionDTO.VerifyPaymentRequest request) {
+        User artisan = getCurrentUser();
+
+        try {
+            MpesaDarajaService.StkQueryResult queryResult =
+                    mpesaService.queryStkPush(request.getCheckoutRequestId());
+
+            if (!"0".equals(queryResult.resultCode())) {
+                throw new RuntimeException("Payment not completed: " + queryResult.resultDesc());
+            }
+
+            Subscription.BillingCycle cycle = request.getBillingCycle() != null
+                    ? request.getBillingCycle()
+                    : Subscription.BillingCycle.MONTHLY;
+
+            log.info("[SUBSCRIPTION] Payment verified for artisan {} — activating {} ({})",
+                    artisan.getId(), request.getPlanType(), cycle);
+
+            return activateSubscription(artisan, request.getPlanType(), cycle, request.getCheckoutRequestId());
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[SUBSCRIPTION] Payment verification failed for artisan {}", artisan.getId(), e);
+            throw new RuntimeException("Payment verification failed: " + e.getMessage());
+        }
     }
 
     private SubscriptionDTO.SubscriptionResponse activateSubscription(
-            User artisan, Subscription.PlanType planType, String mpesaRef) {
+            User artisan, Subscription.PlanType planType,
+            Subscription.BillingCycle billingCycle, String mpesaRef) {
 
         // Cancel any existing active subscription
         subscriptionRepository.findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.ACTIVE)
@@ -63,13 +147,29 @@ public class SubscriptionService {
                     existing.setStatus(Subscription.SubscriptionStatus.CANCELLED);
                     subscriptionRepository.save(existing);
                 });
+        // Also cancel any grace-period subscription (edge case: artisan re-subscribes during grace)
+        subscriptionRepository.findByArtisanIdAndStatus(artisan.getId(), Subscription.SubscriptionStatus.GRACE_PERIOD)
+                .ifPresent(existing -> {
+                    existing.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    subscriptionRepository.save(existing);
+                });
 
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endDate;
+        if (planType == Subscription.PlanType.FREE) {
+            endDate = now.plusYears(10);
+        } else if (billingCycle == Subscription.BillingCycle.WEEKLY) {
+            endDate = now.plusWeeks(1);
+        } else {
+            endDate = now.plusMonths(1);
+        }
+
         Subscription subscription = Subscription.builder()
                 .artisan(artisan)
                 .planType(planType)
+                .billingCycle(billingCycle)
                 .startDate(now)
-                .endDate(planType == Subscription.PlanType.FREE ? now.plusYears(10) : now.plusMonths(1))
+                .endDate(endDate)
                 .status(Subscription.SubscriptionStatus.ACTIVE)
                 .autoRenew(false)
                 .mpesaTransactionId(mpesaRef)
@@ -130,7 +230,8 @@ public class SubscriptionService {
         return Arrays.asList(
                 SubscriptionDTO.PlanInfo.builder()
                         .name("FREE")
-                        .price(0)
+                        .monthlyPrice(0)
+                        .weeklyPrice(0)
                         .maxListings(1)
                         .featured(false)
                         .rankingPriority(1)
@@ -138,7 +239,8 @@ public class SubscriptionService {
                         .build(),
                 SubscriptionDTO.PlanInfo.builder()
                         .name("BASIC")
-                        .price(300)
+                        .monthlyPrice(Subscription.BASIC_MONTHLY_PRICE)
+                        .weeklyPrice(Subscription.BASIC_WEEKLY_PRICE)
                         .maxListings(3)
                         .featured(false)
                         .rankingPriority(2)
@@ -146,7 +248,8 @@ public class SubscriptionService {
                         .build(),
                 SubscriptionDTO.PlanInfo.builder()
                         .name("PRO")
-                        .price(1500)
+                        .monthlyPrice(Subscription.PRO_MONTHLY_PRICE)
+                        .weeklyPrice(Subscription.PRO_WEEKLY_PRICE)
                         .maxListings(999)
                         .featured(true)
                         .rankingPriority(3)
@@ -181,6 +284,8 @@ public class SubscriptionService {
                 .id(sub.getId())
                 .artisanId(sub.getArtisan().getId())
                 .planType(sub.getPlanType().name())
+                .billingCycle(sub.getBillingCycle() != null ? sub.getBillingCycle().name() : "MONTHLY")
+                .priceKes(sub.getPriceKes())
                 .startDate(sub.getStartDate())
                 .endDate(sub.getEndDate())
                 .status(sub.getStatus().name())

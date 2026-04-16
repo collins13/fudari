@@ -2,6 +2,8 @@ package com.tufixit.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,11 +23,16 @@ public class ReportDTO {
         private Long reportedArtisanId;
 
         @NotNull(message = "Reason is required")
+        @Size(max = 100)
         private String reason;
 
+        @Size(max = 2000)
         private String description;
 
+        @Size(max = 20)
         private String reporterPhone;
+        @Email(message = "Invalid email")
+        @Size(max = 150)
         private String reporterEmail;
     }
 

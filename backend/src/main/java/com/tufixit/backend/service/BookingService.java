@@ -1,10 +1,12 @@
 package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.BookingDTO;
+import com.tufixit.backend.entity.Estate;
 import com.tufixit.backend.entity.Job;
 import com.tufixit.backend.entity.PublicReview;
 import com.tufixit.backend.entity.Subscription;
 import com.tufixit.backend.entity.User;
+import com.tufixit.backend.repository.EstateRepository;
 import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.PublicReviewRepository;
 import com.tufixit.backend.repository.SubscriptionRepository;
@@ -37,6 +39,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final PublicReviewRepository publicReviewRepository;
+    private final EstateRepository estateRepository;
     private final SmsService smsService;
 
     // ── Customer: Create booking (no login) ──────────────────────────────────
@@ -106,13 +109,25 @@ public class BookingService {
                 .paymentRecorded(false)
                 .build();
 
-        job = jobRepository.save(job);
+        // 5b. Tag referral source if booking came from an estate link
+        if (req.getEstateSlug() != null && !req.getEstateSlug().isBlank()) {
+            estateRepository.findBySlugAndIsActive(req.getEstateSlug(), true)
+                    .ifPresent(estate -> {
+                        job.setEstateId(estate.getId());
+                        job.setReferralSource("estate:" + estate.getSlug());
+                    });
+        }
+        if (job.getReferralSource() == null) {
+            job.setReferralSource("web");
+        }
+
+        Job savedJob = jobRepository.save(job);
 
         // 6. SMS artisan about new request
         smsService.notifyArtisanNewBooking(artisan.getPhoneNumber(),
                 req.getCustomerName(), bookingCode);
 
-        return toTrackResponse(job, artisan, false);
+        return toTrackResponse(savedJob, artisan, false);
     }
 
     // ── Customer: Track booking ───────────────────────────────────────────────

@@ -3,7 +3,6 @@ package com.tufixit.backend.service;
 import com.tufixit.backend.dto.PaymentDTO;
 import com.tufixit.backend.entity.EscrowTransaction;
 import com.tufixit.backend.entity.Job;
-import com.tufixit.backend.entity.User;
 import com.tufixit.backend.repository.EscrowTransactionRepository;
 import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.UserRepository;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +25,7 @@ public class PaymentService {
     private final EscrowTransactionRepository escrowRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final MpesaDarajaService mpesaService;
 
     @Value("${platform.fee.percentage:0.05}")
     private Double platformFeePercentage;
@@ -113,7 +112,21 @@ public class PaymentService {
         escrow.setMaterialReleaseTime(LocalDateTime.now());
         escrow.setStatus(EscrowTransaction.TransactionStatus.MATERIAL_RELEASED);
 
-        // TODO: Trigger M-Pesa STK Push to worker
+        // Trigger M-Pesa STK Push to worker for material cost
+        if (escrow.getJob().getAssignedWorker() != null) {
+            String workerPhone = escrow.getJob().getAssignedWorker().getPhoneNumber();
+            int amount = escrow.getMaterialCost().intValue();
+            try {
+                MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
+                        workerPhone, amount,
+                        "TUF-MAT-" + escrow.getJob().getId(),
+                        "TuFixIt material cost release");
+                log.info("[Payment] Material release STK Push sent: {}", result.checkoutRequestId());
+            } catch (Exception e) {
+                log.error("[Payment] Material release STK Push failed for job {}: {}",
+                        jobId, e.getMessage());
+            }
+        }
 
         escrow = escrowRepository.save(escrow);
 
@@ -135,32 +148,77 @@ public class PaymentService {
         escrow.setLaborReleaseTime(LocalDateTime.now());
         escrow.setStatus(EscrowTransaction.TransactionStatus.COMPLETED);
 
-        // TODO: Trigger M-Pesa STK Push to worker with labor cost minus platform fee
+        // Trigger M-Pesa STK Push to worker for labor cost minus platform fee
+        if (escrow.getJob().getAssignedWorker() != null) {
+            String workerPhone = escrow.getJob().getAssignedWorker().getPhoneNumber();
+            BigDecimal laborMinusFee = escrow.getLaborCost().subtract(
+                    escrow.getPlatformFee() != null ? escrow.getPlatformFee() : BigDecimal.ZERO);
+            int amount = laborMinusFee.max(BigDecimal.ZERO).intValue();
+            try {
+                MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
+                        workerPhone, amount,
+                        "TUF-LAB-" + escrow.getJob().getId(),
+                        "TuFixIt labor payment");
+                log.info("[Payment] Labor release STK Push sent: {}", result.checkoutRequestId());
+            } catch (Exception e) {
+                log.error("[Payment] Labor release STK Push failed for job {}: {}",
+                        jobId, e.getMessage());
+            }
+        }
 
         escrow = escrowRepository.save(escrow);
 
         return mapToEscrowResponse(escrow);
     }
 
+    /**
+     * Processes a verified M-Pesa STK callback (called AFTER HMAC verification).
+     */
+    @Transactional
+    public PaymentDTO.EscrowResponse processStkCallback(MpesaDarajaService.StkCallbackData data) {
+        log.info("[M-Pesa] Processing STK callback: checkoutId={}, resultCode={}, receipt={}",
+                data.checkoutRequestId(), data.resultCode(), data.mpesaReceiptNumber());
+
+        if (!data.isSuccess()) {
+            log.warn("[M-Pesa] STK Push failed: {} — {}", data.resultCode(), data.resultDesc());
+            return null;
+        }
+
+        EscrowTransaction escrow = escrowRepository.findByMpesaTransactionId(data.checkoutRequestId())
+                .orElse(null);
+
+        if (escrow != null) {
+            if (escrow.getStatus() == EscrowTransaction.TransactionStatus.DEPOSITED) {
+                log.info("[M-Pesa] Duplicate callback for {} — already deposited", data.checkoutRequestId());
+                return mapToEscrowResponse(escrow);
+            }
+            escrow.setMpesaReceiptNumber(data.mpesaReceiptNumber());
+            escrow.setStatus(EscrowTransaction.TransactionStatus.DEPOSITED);
+            escrow = escrowRepository.save(escrow);
+
+            Job job = escrow.getJob();
+            job.setStatus(Job.JobStatus.ACCEPTED);
+            jobRepository.save(job);
+        } else {
+            log.warn("[M-Pesa] No escrow found for checkoutRequestId: {}", data.checkoutRequestId());
+        }
+
+        return escrow != null ? mapToEscrowResponse(escrow) : null;
+    }
+
     @Transactional
     public PaymentDTO.EscrowResponse processMpesaCallback(PaymentDTO.MpesaCallbackRequest callback) {
         log.info("Processing M-Pesa callback: {}", callback);
 
-        // Validate callback has required fields
         if (callback.getTransactionId() == null || callback.getTransactionId().isBlank()) {
             log.warn("[M-Pesa] Callback rejected: missing transactionId");
             return null;
         }
 
-        // TODO: Verify callback authenticity via M-Pesa HMAC signature
-        // In production, validate: HMAC-SHA256(body, MPESA_PASSKEY) == X-Signature header
-        // Reject all callbacks that fail signature verification to prevent spoofing
-
         EscrowTransaction escrow = escrowRepository.findByMpesaTransactionId(callback.getTransactionId())
                 .orElse(null);
 
         if (escrow != null) {
-            // Idempotency: skip if already deposited
             if (escrow.getStatus() == EscrowTransaction.TransactionStatus.DEPOSITED) {
                 log.info("[M-Pesa] Duplicate callback for txn {} — already deposited", callback.getTransactionId());
                 return mapToEscrowResponse(escrow);
@@ -175,21 +233,29 @@ public class PaymentService {
         return escrow != null ? mapToEscrowResponse(escrow) : null;
     }
 
-    @Transactional
-    public PaymentDTO.EscrowResponse initiatePayment(PaymentDTO.InitiatePaymentRequest request) {
-        // Mock M-Pesa STK Push initiation
-        String transactionId = UUID.randomUUID().toString();
-        
-        log.info("Initiating M-Pesa payment: phone={}, amount={}", request.getPhoneNumber(), request.getAmount());
+    /**
+     * Initiates an M-Pesa STK Push for escrow payment.
+     */
+    public PaymentDTO.StkPushResponse initiatePayment(PaymentDTO.InitiatePaymentRequest request) {
+        log.info("Initiating M-Pesa STK Push: phone={}, amount={}", request.getPhoneNumber(), request.getAmount());
 
-        // In production, this would call the M-Pesa API
-        // For now, return a mock response
-        return PaymentDTO.EscrowResponse.builder()
-                .id(0L)
-                .totalAmount(request.getAmount())
-                .status(EscrowTransaction.TransactionStatus.PENDING)
-                .mpesaTransactionId(transactionId)
-                .build();
+        try {
+            MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
+                    request.getPhoneNumber(),
+                    request.getAmount().intValue(),
+                    request.getAccountReference() != null ? request.getAccountReference() : "TUFIXIT",
+                    request.getTransactionDesc());
+
+            return PaymentDTO.StkPushResponse.builder()
+                    .checkoutRequestId(result.checkoutRequestId())
+                    .merchantRequestId(result.merchantRequestId())
+                    .responseCode(result.responseCode())
+                    .responseDescription(result.responseDescription())
+                    .build();
+        } catch (Exception e) {
+            log.error("[M-Pesa] STK Push initiation failed", e);
+            throw new RuntimeException("M-Pesa payment initiation failed: " + e.getMessage());
+        }
     }
 
     private PaymentDTO.EscrowResponse mapToEscrowResponse(EscrowTransaction escrow) {
