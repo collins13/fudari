@@ -63,6 +63,7 @@ public class ArtisanMatchService {
         for (WorkerSkill skill : skills) {
             User artisan = skill.getWorker();
             if (artisan == null || !Boolean.TRUE.equals(artisan.getIsActive())) continue;
+            if (!Boolean.TRUE.equals(artisan.getIsApproved())) continue;
 
             double distanceKm = Double.MAX_VALUE;
             if (latitude != null && longitude != null
@@ -190,6 +191,7 @@ public class ArtisanMatchService {
         for (WorkerSkill skill : skills) {
             User artisan = skill.getWorker();
             if (artisan == null || !Boolean.TRUE.equals(artisan.getIsActive())) continue;
+            if (!Boolean.TRUE.equals(artisan.getIsApproved())) continue;
 
             double distanceKm = Double.MAX_VALUE;
             if (latitude != null && longitude != null

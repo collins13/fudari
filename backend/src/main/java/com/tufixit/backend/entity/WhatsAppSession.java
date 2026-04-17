@@ -73,12 +73,24 @@ public class WhatsAppSession {
     @Column(name = "urgency", length = 20)
     private String urgency;
 
+    /** For SCHEDULED urgency — the date/time text entered by customer. */
+    @Column(name = "scheduled_time_text", length = 100)
+    private String scheduledTimeText;
+
+    /** Parsed scheduled time (best-effort). */
+    @Column(name = "scheduled_time")
+    private LocalDateTime scheduledTime;
+
     /**
      * The artisan ID chosen by the AI matching step.
      * Stored here so we can call createBooking once the customer confirms.
      */
     @Column(name = "selected_artisan_id")
     private Long selectedArtisanId;
+
+    /** JSON of top 3 artisan IDs for multi-choice confirmation. */
+    @Column(name = "matched_artisan_ids", length = 100)
+    private String matchedArtisanIds;
 
     /**
      * Summary message sent to the customer at the CONFIRM step.
@@ -107,6 +119,10 @@ public class WhatsAppSession {
     @Column(name = "session_status", nullable = false)
     @Builder.Default
     private SessionStatus sessionStatus = SessionStatus.ACTIVE;
+
+    /** Last processed messageId — used for webhook retry deduplication. */
+    @Column(name = "last_message_id", length = 100)
+    private String lastMessageId;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -144,8 +160,14 @@ public class WhatsAppSession {
         URGENCY,
 
         /**
-         * Urgency collected — bot ran AI matching, displayed top artisan summary.
-         * Next expected input: YES to confirm, NO to restart, or HELP.
+         * Customer chose SCHEDULED — bot asked for a date/time.
+         * Next expected input: date/time text (e.g. "Monday 2pm", "20/04 at 10:00").
+         */
+        SCHEDULE_TIME,
+
+        /**
+         * Urgency collected — bot ran AI matching, displayed top artisan(s).
+         * Next expected input: artisan number (1/2/3), YES to confirm #1, or NO to cancel.
          */
         CONFIRM,
 

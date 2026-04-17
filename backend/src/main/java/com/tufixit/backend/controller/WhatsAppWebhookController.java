@@ -2,12 +2,20 @@ package com.tufixit.backend.controller;
 
 import com.tufixit.backend.dto.WhatsAppDTO;
 import com.tufixit.backend.service.WhatsAppBotService;
+import com.tufixit.backend.service.whatsapp.DeliveryStatus;
+import com.tufixit.backend.service.whatsapp.InboundMessage;
+import com.tufixit.backend.service.whatsapp.MetaWhatsAppProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -38,9 +46,14 @@ import java.util.List;
 public class WhatsAppWebhookController {
 
     private final WhatsAppBotService botService;
+    private final MetaWhatsAppProvider metaProvider;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Value("${whatsapp.verify-token:tufixit_whatsapp_verify_token}")
     private String verifyToken;
+
+    @Value("${whatsapp.app-secret:}")
+    private String appSecret;
 
     // ── Webhook verification (GET) ───────────────────────────────────────────
 
@@ -70,8 +83,19 @@ public class WhatsAppWebhookController {
      * so Meta never sees a 5xx that would trigger its exponential back-off retries.
      */
     @PostMapping("/webhook")
-    public ResponseEntity<String> receiveWebhook(@RequestBody WhatsAppDTO.InboundWebhook payload) {
+    public ResponseEntity<String> receiveWebhook(
+            @RequestBody String rawBody,
+            @RequestHeader(value = "X-Hub-Signature-256", required = false) String signatureHeader) {
         try {
+            // Validate Meta X-Hub-Signature-256 if app secret is configured
+            if (appSecret != null && !appSecret.isBlank()) {
+                if (!validateMetaSignature(rawBody, signatureHeader)) {
+                    log.warn("[WA-WEBHOOK] Invalid X-Hub-Signature-256 — rejecting request");
+                    return ResponseEntity.status(403).body("Invalid signature");
+                }
+            }
+
+            WhatsAppDTO.InboundWebhook payload = MAPPER.readValue(rawBody, WhatsAppDTO.InboundWebhook.class);
             processPayload(payload);
         } catch (Exception e) {
             // Log but do not propagate — Meta must receive 200 or it will retry
@@ -82,75 +106,46 @@ public class WhatsAppWebhookController {
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
+    private boolean validateMetaSignature(String body, String signatureHeader) {
+        if (signatureHeader == null || !signatureHeader.startsWith("sha256=")) return false;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(appSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] hash = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
+            String expected = "sha256=" + HexFormat.of().formatHex(hash);
+            return expected.equals(signatureHeader);
+        } catch (Exception e) {
+            log.warn("[WA-WEBHOOK] Signature validation error: {}", e.getMessage());
+            return false;
+        }
+    }
+
     private void processPayload(WhatsAppDTO.InboundWebhook payload) {
-        if (payload == null || payload.getEntry() == null) return;
-
-        for (WhatsAppDTO.Entry entry : payload.getEntry()) {
-            if (entry.getChanges() == null) continue;
-            for (WhatsAppDTO.Change change : entry.getChanges()) {
-                if (!"messages".equals(change.getField())) continue;
-                processChange(change.getValue());
-            }
-        }
-    }
-
-    private void processChange(WhatsAppDTO.Value value) {
-        if (value == null) return;
-
-        // Status updates (delivered/read) — acknowledge and skip
-        if (value.getStatuses() != null && !value.getStatuses().isEmpty()) {
-            log.debug("[WA-WEBHOOK] Status update received, count={}", value.getStatuses().size());
-            return;
-        }
-
-        List<WhatsAppDTO.InboundMessage> messages = value.getMessages();
-        List<WhatsAppDTO.Contact> contacts = value.getContacts();
-        if (messages == null || messages.isEmpty()) return;
-
-        for (WhatsAppDTO.InboundMessage message : messages) {
-            String from = message.getFrom(); // e.g. "254712345678"
-            String displayName = extractName(contacts, from);
-            String text = extractText(message);
-
-            if (text == null || text.isBlank()) {
-                log.debug("[WA-WEBHOOK] Non-text message from {} (type={}), ignoring", from, message.getType());
-                continue;
-            }
-
-            log.info("[WA-WEBHOOK] Message from {} ({}): {}", from, displayName, text);
-            botService.handleInbound(from, displayName, text);
-        }
-    }
-
-    /** Extracts the text body regardless of whether it is a plain text or interactive reply. */
-    private String extractText(WhatsAppDTO.InboundMessage message) {
-        if (message == null) return null;
-
-        // Plain text
-        if ("text".equals(message.getType()) && message.getText() != null) {
-            return message.getText().getBody();
-        }
-
-        // Interactive button or list reply — use the reply ID as the input to the state machine
-        if ("interactive".equals(message.getType()) && message.getInteractive() != null) {
-            WhatsAppDTO.Interactive interactive = message.getInteractive();
-            if (interactive.getButtonReply() != null) {
-                return interactive.getButtonReply().getId();
-            }
-            if (interactive.getListReply() != null) {
-                return interactive.getListReply().getId();
+        // Parse delivery statuses
+        List<DeliveryStatus> statuses = metaProvider.parseStatuses(payload);
+        if (!statuses.isEmpty()) {
+            log.debug("[WA-WEBHOOK] Status updates received, count={}", statuses.size());
+            for (DeliveryStatus status : statuses) {
+                if (status.getStatus() == DeliveryStatus.Status.FAILED) {
+                    log.warn("[WA-WEBHOOK] Message {} failed for {}", status.getMessageId(), status.getRecipientPhone());
+                }
             }
         }
 
-        return null;
-    }
-
-    private String extractName(List<WhatsAppDTO.Contact> contacts, String phone) {
-        if (contacts == null) return "Customer";
-        return contacts.stream()
-                .filter(c -> phone.equals(c.getWaId()))
-                .findFirst()
-                .map(c -> c.getProfile() != null ? c.getProfile().getName() : "Customer")
-                .orElse("Customer");
+        // Parse inbound messages
+        List<InboundMessage> messages = metaProvider.parseInbound(payload);
+        if (messages.isEmpty()) {
+            // Non-text messages (images, voice notes, etc.) — send help hint
+            List<String> senders = metaProvider.extractSenderPhones(payload);
+            for (String sender : senders) {
+                botService.handleInbound(sender, null, "HELP", null);
+            }
+        }
+        for (InboundMessage message : messages) {
+            log.info("[WA-WEBHOOK] Message from {} ({}): {}",
+                    message.getFrom(), message.getDisplayName(), message.getText());
+            botService.handleInbound(message.getFrom(), message.getDisplayName(),
+                    message.getText(), message.getMessageId());
+        }
     }
 }

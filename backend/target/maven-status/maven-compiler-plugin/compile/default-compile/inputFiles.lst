@@ -34,6 +34,7 @@
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/TufixitBackendApplication.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/security/JwtTokenProvider.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/GlobalExceptionHandler.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/DeliveryStatus.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/AuditService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/WhatsAppWebhookController.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/QualityVerificationService.java
@@ -45,8 +46,12 @@
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/repository/MessageRepository.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/ChatWebSocketController.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/repository/BidRepository.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/TwilioWhatsAppWebhookController.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/TwilioWhatsAppProvider.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/RateLimitFilter.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/security/JwtAuthenticationFilter.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/WhatsAppProviderManager.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/GeocodingService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/AuthService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/EstateService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/DataSeeder.java
@@ -76,6 +81,7 @@
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/CategoryService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/SubscriptionService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/WebSocketConfig.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/WhatsAppProvider.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/EstateController.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/MessageService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/dto/PublicReviewDTO.java
@@ -95,9 +101,11 @@
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/SecurityConfig.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/entity/EscrowTransaction.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/LeadTrackingService.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/MetaWhatsAppProvider.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/PaymentController.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/dto/ReportDTO.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/repository/WhatsAppSessionRepository.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/entity/WhatsAppSession.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/WhatsAppBotService.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/whatsapp/InboundMessage.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/HealthController.java

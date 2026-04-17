@@ -12,7 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,9 +31,36 @@ public class WorkerService {
         List<User> workers;
 
         if (latitude != null && longitude != null) {
-            workers = userRepository.findApprovedNearbyWorkers(latitude, longitude, radiusKm != null ? radiusKm : 25.0);
+            double radius = radiusKm != null ? radiusKm : 25.0;
+
+            // 1. Nearby artisans (within radius), ranked by score
+            List<User> nearby = userRepository.findApprovedNearbyWorkers(latitude, longitude, radius);
+            Set<Long> nearbyIds = nearby.stream().map(User::getId).collect(Collectors.toSet());
+
+            // 2. All remaining artisans (outside radius), ranked by score
+            List<User> allWorkers = userRepository.findApprovedActiveWorkers();
+            List<User> rest = allWorkers.stream()
+                    .filter(w -> !nearbyIds.contains(w.getId()))
+                    .collect(Collectors.toList());
+
+            // Sort each group independently by ranking score
+            nearby.sort((a, b) -> Double.compare(
+                    rankingService.computeArtisanScore(b),
+                    rankingService.computeArtisanScore(a)));
+            rest.sort((a, b) -> Double.compare(
+                    rankingService.computeArtisanScore(b),
+                    rankingService.computeArtisanScore(a)));
+
+            // Combine: nearby first, then the rest
+            workers = new ArrayList<>(nearby.size() + rest.size());
+            workers.addAll(nearby);
+            workers.addAll(rest);
         } else {
             workers = userRepository.findApprovedActiveWorkers();
+            // Sort by composite ranking score (subscription-weighted algorithm)
+            workers.sort((a, b) -> Double.compare(
+                    rankingService.computeArtisanScore(b),
+                    rankingService.computeArtisanScore(a)));
         }
 
         if (skillType != null && !skillType.isEmpty()) {
@@ -46,11 +75,6 @@ public class WorkerService {
                 log.warn("Invalid skill type: {}", skillType);
             }
         }
-
-        // Sort by composite ranking score (subscription-weighted algorithm)
-        workers.sort((a, b) -> Double.compare(
-                rankingService.computeArtisanScore(b),
-                rankingService.computeArtisanScore(a)));
 
         return workers.stream()
                 .map(this::mapToUserDTOWithSkills)
