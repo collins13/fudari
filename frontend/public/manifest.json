@@ -1,0 +1,54 @@
+{
+  "name": "TUFIXIT - Kenya's Jua Kali Marketplace",
+  "short_name": "TUFIXIT",
+  "description": "Find verified electricians, plumbers, mechanics and more near you. Kenya's #1 Jua Kali marketplace.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#F84525",
+  "orientation": "portrait-primary",
+  "id": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Find a Pro",
+      "short_name": "Browse",
+      "description": "Browse verified service providers near you",
+      "url": "/artisans",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "View Pricing",
+      "short_name": "Pricing",
+      "description": "View subscription packages",
+      "url": "/pricing"
+    }
+  ]
+}

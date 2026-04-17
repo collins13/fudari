@@ -1,0 +1,74 @@
+:root {
+  --primary: #F84525;
+  --bs-primary: #F84525;
+  --bs-primary-rgb: 248, 69, 37;
+}
+
+body {
+  font-family: 'Wix Madefor Display', sans-serif;
+}
+
+.font-caveat {
+  font-family: 'Caveat', cursive;
+}
+
+/* Ensure next/link styled like anchor tags */
+a {
+  text-decoration: none;
+}
+
+/* ── Transparent navbar: fix menu visibility on scroll ─────────────────────
+   When user scrolls, script.js swaps .navbar-transfarent → .navbar-bg
+   (white background). The nav links & buttons must switch to dark text. */
+
+/* Scrolled state: dark text on white bg */
+@media (min-width: 992px) {
+  .custom-navbar.navbar.navbar-bg {
+    --bs-navbar-color: #2c3038;
+    --bs-navbar-active-color: var(--bs-primary);
+    --bs-navbar-border-color: var(--bs-primary);
+  }
+
+  [data-bs-theme="dark"] .custom-navbar.navbar.navbar-bg {
+    --bs-navbar-color: var(--bs-white);
+    --bs-navbar-active-color: var(--bs-white);
+    --bs-navbar-border-color: var(--bs-white);
+  }
+}
+
+/* btn-user icons: dark when scrolled, white when transparent */
+.custom-navbar.navbar.navbar-bg .btn-user {
+  color: #2c3038;
+}
+[data-bs-theme="dark"] .custom-navbar.navbar.navbar-bg .btn-user {
+  color: #ffffff;
+}
+
+/* Logo swap: show dark logo when scrolled, white logo when transparent */
+.custom-navbar.navbar .logo-for-dark { display: none; }
+.custom-navbar.navbar .logo-for-white { display: none; }
+
+/* Transparent state → white logo */
+.custom-navbar.navbar.navbar-transfarent .logo-for-white { display: block; }
+.custom-navbar.navbar.navbar-transfarent .logo-for-dark { display: none; }
+
+/* Scrolled state → dark logo */
+.custom-navbar.navbar.navbar-bg .logo-for-dark { display: block; }
+.custom-navbar.navbar.navbar-bg .logo-for-white { display: none; }
+
+/* Dark theme override: always show white logo */
+[data-bs-theme="dark"] .custom-navbar.navbar.navbar-bg .logo-for-dark { display: none; }
+[data-bs-theme="dark"] .custom-navbar.navbar.navbar-bg .logo-for-white { display: block; }
+
+/* Dropdown user button: adapt outline color on scroll */
+.custom-navbar.navbar.navbar-bg .btn-outline-light {
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-border-color: var(--bs-primary);
+}
+[data-bs-theme="dark"] .custom-navbar.navbar.navbar-bg .btn-outline-light {
+  --bs-btn-color: #fff;
+  --bs-btn-border-color: rgba(255,255,255,0.5);
+}
