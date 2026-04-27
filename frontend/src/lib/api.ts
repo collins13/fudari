@@ -145,6 +145,7 @@ export const jobsAPI = {
 export const workersAPI = {
   searchWorkers: (params: { 
     skillType?: string; 
+    name?: string;
     latitude?: number; 
     longitude?: number; 
     radiusKm?: number 
@@ -334,6 +335,18 @@ export const adminUsersAPI = {
     lastName: string;
     password: string;
     role?: string;
+    nationalId?: string;
+    idDocumentImage?: string;
+    certificateOfGoodConduct?: string;
+    autoApprove?: boolean;
+    skillType?: string;
+    bio?: string;
+    experienceYears?: number;
+    hourlyRate?: string;
+    locationName?: string;
+    latitude?: number;
+    longitude?: number;
+    profileImage?: string;
   }) => api.post('/admin/users', data),
 
   updateUserRole: (id: number, role: string) =>
@@ -350,6 +363,9 @@ export const adminUsersAPI = {
 
   revokeApproval: (id: number) =>
     api.put(`/admin/users/${id}/revoke-approval`),
+
+  rejectArtisan: (id: number, reason?: string) =>
+    api.put(`/admin/users/${id}/reject`, { reason }),
 
   softDeleteUser: (id: number) =>
     api.delete(`/admin/users/${id}`),
@@ -622,6 +638,12 @@ export const estatesAPI = {
   /** Public: resolve estate by slug (for booking pages) */
   resolve: (slug: string) => api.get(`/estates/resolve/${slug}`),
 
+  /** Public: resolve estate by 4-digit short code */
+  resolveByCode: (shortCode: string) => api.get(`/estates/resolve/code/${shortCode}`),
+
+  /** Public: list approved artisan profiles for an estate (full UserDTO) */
+  getApprovedArtisanProfiles: (slug: string) => api.get(`/estates/resolve/${slug}/artisans`),
+
   /** Admin: create estate */
   create: (data: {
     name: string;
@@ -635,6 +657,10 @@ export const estatesAPI = {
     monthlyFee?: number;
     contractStartDate?: string;
     contractEndDate?: string;
+    brandPrimaryColor?: string;
+    brandLogoUrl?: string;
+    brandWelcomeMessage?: string;
+    commissionRate?: number;
   }) => api.post('/estates', data),
 
   /** Admin: list all estates */
@@ -649,17 +675,24 @@ export const estatesAPI = {
   /** Admin: delete estate */
   delete: (id: number) => api.delete(`/estates/${id}`),
 
-  /** Admin: get analytics for an estate */
+  /** Admin/Manager: get analytics for an estate */
   getAnalytics: (id: number) => api.get(`/estates/${id}/analytics`),
 
-  /** Admin: approve an artisan for an estate */
+  /** Admin/Manager: submit artisan for approval */
   approveArtisan: (estateId: number, data: { artisanId: number; note?: string }) =>
     api.post(`/estates/${estateId}/artisans`, data),
 
-  /** Admin: list approved artisans for an estate */
+  /** Admin/Manager: list approved artisans for an estate */
   getApprovedArtisans: (estateId: number) => api.get(`/estates/${estateId}/artisans`),
 
-  /** Admin: remove artisan approval */
+  /** Admin/Manager: list pending approval requests */
+  getPendingApprovals: (estateId: number) => api.get(`/estates/${estateId}/artisans/pending`),
+
+  /** Admin/Manager: approve or reject an artisan application */
+  decideApproval: (estateId: number, approvalId: number, data: { decision: string; rejectionReason?: string }) =>
+    api.put(`/estates/${estateId}/artisans/${approvalId}/decision`, data),
+
+  /** Admin/Manager: remove artisan approval */
   removeArtisan: (estateId: number, artisanId: number) =>
     api.delete(`/estates/${estateId}/artisans/${artisanId}`),
 };

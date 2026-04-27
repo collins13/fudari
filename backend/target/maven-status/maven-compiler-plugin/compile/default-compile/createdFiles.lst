@@ -179,8 +179,8 @@ com/tufixit/backend/dto/CategoryDTO$CreateCategoryRequest.class
 com/tufixit/backend/dto/CategoryDTO$CategoryResponse.class
 com/tufixit/backend/controller/LeadTrackingController.class
 com/tufixit/backend/entity/WorkerSkill.class
-com/tufixit/backend/service/PaymentService.class
 com/tufixit/backend/service/WorkerService.class
+com/tufixit/backend/service/PaymentService.class
 com/tufixit/backend/service/whatsapp/DeliveryStatus$Status.class
 com/tufixit/backend/dto/ListingDTO$CreateListingRequest$CreateListingRequestBuilder.class
 com/tufixit/backend/dto/WhatsAppDTO$OutboundTemplate.class
@@ -242,6 +242,7 @@ com/tufixit/backend/config/DataSeeder$1.class
 com/tufixit/backend/dto/PublicReviewDTO.class
 com/tufixit/backend/dto/BookingDTO$ResolveDisputeRequest.class
 com/tufixit/backend/dto/AuthDTO$RegisterRequest.class
+com/tufixit/backend/entity/EstateArtisanApproval$ApprovalStatus.class
 com/tufixit/backend/dto/WhatsAppDTO$Interactive.class
 com/tufixit/backend/entity/Review$ReviewBuilder.class
 com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest$ReleaseLaborRequestBuilder.class
@@ -277,6 +278,7 @@ com/tufixit/backend/service/SmartPricingService.class
 com/tufixit/backend/dto/AiDTO$ScopingMessage.class
 com/tufixit/backend/dto/BookingDTO$BookingTrackResponse$BookingTrackResponseBuilder.class
 com/tufixit/backend/dto/ReportDTO$ReportResponse.class
+com/tufixit/backend/dto/EstateDTO$ApprovalDecisionRequest$ApprovalDecisionRequestBuilder.class
 com/tufixit/backend/dto/AiDTO$ScopingMessage$ScopingMessageBuilder.class
 com/tufixit/backend/service/LeadTrackingService.class
 com/tufixit/backend/dto/BookingDTO$CounterOfferRequest$CounterOfferRequestBuilder.class
@@ -319,6 +321,7 @@ com/tufixit/backend/dto/CategoryDTO.class
 com/tufixit/backend/dto/JobDTO$CreateJobRequest$CreateJobRequestBuilder.class
 com/tufixit/backend/dto/BookingDTO$CreateBookingRequest$CreateBookingRequestBuilder.class
 com/tufixit/backend/entity/WorkerSkill$WorkerSkillBuilder.class
+com/tufixit/backend/dto/EstateDTO$ApprovalDecisionRequest.class
 com/tufixit/backend/dto/WhatsAppDTO$Change.class
 com/tufixit/backend/service/whatsapp/WhatsAppProvider.class
 com/tufixit/backend/dto/AiDTO$DemandTrend.class

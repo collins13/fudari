@@ -173,6 +173,23 @@ public class WorkerService {
         return mapToUserDTOWithSkills(user);
     }
 
+    /**
+     * Convert a list of User entities to DTOs — used by EstateService for approved artisan list.
+     */
+    public List<AuthDTO.UserDTO> mapUsersToDTOs(List<User> users) {
+        return users.stream().map(this::mapToUserDTOWithSkills).collect(Collectors.toList());
+    }
+
+    /**
+     * Search active/approved workers by name (first or last).
+     */
+    public List<AuthDTO.UserDTO> searchWorkersByName(String name) {
+        if (name == null || name.trim().length() < 2) return List.of();
+        return userRepository.searchWorkersByName(name.trim()).stream()
+                .map(this::mapToUserDTOWithSkills)
+                .collect(Collectors.toList());
+    }
+
     private AuthDTO.UserDTO mapToUserDTOWithSkills(User user) {
         List<AuthDTO.WorkerSkillInfo> skillInfos = workerSkillRepository.findByWorkerId(user.getId())
                 .stream()

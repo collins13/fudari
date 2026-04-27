@@ -3,6 +3,7 @@ package com.tufixit.backend.service;
 import com.tufixit.backend.dto.AiDTO;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
+import com.tufixit.backend.repository.EstateArtisanApprovalRepository;
 import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.UserRepository;
 import com.tufixit.backend.repository.WorkerSkillRepository;
@@ -22,6 +23,10 @@ import java.util.stream.Collectors;
  *   - Subscription tier / vetting level (20% weight)
  *   - Job completion count (10% weight)
  *
+ * When an estateId is provided, uses Priority-Tiered Search:
+ *   Priority 1: Estate-approved artisans (1.2x score boost)
+ *   Priority 2: Backfill with local artisans within 5km if < 3 approved found
+ *
  * Returns top N artisans with a human-readable match reason.
  */
 @Service
@@ -32,21 +37,34 @@ public class ArtisanMatchService {
     private final UserRepository userRepository;
     private final WorkerSkillRepository workerSkillRepository;
     private final JobRepository jobRepository;
+    private final EstateArtisanApprovalRepository approvalRepository;
 
     private static final int TOP_N = 3;
     private static final double EARTH_RADIUS_KM = 6371.0;
     private static final double MAX_RADIUS_KM = 20.0;
+    private static final double ESTATE_BACKFILL_RADIUS_KM = 5.0;
+    private static final double ESTATE_APPROVAL_BOOST = 1.2;
 
     /**
      * Find and score the top N artisans for a given skill type and location.
-     *
-     * @param skillTypeStr  Skill type string e.g. "PLUMBER"
-     * @param latitude      Customer latitude (nullable — falls back to score-only ranking)
-     * @param longitude     Customer longitude
-     * @return Ranked list of top artisans with match scores
+     * Delegates to the estate-aware overload with no estate context.
      */
     public List<AiDTO.MatchedArtisan> findTopMatches(
             String skillTypeStr, Double latitude, Double longitude) {
+        return findTopMatches(skillTypeStr, latitude, longitude, null);
+    }
+
+    /**
+     * Priority-Tiered artisan matching.
+     *
+     * When estateId is provided:
+     *   Priority 1: Fetch APPROVED artisans from estate_artisan_approvals with 1.2x score boost.
+     *   Priority 2: If fewer than TOP_N found, backfill with local artisans within 5km.
+     *
+     * When estateId is null: standard matching within MAX_RADIUS_KM.
+     */
+    public List<AiDTO.MatchedArtisan> findTopMatches(
+            String skillTypeStr, Double latitude, Double longitude, Long estateId) {
 
         WorkerSkill.SkillType skillType;
         try {
@@ -58,7 +76,13 @@ public class ArtisanMatchService {
         // All active workers with this skill
         List<WorkerSkill> skills = workerSkillRepository.findBySkillType(skillType);
 
-        List<ScoredArtisan> scored = new ArrayList<>();
+        // Estate-approved artisan IDs (Priority 1)
+        Set<Long> approvedIds = estateId != null
+                ? new HashSet<>(approvalRepository.findApprovedArtisanIdsByEstateId(estateId))
+                : Collections.emptySet();
+
+        List<ScoredArtisan> approvedScored = new ArrayList<>();
+        List<ScoredArtisan> backfillScored = new ArrayList<>();
 
         for (WorkerSkill skill : skills) {
             User artisan = skill.getWorker();
@@ -69,16 +93,51 @@ public class ArtisanMatchService {
             if (latitude != null && longitude != null
                     && artisan.getLatitude() != null && artisan.getLongitude() != null) {
                 distanceKm = haversine(latitude, longitude, artisan.getLatitude(), artisan.getLongitude());
-                if (distanceKm > MAX_RADIUS_KM) continue; // too far
             }
 
             double score = computeScore(artisan, distanceKm);
-            scored.add(new ScoredArtisan(artisan, skill, distanceKm, score));
+            boolean isEstateApproved = approvedIds.contains(artisan.getId());
+
+            if (isEstateApproved) {
+                // Priority 1: estate-approved artisan — apply 1.2x boost
+                double boostedScore = score * ESTATE_APPROVAL_BOOST;
+                approvedScored.add(new ScoredArtisan(artisan, skill, distanceKm, boostedScore, true));
+            } else if (estateId != null) {
+                // Priority 2: backfill — only within 5km
+                if (distanceKm <= ESTATE_BACKFILL_RADIUS_KM) {
+                    backfillScored.add(new ScoredArtisan(artisan, skill, distanceKm, score, false));
+                }
+            } else {
+                // No estate context — standard radius filter
+                if (distanceKm <= MAX_RADIUS_KM || distanceKm == Double.MAX_VALUE) {
+                    backfillScored.add(new ScoredArtisan(artisan, skill, distanceKm, score, false));
+                }
+            }
         }
 
-        // Sort descending by score, take top N
-        return scored.stream()
-                .sorted(Comparator.comparingDouble(ScoredArtisan::score).reversed())
+        // Merge: take approved first (sorted by score), then backfill to reach TOP_N
+        approvedScored.sort(Comparator.comparingDouble(ScoredArtisan::score).reversed());
+        backfillScored.sort(Comparator.comparingDouble(ScoredArtisan::score).reversed());
+
+        List<ScoredArtisan> merged = new ArrayList<>(approvedScored);
+        if (merged.size() < TOP_N) {
+            Set<Long> alreadyIncluded = merged.stream()
+                    .map(s -> s.artisan().getId()).collect(Collectors.toSet());
+            for (ScoredArtisan sa : backfillScored) {
+                if (merged.size() >= TOP_N) break;
+                if (!alreadyIncluded.contains(sa.artisan().getId())) {
+                    merged.add(sa);
+                    alreadyIncluded.add(sa.artisan().getId());
+                }
+            }
+        }
+
+        if (estateId != null && !approvedScored.isEmpty()) {
+            log.debug("[MATCH] Estate {} — {} approved artisans found, {} backfill added",
+                    estateId, approvedScored.size(), merged.size() - approvedScored.size());
+        }
+
+        return merged.stream()
                 .limit(TOP_N)
                 .map(this::toMatchedArtisan)
                 .collect(Collectors.toList());
@@ -112,10 +171,8 @@ public class ArtisanMatchService {
     private AiDTO.MatchedArtisan toMatchedArtisan(ScoredArtisan sa) {
         User a = sa.artisan();
         double dist = sa.distanceKm();
-        String distLabel = dist == Double.MAX_VALUE ? "Nearby"
-                : String.format("%.1f km away", dist);
 
-        String reason = buildReason(a, dist);
+        String reason = buildReason(a, dist, sa.estateApproved());
 
         Integer rate = null;
         if (sa.skill().getHourlyRate() != null) {
@@ -137,8 +194,9 @@ public class ArtisanMatchService {
                 .build();
     }
 
-    private String buildReason(User a, double distKm) {
+    private String buildReason(User a, double distKm, boolean estateApproved) {
         List<String> reasons = new ArrayList<>();
+        if (estateApproved) reasons.add("estate-approved");
         if (distKm != Double.MAX_VALUE && distKm <= 3.0)  reasons.add("very close to you");
         else if (distKm != Double.MAX_VALUE)               reasons.add(String.format("%.1f km away", distKm));
         if (a.getTrustScore() != null && a.getTrustScore() >= 4.5) reasons.add("highly rated");
@@ -163,7 +221,7 @@ public class ArtisanMatchService {
 
     // ── Internal record ───────────────────────────────────────────────────────
 
-    private record ScoredArtisan(User artisan, WorkerSkill skill, double distanceKm, double score) {}
+    private record ScoredArtisan(User artisan, WorkerSkill skill, double distanceKm, double score, boolean estateApproved) {}
 
     // ══════════════════════════════════════════════════════════════════════════
     // ── Feature 7: Predictive Multi-Category Match ───────────────────────────
@@ -201,7 +259,7 @@ public class ArtisanMatchService {
             }
 
             double score = computeScore(artisan, distanceKm);
-            allScored.add(new ScoredArtisan(artisan, skill, distanceKm, score));
+            allScored.add(new ScoredArtisan(artisan, skill, distanceKm, score, false));
         }
 
         // Best Match — highest overall score

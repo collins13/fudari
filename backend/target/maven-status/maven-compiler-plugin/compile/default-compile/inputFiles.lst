@@ -56,6 +56,7 @@
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/EstateService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/config/DataSeeder.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/entity/AdminAuditLog.java
+/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/service/EmailService.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/controller/BookingController.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/repository/WorkerSkillRepository.java
 /home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/main/java/com/tufixit/backend/repository/EstateRepository.java

@@ -26,9 +26,13 @@ public class WorkerController {
     @GetMapping("/search")
     public ResponseEntity<List<AuthDTO.UserDTO>> searchWorkers(
             @RequestParam(required = false) String skillType,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
             @RequestParam(defaultValue = "25") Double radiusKm) {
+        if (name != null && !name.isBlank()) {
+            return ResponseEntity.ok(workerService.searchWorkersByName(name));
+        }
         return ResponseEntity.ok(workerService.searchWorkers(skillType, latitude, longitude, radiusKm));
     }
 

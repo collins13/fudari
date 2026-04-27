@@ -2,8 +2,10 @@ package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.AiDTO;
 import com.tufixit.backend.dto.BookingDTO;
+import com.tufixit.backend.entity.Estate;
 import com.tufixit.backend.entity.WhatsAppSession;
 import com.tufixit.backend.entity.WorkerSkill;
+import com.tufixit.backend.repository.EstateRepository;
 import com.tufixit.backend.repository.UserRepository;
 import com.tufixit.backend.repository.WhatsAppSessionRepository;
 import com.tufixit.backend.service.whatsapp.WhatsAppProviderManager;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,8 +58,15 @@ public class WhatsAppBotService {
     private final UserRepository userRepository;
     private final WhatsAppProviderManager whatsAppProviderManager;
     private final GeocodingService geocodingService;
+    private final EstateRepository estateRepository;
 
     private static final int SESSION_TIMEOUT_MINUTES = 30;
+    private static final int SESSION_HARD_EXPIRE_MINUTES = 120;
+
+    /** Matches START_ESTATE_{CODE} where CODE is a 4-char alphanumeric short code. */
+    private static final Pattern ESTATE_SHORT_CODE_PATTERN = Pattern.compile(
+            "(?i)^START_ESTATE_([A-Z0-9]{4})$"
+    );
 
     private static final List<String> CATEGORIES = Arrays.asList(
             "Electrician", "Plumber", "Mechanic", "Carpenter", "Painter",
@@ -135,6 +145,50 @@ public class WhatsAppBotService {
             return;
         }
 
+        // ── Estate Short-Code: START_ESTATE_{CODE} ──────────────────────────
+        Matcher estateCodeMatch = ESTATE_SHORT_CODE_PATTERN.matcher(input);
+        if (estateCodeMatch.matches()) {
+            String code = estateCodeMatch.group(1).toUpperCase(Locale.ROOT);
+            Optional<Estate> estateOpt = estateRepository.findByShortCodeAndIsActive(code, true);
+            if (estateOpt.isEmpty()) {
+                sendText(phone, "Sorry, estate code *" + code + "* was not found. " +
+                        "Please check the code and try again, or type *Hi* to start a normal booking.");
+                return;
+            }
+            Estate estate = estateOpt.get();
+            // Abandon any existing active session for this phone
+            sessionRepo.findTopByCustomerPhoneAndSessionStatusOrderByUpdatedAtDesc(
+                    phone, WhatsAppSession.SessionStatus.ACTIVE)
+                    .ifPresent(s -> {
+                        s.setSessionStatus(WhatsAppSession.SessionStatus.ABANDONED);
+                        s.setState(WhatsAppSession.ConversationState.ABANDONED);
+                        sessionRepo.save(s);
+                    });
+
+            WhatsAppSession estateSession = WhatsAppSession.builder()
+                    .customerPhone(phone)
+                    .customerName(customerName)
+                    .state(WhatsAppSession.ConversationState.CATEGORY)
+                    .sessionStatus(WhatsAppSession.SessionStatus.ACTIVE)
+                    .estateId(estate.getId())
+                    .customerLocation(estate.getArea())
+                    .lastMessageId(messageId)
+                    .build();
+            sessionRepo.save(estateSession);
+
+            String welcome = estate.getBrandWelcomeMessage() != null
+                    ? estate.getBrandWelcomeMessage()
+                    : "Welcome to the *" + estate.getName() + "* maintenance portal!";
+
+            sendText(phone,
+                "\ud83c\udfe0 " + welcome + "\n\n" +
+                "Which service do you need? Reply with a number:\n\n" +
+                buildCategoryList() + "\n" +
+                "Or type the service name directly.\n\n" +
+                "_Powered by TuFixIt \u2014 type CANCEL at any time to stop._");
+            return;
+        }
+
         // Load or create session
         Optional<WhatsAppSession> existing = sessionRepo
                 .findTopByCustomerPhoneAndSessionStatusOrderByUpdatedAtDesc(
@@ -158,8 +212,25 @@ public class WhatsAppBotService {
             return;
         }
 
-        // No active session - try to parse pre-filled message or create new
+        // No active session — check for a recently expired session to offer resume
         if (session == null) {
+            Optional<WhatsAppSession> expired = sessionRepo
+                    .findTopByCustomerPhoneAndSessionStatusOrderByUpdatedAtDesc(
+                            phone, WhatsAppSession.SessionStatus.EXPIRED);
+
+            if (expired.isPresent()) {
+                WhatsAppSession expiredSession = expired.get();
+                // Only offer resume if the session had meaningful progress
+                if (expiredSession.getSkillType() != null) {
+                    offerResume(expiredSession, messageId);
+                    return;
+                }
+                // Shallow session (only CATEGORY) — just abandon and start fresh
+                expiredSession.setSessionStatus(WhatsAppSession.SessionStatus.ABANDONED);
+                expiredSession.setState(WhatsAppSession.ConversationState.ABANDONED);
+                sessionRepo.save(expiredSession);
+            }
+
             session = tryPrefillOrCreateSession(phone, customerName, input, messageId);
             // Initial prompt already sent by tryPrefillOrCreateSession; don't double-dispatch
             return;
@@ -177,6 +248,7 @@ public class WhatsAppBotService {
             case URGENCY        -> handleUrgency(session, input);
             case SCHEDULE_TIME  -> handleScheduleTime(session, input);
             case CONFIRM        -> handleConfirm(session, input);
+            case RESUME_PROMPT  -> handleResumePrompt(session, input, customerName, messageId);
             case COMPLETED, ABANDONED -> {
                 // Session is finished; start fresh. tryPrefill already sends the prompt.
                 tryPrefillOrCreateSession(phone, customerName, input, messageId);
@@ -313,6 +385,21 @@ public class WhatsAppBotService {
                 "(Minimum 10 characters)");
             return;
         }
+
+        String rejection = validateDescription(input);
+        if (rejection != null) {
+            incrementError(session);
+            if (session.getErrorCount() >= 3) {
+                abandonSession(session.getCustomerPhone());
+                sendText(session.getCustomerPhone(),
+                    "Too many invalid descriptions. Your session has ended. " +
+                    "Type *Hi* to start again or visit tufixit.com");
+                return;
+            }
+            sendText(session.getCustomerPhone(), rejection);
+            return;
+        }
+
         session.setJobDescription(input);
         session.setState(WhatsAppSession.ConversationState.URGENCY);
         sessionRepo.save(session);
@@ -384,7 +471,8 @@ public class WhatsAppBotService {
             log.debug("[WA-BOT] Geocoded '{}' -> [{}, {}]", session.getCustomerLocation(), lat, lng);
         }
 
-        var matches = artisanMatchService.findTopMatches(session.getSkillType(), lat, lng);
+        var matches = artisanMatchService.findTopMatches(
+                session.getSkillType(), lat, lng, session.getEstateId());
 
         if (matches.isEmpty()) {
             sendText(session.getCustomerPhone(),
@@ -510,6 +598,13 @@ public class WhatsAppBotService {
                     .urgency(parseUrgency(session.getUrgency()))
                     .referralSource("whatsapp");
 
+            // Propagate estate context so booking is tagged + GatePass generated
+            if (session.getEstateId() != null) {
+                estateRepository.findById(session.getEstateId()).ifPresent(estate ->
+                    reqBuilder.estateSlug(estate.getSlug())
+                );
+            }
+
             if ("SCHEDULED".equals(session.getUrgency()) && session.getScheduledTime() != null) {
                 reqBuilder.scheduledTime(session.getScheduledTime());
             }
@@ -543,6 +638,152 @@ public class WhatsAppBotService {
             sendText(session.getCustomerPhone(),
                 "\u26a0\ufe0f Something went wrong creating your booking. Please try again or visit tufixit.com");
         }
+    }
+
+    // == Soft TTL: Resume expired sessions ==
+
+    private void offerResume(WhatsAppSession session, String messageId) {
+        String friendlySkill = session.getSkillType().charAt(0)
+                + session.getSkillType().substring(1).toLowerCase(Locale.ROOT);
+
+        // Save the state the session was in before we interrupt it
+        if (session.getPreviousState() == null) {
+            session.setPreviousState(session.getState());
+        }
+        session.setState(WhatsAppSession.ConversationState.RESUME_PROMPT);
+        session.setSessionStatus(WhatsAppSession.SessionStatus.ACTIVE);
+        session.setErrorCount(0);
+        if (messageId != null) session.setLastMessageId(messageId);
+        sessionRepo.save(session);
+
+        StringBuilder msg = new StringBuilder();
+        msg.append("\ud83d\udc4b Welcome back! I see you were looking for a *")
+           .append(friendlySkill).append("*");
+        if (session.getCustomerLocation() != null) {
+            msg.append(" in *").append(session.getCustomerLocation()).append("*");
+        }
+        msg.append(" earlier.\n\n");
+        msg.append("Reply *CONTINUE* to pick up where you left off.\n");
+        msg.append("Reply *START OVER* to begin a new booking.");
+
+        sendText(session.getCustomerPhone(), msg.toString());
+    }
+
+    private void handleResumePrompt(WhatsAppSession session, String input, String customerName, String messageId) {
+        String answer = input.trim().toUpperCase(Locale.ROOT);
+
+        if (answer.equals("CONTINUE") || answer.equals("YES") || answer.equals("Y") || answer.equals("OK")) {
+            // Restore the session to where it was before expiry
+            WhatsAppSession.ConversationState resumeState = session.getPreviousState();
+            if (resumeState == null) resumeState = WhatsAppSession.ConversationState.CATEGORY;
+            session.setState(resumeState);
+            session.setPreviousState(null);
+            session.setErrorCount(0);
+            sessionRepo.save(session);
+
+            // Re-send the prompt for the resumed state
+            resendStatePrompt(session);
+            return;
+        }
+
+        if (answer.equals("START OVER") || answer.equals("NO") || answer.equals("N") || answer.equals("NEW")) {
+            // Abandon old session and start fresh
+            session.setSessionStatus(WhatsAppSession.SessionStatus.ABANDONED);
+            session.setState(WhatsAppSession.ConversationState.ABANDONED);
+            sessionRepo.save(session);
+
+            tryPrefillOrCreateSession(session.getCustomerPhone(), customerName, input, messageId);
+            return;
+        }
+
+        // Unrecognised — re-prompt
+        sendText(session.getCustomerPhone(),
+            "Please reply *CONTINUE* to resume your previous booking, " +
+            "or *START OVER* to begin a new one.");
+    }
+
+    private void resendStatePrompt(WhatsAppSession session) {
+        String phone = session.getCustomerPhone();
+        switch (session.getState()) {
+            case CATEGORY -> sendCategoryMenu(phone);
+            case LOCATION -> sendText(phone,
+                "\ud83d\udccd Which area are you in? (e.g. Westlands, Karen, Ruaka, Kilimani)");
+            case DESCRIPTION -> sendText(phone,
+                "\ud83d\udcdd Briefly describe the work you need done.\n" +
+                "Example: _\"Faulty socket in bedroom, needs replacing\"_");
+            case URGENCY -> sendUrgencyMenu(phone);
+            case SCHEDULE_TIME -> sendText(phone,
+                "\ud83d\udcc5 When would you like the artisan to come?\n" +
+                "Examples: _Monday 2pm_, _20/04 at 14:00_, _Tomorrow 10:00_");
+            case CONFIRM -> {
+                if (session.getConfirmSummary() != null) {
+                    sendText(phone, session.getConfirmSummary());
+                } else {
+                    sendText(phone,
+                        "\ud83d\udd0d Finding the best artisans near *" + session.getCustomerLocation() + "*...");
+                    findAndConfirmArtisan(session);
+                }
+            }
+            default -> sendCategoryMenu(phone);
+        }
+    }
+
+    // == Description input sanitisation ==
+
+    private static final Set<String> GARBAGE_INPUTS = Set.of(
+            "test", "testing", "tst", "aaa", "asdf", "asdfgh", "asdfghjk",
+            "qwerty", "qwer", "zxcv", "hello", "hi", "hey", "ok", "okay",
+            "abc", "abcdef", "xxx", "yyy", "zzz", "1234", "12345", "123456",
+            "nothing", "none", "n/a", "na", "nil", "null", "idk", "dunno",
+            "blah", "blahblah", "foo", "bar", "baz", "lorem", "ipsum"
+    );
+
+    /** Returns an error message if the description is garbage/profanity, or null if valid. */
+    private String validateDescription(String input) {
+        String lower = input.trim().toLowerCase(Locale.ROOT);
+        String alphaOnly = lower.replaceAll("[^a-z]", "");
+
+        // Known garbage / placeholder inputs
+        if (GARBAGE_INPUTS.contains(lower) || GARBAGE_INPUTS.contains(alphaOnly)) {
+            return "\u26a0\ufe0f That doesn't look like a real job description.\n\n" +
+                   "Please describe the actual work you need done so the artisan can prepare.\n" +
+                   "Example: _\"Leaking kitchen tap, needs washer replaced\"_";
+        }
+
+        // Keyboard mashing: very low unique character ratio
+        if (alphaOnly.length() >= 6) {
+            long uniqueChars = alphaOnly.chars().distinct().count();
+            double ratio = (double) uniqueChars / alphaOnly.length();
+            if (ratio < 0.3) {
+                return "\u26a0\ufe0f That looks like random characters.\n\n" +
+                       "Please describe the work you need in a few words.\n" +
+                       "Example: _\"Broken door handle in main bedroom\"_";
+            }
+        }
+
+        // Repeated character pattern (e.g. "aaaaaaa", "hahahahaha")
+        if (alphaOnly.length() >= 6 && alphaOnly.matches("(.)\\1{5,}")) {
+            return "\u26a0\ufe0f That doesn't look like a real description.\n\n" +
+                   "Please briefly describe the work you need done.\n" +
+                   "Example: _\"Socket sparking in living room\"_";
+        }
+
+        // Repeated short pattern (e.g. "abababab", "hahaha")
+        if (alphaOnly.length() >= 6 && alphaOnly.matches("(.{1,3})\\1{2,}")) {
+            return "\u26a0\ufe0f That doesn't look like a real description.\n\n" +
+                   "Please briefly describe the work you need done.\n" +
+                   "Example: _\"Blocked bathroom drain, water backing up\"_";
+        }
+
+        // Too few real words (after filtering short noise tokens)
+        String[] words = lower.split("\\s+");
+        long meaningfulWords = Arrays.stream(words).filter(w -> w.length() > 2).count();
+        if (meaningfulWords < 2) {
+            return "Please use at least a couple of words to describe the work.\n" +
+                   "Example: _\"Faulty socket in bedroom, needs replacing\"_";
+        }
+
+        return null; // valid
     }
 
     // == BACK command ==
@@ -605,15 +846,23 @@ public class WhatsAppBotService {
         }
     }
 
-    // == Stale session cleanup ==
+    // == Stale session cleanup (two-tier TTL) ==
 
     @Scheduled(fixedDelay = 10 * 60 * 1000)
     @Transactional
     public void cleanUpStaleSessions() {
-        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(SESSION_TIMEOUT_MINUTES);
-        int count = sessionRepo.abandonStaleSessions(cutoff);
-        if (count > 0) {
-            log.info("[WA-BOT] Abandoned {} stale sessions (idle > {}min)", count, SESSION_TIMEOUT_MINUTES);
+        // Tier 1: ACTIVE sessions idle > 30 min → EXPIRED (eligible for resume prompt)
+        LocalDateTime softCutoff = LocalDateTime.now().minusMinutes(SESSION_TIMEOUT_MINUTES);
+        int expired = sessionRepo.expireStaleSessions(softCutoff);
+        if (expired > 0) {
+            log.info("[WA-BOT] Soft-expired {} sessions (idle > {}min)", expired, SESSION_TIMEOUT_MINUTES);
+        }
+
+        // Tier 2: EXPIRED sessions idle > 2 hrs → ABANDONED (no resume possible)
+        LocalDateTime hardCutoff = LocalDateTime.now().minusMinutes(SESSION_HARD_EXPIRE_MINUTES);
+        int abandoned = sessionRepo.abandonExpiredSessions(hardCutoff);
+        if (abandoned > 0) {
+            log.info("[WA-BOT] Hard-abandoned {} expired sessions (idle > {}min)", abandoned, SESSION_HARD_EXPIRE_MINUTES);
         }
     }
 

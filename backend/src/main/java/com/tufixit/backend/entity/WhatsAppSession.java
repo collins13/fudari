@@ -110,6 +110,10 @@ public class WhatsAppSession {
     @Column(name = "job_id")
     private Long jobId;
 
+    /** Estate ID — set when session started via START_ESTATE_{code} or estate link. */
+    @Column(name = "estate_id")
+    private Long estateId;
+
     /** Number of times the customer sent an unrecognised input (for retry limit). */
     @Column(name = "error_count")
     @Builder.Default
@@ -123,6 +127,11 @@ public class WhatsAppSession {
     /** Last processed messageId — used for webhook retry deduplication. */
     @Column(name = "last_message_id", length = 100)
     private String lastMessageId;
+
+    /** Stores the state the session was in before it expired, so we can resume there. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "previous_state", length = 20)
+    private ConversationState previousState;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -175,12 +184,20 @@ public class WhatsAppSession {
         COMPLETED,
 
         /** Customer typed CANCEL or session timed out without completing. */
-        ABANDONED
+        ABANDONED,
+
+        /**
+         * Session expired (idle 30min–2hrs) — bot asked if user wants to resume.
+         * Next expected input: YES/CONTINUE to resume, NO/START OVER to start fresh.
+         */
+        RESUME_PROMPT
     }
 
     public enum SessionStatus {
         ACTIVE,
         COMPLETED,
-        ABANDONED
+        ABANDONED,
+        /** Session idle > 30min but < 2hrs — eligible for resume prompt. */
+        EXPIRED
     }
 }

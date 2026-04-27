@@ -149,4 +149,12 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Query("SELECT j FROM Job j WHERE j.estateId = :estateId AND j.status = 'COMPLETED' ORDER BY j.completionTime DESC")
     List<Job> findCompletedByEstateId(@Param("estateId") Long estateId);
+
+    /** Active (in-progress) jobs for an estate — Service Health view. */
+    @Query("SELECT j FROM Job j WHERE j.estateId = :estateId AND j.status IN ('PENDING','ACCEPTED','ARRIVED','IN_PROGRESS') ORDER BY j.createdAt DESC")
+    List<Job> findActiveJobsByEstateId(@Param("estateId") Long estateId);
+
+    /** Sum of agreed prices for completed estate jobs (for commission calculation). */
+    @Query("SELECT COALESCE(SUM(CAST(j.agreedPrice AS int)), 0) FROM Job j WHERE j.estateId = :estateId AND j.status = 'COMPLETED' AND j.agreedPrice IS NOT NULL")
+    long sumAgreedPriceByEstateId(@Param("estateId") Long estateId);
 }

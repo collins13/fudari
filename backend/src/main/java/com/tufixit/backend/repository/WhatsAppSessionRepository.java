@@ -31,4 +31,29 @@ public interface WhatsAppSessionRepository extends JpaRepository<WhatsAppSession
           AND s.updatedAt < :cutoff
     """)
     int abandonStaleSessions(LocalDateTime cutoff);
+
+    /**
+     * Soft-expire ACTIVE sessions idle longer than {@code softCutoff} (30 min)
+     * but not yet past the hard cutoff. These become EXPIRED and eligible for resume.
+     */
+    @Modifying
+    @Query("""
+        UPDATE WhatsAppSession s
+        SET s.sessionStatus = 'EXPIRED', s.previousState = s.state
+        WHERE s.sessionStatus = 'ACTIVE'
+          AND s.updatedAt < :softCutoff
+    """)
+    int expireStaleSessions(LocalDateTime softCutoff);
+
+    /**
+     * Hard-abandon sessions that have been EXPIRED longer than {@code hardCutoff} (2 hrs).
+     */
+    @Modifying
+    @Query("""
+        UPDATE WhatsAppSession s
+        SET s.sessionStatus = 'ABANDONED', s.state = 'ABANDONED'
+        WHERE s.sessionStatus = 'EXPIRED'
+          AND s.updatedAt < :hardCutoff
+    """)
+    int abandonExpiredSessions(LocalDateTime hardCutoff);
 }

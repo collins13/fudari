@@ -4,14 +4,20 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { estatesAPI, categoriesAPI, workersAPI, bookingsAPI } from '@/lib/api';
+import { estatesAPI, categoriesAPI, bookingsAPI } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
+import { TenantProvider, useTenant } from '@/context/TenantContext';
 
 interface Estate {
   id: number;
   name: string;
   slug: string;
   area: string;
+  brandPrimaryColor?: string | null;
+  brandLogoUrl?: string | null;
+  brandWelcomeMessage?: string | null;
+  shortCode?: string | null;
+  whatsappStartCommand?: string | null;
 }
 
 interface Category {
@@ -37,6 +43,7 @@ export default function EstateBookingPage() {
 
   const [estate, setEstate] = useState<Estate | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [allApprovedWorkers, setAllApprovedWorkers] = useState<Worker[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,12 +64,15 @@ export default function EstateBookingPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [estateRes, catRes] = await Promise.all([
+        const [estateRes, catRes, artisansRes] = await Promise.all([
           estatesAPI.resolve(slug),
           categoriesAPI.getActiveCategoriesWithStats(),
+          estatesAPI.getApprovedArtisanProfiles(slug),
         ]);
         setEstate(estateRes.data);
         setCategories(catRes.data);
+        const approved = artisansRes.data || [];
+        setAllApprovedWorkers(approved);
       } catch {
         setError('Estate not found or inactive.');
       } finally {
@@ -72,15 +82,16 @@ export default function EstateBookingPage() {
     load();
   }, [slug]);
 
-  const handleCategorySelect = async (skillType: string) => {
+  const handleCategorySelect = (skillType: string) => {
     setSelectedCategory(skillType);
     setSelectedWorker(null);
-    try {
-      const res = await workersAPI.searchWorkers({ skillType });
-      setWorkers(res.data?.content || res.data || []);
-    } catch {
-      setWorkers([]);
-    }
+    // Filter approved artisans by skill type (match against skills array)
+    const filtered = allApprovedWorkers.filter((w: any) =>
+      w.skills?.some((s: any) => s.skillType === skillType) ||
+      // fallback: match first skill
+      (w.skills?.[0]?.skillType || '').toUpperCase() === skillType.toUpperCase()
+    );
+    setWorkers(filtered);
   };
 
   const handleBooking = async (e: React.FormEvent) => {
@@ -177,21 +188,37 @@ export default function EstateBookingPage() {
   }
 
   return (
-    <>
+    <TenantProvider slug={slug}>
       <Navbar />
 
-      {/* Estate Header */}
-      <section className="bg-primary text-white py-4 mx-3 rounded-4 mt-3">
+      {/* Estate Header — dynamic brand theming */}
+      <section
+        className="text-white py-4 mx-3 rounded-4 mt-3"
+        style={{ backgroundColor: estate.brandPrimaryColor || '#0d6efd' }}
+      >
         <div className="container text-center">
-          <div className="badge bg-white text-primary mb-2 px-3 py-2 rounded-5">
+          {estate.brandLogoUrl && (
+            <img src={estate.brandLogoUrl} alt={estate.name} className="mb-3"
+              style={{ maxHeight: 60, objectFit: 'contain' }} />
+          )}
+          <div className="badge bg-white mb-2 px-3 py-2 rounded-5"
+            style={{ color: estate.brandPrimaryColor || '#0d6efd' }}>
             <i className="fa-solid fa-building me-1"></i> Estate Services
           </div>
           <h2 className="display-5 fw-bold mb-2">{estate.name}</h2>
           <p className="lead opacity-75 mb-0">
-            <i className="fa-solid fa-location-dot me-1"></i>{estate.area} — Book trusted artisans for your home
+            {estate.brandWelcomeMessage || (
+              <><i className="fa-solid fa-location-dot me-1"></i>{estate.area} — Book trusted artisans for your home</>
+            )}
           </p>
+          {estate.whatsappStartCommand && (
+            <div className="mt-2 small opacity-75">
+              <i className="fa-brands fa-whatsapp me-1"></i>
+              WhatsApp: Send <strong>{estate.whatsappStartCommand}</strong> to book via chat
+            </div>
+          )}
           <a
-            href={whatsappBotLink(`Hi, I live in ${estate.name} and need to book an artisan`)}
+            href={whatsappBotLink(estate.whatsappStartCommand || `Hi, I live in ${estate.name} and need to book an artisan`)}
             target="_blank" rel="noopener noreferrer"
             className="btn btn-success btn-lg rounded-5 mt-3"
           >
@@ -358,6 +385,6 @@ export default function EstateBookingPage() {
       </div>
 
       <Footer />
-    </>
+    </TenantProvider>
   );
 }

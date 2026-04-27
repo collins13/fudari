@@ -1,6 +1,62 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { adminUsersAPI } from '@/lib/api';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { adminUsersAPI, authAPI } from '@/lib/api';
+
+const PHONE_REGEX = /^(?:\+254|0)[17]\d{8}$/;
+const NAME_REGEX = /^[A-Za-z\s'-]{2,50}$/;
+const NATIONAL_ID_REGEX = /^[A-Za-z0-9-]{5,30}$/;
+const MAX_DOC_BYTES = 2 * 1024 * 1024; // 2MB
+
+// Mirrors WorkerSkill.SkillType enum on the backend
+const SKILL_CATEGORIES: { label: string; value: string }[] = [
+  { label: 'Electrician', value: 'ELECTRICIAN' },
+  { label: 'Plumber', value: 'PLUMBER' },
+  { label: 'Mechanic', value: 'MECHANIC' },
+  { label: 'Carpenter', value: 'CARPENTER' },
+  { label: 'Painter', value: 'PAINTER' },
+  { label: 'Welder', value: 'WELDER' },
+  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
+  { label: 'Appliance Repair', value: 'APPLIANCE_REPAIR' },
+  { label: 'Roofing', value: 'ROOFING' },
+  { label: 'Tiling', value: 'TILING' },
+  { label: 'Mason', value: 'MASON' },
+  { label: 'Gardener', value: 'GARDENER' },
+  { label: 'Cleaner', value: 'CLEANER' },
+  { label: 'Security', value: 'SECURITY' },
+  { label: 'Solar Technician', value: 'SOLAR_TECHNICIAN' },
+  { label: 'Borehole Drilling', value: 'BOREHOLE_DRILLING' },
+  { label: 'Fumigation', value: 'FUMIGATION' },
+  { label: 'Water Tank Cleaning', value: 'WATER_TANK_CLEANING' },
+  { label: 'Glass Fitter', value: 'GLASS_FITTER' },
+  { label: 'Ceiling Board', value: 'CEILING_BOARD' },
+  { label: 'Locksmith', value: 'LOCKSMITH' },
+  { label: 'CCTV Installer', value: 'CCTV_INSTALLER' },
+  { label: 'Interior Designer', value: 'INTERIOR_DESIGNER' },
+  { label: 'Other', value: 'OTHER' },
+];
+
+function getPasswordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  if (score <= 1) return { label: 'Weak', color: '#dc3545', percent: 20 };
+  if (score === 2) return { label: 'Fair', color: '#fd7e14', percent: 40 };
+  if (score === 3) return { label: 'Good', color: '#ffc107', percent: 60 };
+  if (score === 4) return { label: 'Strong', color: '#198754', percent: 80 };
+  return { label: 'Very Strong', color: '#0d6efd', percent: 100 };
+}
+
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+}
 
 interface UserDTO {
   id: number;
@@ -19,6 +75,12 @@ interface UserDTO {
   isActive: boolean;
   accountStatus: string;
   isApproved: boolean;
+  approvalStatus?: string;
+  approvedAt?: string | null;
+  approvedByAdminId?: number | null;
+  rejectionReason?: string | null;
+  createdByAdminId?: number | null;
+  nationalId?: string | null;
   createdAt: string | null;
   skills?: { id: number; skillType: string; experienceYears: number; hourlyRate: string; isVerified: boolean }[];
 }
@@ -38,10 +100,11 @@ function RoleBadge({ role }: { role: string }) {
   return <span className={`badge text-bg-${cls}`}>{role}</span>;
 }
 
-function ApprovalBadge({ approved }: { approved: boolean }) {
-  return approved
-    ? <span className="badge text-bg-success"><i className="fa-solid fa-check me-1" />Approved</span>
-    : <span className="badge text-bg-warning"><i className="fa-solid fa-clock me-1" />Pending</span>;
+function ApprovalBadge({ user }: { user: { isApproved: boolean; approvalStatus?: string } }) {
+  const status = user.approvalStatus || (user.isApproved ? 'APPROVED' : 'PENDING');
+  if (status === 'APPROVED') return <span className="badge text-bg-success"><i className="fa-solid fa-check me-1" />Approved</span>;
+  if (status === 'REJECTED') return <span className="badge text-bg-danger"><i className="fa-solid fa-xmark me-1" />Rejected</span>;
+  return <span className="badge text-bg-warning"><i className="fa-solid fa-clock me-1" />Pending</span>;
 }
 
 function formatDate(d: string | null): string {
@@ -68,11 +131,40 @@ export default function AdminUsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
 
-  // Create form state
+  // Create form state — mirrors provider self-registration + artisan vetting + service profile
   const [createForm, setCreateForm] = useState({
-    firstName: '', lastName: '', phoneNumber: '', email: '', password: '', role: 'CLIENT' as string,
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'WORKER' as 'CLIENT' | 'WORKER' | 'ADMIN',
+    nationalId: '',
+    idDocumentImage: '',
+    idDocumentName: '',
+    certificateOfGoodConduct: '',
+    certificateName: '',
+    autoApprove: false,
+    // Service profile (artisan-only)
+    skillType: '',
+    bio: '',
+    experienceYears: '',
+    hourlyRate: '',
+    locationName: '',
+    latitude: '' as string | number,
+    longitude: '' as string | number,
+    profileImage: '',
   });
+  const [locating, setLocating] = useState(false);
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+  const [createTouched, setCreateTouched] = useState<Record<string, boolean>>({});
+  const [phoneStatus, setPhoneStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const phoneDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const passwordStrength = useMemo(() => getPasswordStrength(createForm.password), [createForm.password]);
 
   const loadUsers = async () => {
     try {
@@ -83,6 +175,22 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => { loadUsers(); }, []);
+
+  // Real-time phone availability check (matches provider self-registration)
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const stripped = createForm.phoneNumber.replace(/\s/g, '');
+    if (!PHONE_REGEX.test(stripped)) { setPhoneStatus('idle'); return; }
+    setPhoneStatus('checking');
+    if (phoneDebounceRef.current) clearTimeout(phoneDebounceRef.current);
+    phoneDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await authAPI.checkPhone(stripped);
+        setPhoneStatus(res.data.available ? 'available' : 'taken');
+      } catch { setPhoneStatus('idle'); }
+    }, 500);
+    return () => { if (phoneDebounceRef.current) clearTimeout(phoneDebounceRef.current); };
+  }, [createForm.phoneNumber, showCreateModal]);
 
   const showToast = (msg: string, type: 'success' | 'danger') => {
     setToast({ msg, type });
@@ -140,20 +248,181 @@ export default function AdminUsersPage() {
     finally { setActionLoading(null); }
   };
 
+  const validateCreateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!createForm.firstName.trim() || !NAME_REGEX.test(createForm.firstName.trim()))
+      errors.firstName = 'Enter a valid first name (letters only, 2-50 characters).';
+    if (!createForm.lastName.trim() || !NAME_REGEX.test(createForm.lastName.trim()))
+      errors.lastName = 'Enter a valid last name (letters only, 2-50 characters).';
+    if (!PHONE_REGEX.test(createForm.phoneNumber.replace(/\s/g, '')))
+      errors.phoneNumber = 'Enter a valid Kenyan phone number (e.g. 0712345678 or +254712345678).';
+    if (createForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email))
+      errors.email = 'Enter a valid email address.';
+    if (createForm.password.length < 8)
+      errors.password = 'Password must be at least 8 characters.';
+    if (createForm.password !== createForm.confirmPassword)
+      errors.confirmPassword = 'Passwords do not match.';
+    if (createForm.role === 'WORKER') {
+      if (!createForm.nationalId.trim() || !NATIONAL_ID_REGEX.test(createForm.nationalId.trim()))
+        errors.nationalId = 'Enter a valid National ID number.';
+      if (!createForm.idDocumentImage) errors.idDocumentImage = 'Upload the artisan\u2019s ID document.';
+      if (!createForm.certificateOfGoodConduct) errors.certificateOfGoodConduct = 'Upload Certificate of Good Conduct.';
+      if (!createForm.skillType) errors.skillType = 'Select the artisan’s primary service category.';
+      if (!createForm.locationName.trim()) errors.locationName = 'Enter the artisan’s service area.';
+      if (createForm.experienceYears && Number(createForm.experienceYears) < 0)
+        errors.experienceYears = 'Experience years must be 0 or greater.';
+      if (createForm.hourlyRate && Number(createForm.hourlyRate) < 0)
+        errors.hourlyRate = 'Hourly rate must be 0 or greater.';
+    }
+    setCreateErrors(errors);
+    setCreateTouched({
+      firstName: true, lastName: true, phoneNumber: true, email: true,
+      password: true, confirmPassword: true,
+      nationalId: true, idDocumentImage: true, certificateOfGoodConduct: true,
+      skillType: true, locationName: true,
+    });
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleDocUpload = async (
+    field: 'idDocumentImage' | 'certificateOfGoodConduct',
+    nameField: 'idDocumentName' | 'certificateName',
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!/^(image\/(png|jpeg|jpg|webp)|application\/pdf)$/.test(file.type)) {
+      setCreateErrors((p) => ({ ...p, [field]: 'Only JPG, PNG, WEBP or PDF allowed.' }));
+      return;
+    }
+    if (file.size > MAX_DOC_BYTES) {
+      setCreateErrors((p) => ({ ...p, [field]: 'File too large (max 2MB).' }));
+      return;
+    }
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setCreateForm((f) => ({ ...f, [field]: dataUrl, [nameField]: file.name }));
+      setCreateErrors((p) => { const n = { ...p }; delete n[field]; return n; });
+    } catch {
+      setCreateErrors((p) => ({ ...p, [field]: 'Failed to read file.' }));
+    }
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } },
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const name = addr.suburb || addr.neighbourhood || addr.city_district
+            || addr.town || addr.city || addr.county || data.display_name;
+          setCreateForm((f) => ({
+            ...f,
+            locationName: name || f.locationName,
+            latitude,
+            longitude,
+          }));
+        } catch {
+          /* ignore reverse-geocode errors */
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => setLocating(false),
+      { timeout: 8000 },
+    );
+  };
+
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!/^image\/(png|jpeg|jpg|webp)$/.test(file.type)) {
+      setCreateErrors((p) => ({ ...p, profileImage: 'Only JPG, PNG, or WEBP allowed.' }));
+      return;
+    }
+    if (file.size > MAX_DOC_BYTES) {
+      setCreateErrors((p) => ({ ...p, profileImage: 'Image too large (max 2MB).' }));
+      return;
+    }
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setCreateForm((f) => ({ ...f, profileImage: dataUrl }));
+      setCreateErrors((p) => { const n = { ...p }; delete n.profileImage; return n; });
+    } catch {
+      setCreateErrors((p) => ({ ...p, profileImage: 'Failed to read file.' }));
+    }
+  };
+
+  const resetCreateForm = () => {
+    setCreateForm({
+      firstName: '', lastName: '', phoneNumber: '', email: '',
+      password: '', confirmPassword: '', role: 'WORKER',
+      nationalId: '', idDocumentImage: '', idDocumentName: '',
+      certificateOfGoodConduct: '', certificateName: '', autoApprove: false,
+      skillType: '', bio: '', experienceYears: '', hourlyRate: '',
+      locationName: '', latitude: '', longitude: '', profileImage: '',
+    });
+    setCreateErrors({});
+    setCreateTouched({});
+    setCreateError('');
+    setPhoneStatus('idle');
+    setShowPassword(false);
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateError('');
+    if (!validateCreateForm()) return;
+    if (phoneStatus === 'taken') {
+      setCreateError('This phone number is already registered.');
+      return;
+    }
     setCreating(true);
     try {
       await adminUsersAPI.createUser({
-        ...createForm,
-        email: createForm.email || undefined,
+        firstName: createForm.firstName.trim(),
+        lastName: createForm.lastName.trim(),
+        phoneNumber: createForm.phoneNumber.replace(/\s/g, ''),
+        email: createForm.email.trim() || undefined,
+        password: createForm.password,
+        role: createForm.role,
+        ...(createForm.role === 'WORKER' && {
+          nationalId: createForm.nationalId.trim(),
+          idDocumentImage: createForm.idDocumentImage,
+          certificateOfGoodConduct: createForm.certificateOfGoodConduct,
+          autoApprove: createForm.autoApprove,
+          skillType: createForm.skillType || undefined,
+          bio: createForm.bio.trim() || undefined,
+          experienceYears: createForm.experienceYears ? Number(createForm.experienceYears) : undefined,
+          hourlyRate: createForm.hourlyRate || undefined,
+          locationName: createForm.locationName.trim() || undefined,
+          latitude: createForm.latitude !== '' ? Number(createForm.latitude) : undefined,
+          longitude: createForm.longitude !== '' ? Number(createForm.longitude) : undefined,
+          profileImage: createForm.profileImage || undefined,
+        }),
       });
-      showToast('User created successfully', 'success');
+      const isPending = createForm.role === 'WORKER' && !createForm.autoApprove;
+      showToast(isPending
+        ? 'Artisan onboarded \u2014 awaiting approval'
+        : 'User created successfully', 'success');
       setShowCreateModal(false);
-      setCreateForm({ firstName: '', lastName: '', phoneNumber: '', email: '', password: '', role: 'CLIENT' });
+      resetCreateForm();
       loadUsers();
-    } catch { showToast('Failed to create user. Phone or email may already exist.', 'danger'); }
-    finally { setCreating(false); }
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || 'Failed to create user. Phone, email, or National ID may already exist.';
+      setCreateError(msg);
+    } finally {
+      setCreating(false);
+    }
   };
 
   const filtered = users.filter((u) => {
@@ -314,7 +583,7 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td>
-                        {u.role === 'WORKER' ? <ApprovalBadge approved={u.isApproved} /> : '—'}
+                        {u.role === 'WORKER' ? <ApprovalBadge user={u} /> : '—'}
                       </td>
                       <td className="text-muted small">{formatDate(u.createdAt)}</td>
                       <td className="text-end pe-3">
@@ -347,74 +616,342 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* ─── Create User Modal ─────────────────────────────────────── */}
+      {/* ─── Create User / Onboard Artisan Modal ───────────────── */}
       {showCreateModal && (
         <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setShowCreateModal(false)}>
-          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+          onClick={() => { setShowCreateModal(false); resetCreateForm(); }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content border-0 shadow">
               <div className="modal-header border-0">
                 <h5 className="modal-title fw-bold">
-                  <i className="fa-solid fa-user-plus me-2 text-primary" />Create New User
+                  <i className="fa-solid fa-user-plus me-2 text-primary" />
+                  {createForm.role === 'WORKER' ? 'Onboard New Artisan' : 'Create New User'}
                 </h5>
-                <button className="btn-close" onClick={() => setShowCreateModal(false)} />
+                <button className="btn-close" onClick={() => { setShowCreateModal(false); resetCreateForm(); }} />
               </div>
-              <form onSubmit={handleCreateUser}>
+              <form onSubmit={handleCreateUser} noValidate>
                 <div className="modal-body">
+                  {createError && (
+                    <div className="alert alert-danger small py-2 rounded-3">
+                      <i className="fa-solid fa-triangle-exclamation me-2" />{createError}
+                    </div>
+                  )}
+
+                  {/* Role toggle — same UX as provider self-registration */}
+                  <fieldset className="mb-3">
+                    <legend className="form-label small fw-medium mb-2">Account Type</legend>
+                    <div className="d-flex gap-2 p-1 bg-light rounded-3" role="radiogroup">
+                      {[
+                        { value: 'CLIENT', icon: 'fa-user', label: 'Customer' },
+                        { value: 'WORKER', icon: 'fa-wrench', label: 'Artisan / Provider' },
+                        { value: 'ADMIN', icon: 'fa-shield', label: 'Admin' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={createForm.role === opt.value}
+                          className={`btn flex-grow-1 rounded-3 fw-medium btn-sm ${createForm.role === opt.value ? 'btn-primary' : 'btn-light'}`}
+                          onClick={() => setCreateForm((f) => ({ ...f, role: opt.value as 'CLIENT' | 'WORKER' | 'ADMIN' }))}
+                        >
+                          <i className={`fa-solid ${opt.icon} me-2`} />{opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
                   <div className="row g-3">
-                    <div className="col-6">
+                    <div className="col-sm-6">
                       <label className="form-label small fw-medium">First Name *</label>
-                      <input type="text" className="form-control" required
+                      <input type="text"
+                        className={`form-control${createTouched.firstName && createErrors.firstName ? ' is-invalid' : ''}`}
+                        required autoComplete="given-name" placeholder="John"
                         value={createForm.firstName}
-                        onChange={(e) => setCreateForm(f => ({ ...f, firstName: e.target.value }))} />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label small fw-medium">Last Name *</label>
-                      <input type="text" className="form-control" required
-                        value={createForm.lastName}
-                        onChange={(e) => setCreateForm(f => ({ ...f, lastName: e.target.value }))} />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-medium">Phone Number *</label>
-                      <input type="tel" className="form-control" required placeholder="e.g. 0712345678"
-                        value={createForm.phoneNumber}
-                        onChange={(e) => setCreateForm(f => ({ ...f, phoneNumber: e.target.value }))} />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-medium">Email (optional)</label>
-                      <input type="email" className="form-control" placeholder="user@example.com"
-                        value={createForm.email}
-                        onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))} />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-medium">Password *</label>
-                      <input type="password" className="form-control" required minLength={6}
-                        value={createForm.password}
-                        onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))} />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label small fw-medium">Role *</label>
-                      <select className="form-select" value={createForm.role}
-                        onChange={(e) => setCreateForm(f => ({ ...f, role: e.target.value }))}>
-                        <option value="CLIENT">Client</option>
-                        <option value="WORKER">Worker (Artisan)</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
-                      {createForm.role === 'WORKER' && (
-                        <div className="form-text text-info">
-                          <i className="fa-solid fa-info-circle me-1" />
-                          Admin-created workers are auto-approved.
-                        </div>
+                        onChange={(e) => setCreateForm((f) => ({ ...f, firstName: e.target.value }))}
+                        onBlur={() => setCreateTouched((t) => ({ ...t, firstName: true }))} />
+                      {createTouched.firstName && createErrors.firstName && (
+                        <div className="invalid-feedback">{createErrors.firstName}</div>
                       )}
                     </div>
+                    <div className="col-sm-6">
+                      <label className="form-label small fw-medium">Last Name *</label>
+                      <input type="text"
+                        className={`form-control${createTouched.lastName && createErrors.lastName ? ' is-invalid' : ''}`}
+                        required autoComplete="family-name" placeholder="Kamau"
+                        value={createForm.lastName}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, lastName: e.target.value }))}
+                        onBlur={() => setCreateTouched((t) => ({ ...t, lastName: true }))} />
+                      {createTouched.lastName && createErrors.lastName && (
+                        <div className="invalid-feedback">{createErrors.lastName}</div>
+                      )}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label small fw-medium">Phone Number *</label>
+                      <div className="input-group">
+                        <input type="tel"
+                          className={`form-control${createTouched.phoneNumber && createErrors.phoneNumber ? ' is-invalid' : ''}`}
+                          required placeholder="0712345678"
+                          value={createForm.phoneNumber}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, phoneNumber: e.target.value }))}
+                          onBlur={() => setCreateTouched((t) => ({ ...t, phoneNumber: true }))} />
+                        {phoneStatus === 'checking' && (
+                          <span className="input-group-text bg-white">
+                            <span className="spinner-border spinner-border-sm text-secondary" />
+                          </span>
+                        )}
+                        {phoneStatus === 'available' && (
+                          <span className="input-group-text bg-white text-success">
+                            <i className="fa-solid fa-circle-check me-1" />Available
+                          </span>
+                        )}
+                        {phoneStatus === 'taken' && (
+                          <span className="input-group-text bg-white text-danger">
+                            <i className="fa-solid fa-circle-xmark me-1" />Registered
+                          </span>
+                        )}
+                      </div>
+                      {createTouched.phoneNumber && createErrors.phoneNumber && (
+                        <div className="text-danger small mt-1">{createErrors.phoneNumber}</div>
+                      )}
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label small fw-medium">Email <span className="text-muted fw-normal">(optional)</span></label>
+                      <input type="email"
+                        className={`form-control${createTouched.email && createErrors.email ? ' is-invalid' : ''}`}
+                        placeholder="user@example.com"
+                        value={createForm.email}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                        onBlur={() => setCreateTouched((t) => ({ ...t, email: true }))} />
+                      {createTouched.email && createErrors.email && (
+                        <div className="invalid-feedback">{createErrors.email}</div>
+                      )}
+                    </div>
+
+                    <div className="col-sm-6">
+                      <label className="form-label small fw-medium">Password *</label>
+                      <div className="input-group">
+                        <input type={showPassword ? 'text' : 'password'}
+                          className={`form-control${createTouched.password && createErrors.password ? ' is-invalid' : ''}`}
+                          required minLength={8} autoComplete="new-password"
+                          value={createForm.password}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                          onBlur={() => setCreateTouched((t) => ({ ...t, password: true }))} />
+                        <button type="button" className="btn btn-outline-secondary"
+                          onClick={() => setShowPassword((v) => !v)} tabIndex={-1}>
+                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
+                        </button>
+                      </div>
+                      {createForm.password && (
+                        <div className="mt-1">
+                          <div className="progress" style={{ height: 3 }}>
+                            <div className="progress-bar" role="progressbar"
+                              style={{ width: `${passwordStrength.percent}%`, backgroundColor: passwordStrength.color }} />
+                          </div>
+                          <small style={{ color: passwordStrength.color }} className="fw-medium">
+                            {passwordStrength.label}
+                          </small>
+                        </div>
+                      )}
+                      {createTouched.password && createErrors.password && (
+                        <div className="text-danger small mt-1">{createErrors.password}</div>
+                      )}
+                    </div>
+                    <div className="col-sm-6">
+                      <label className="form-label small fw-medium">Confirm Password *</label>
+                      <input type={showPassword ? 'text' : 'password'}
+                        className={`form-control${createTouched.confirmPassword && createErrors.confirmPassword ? ' is-invalid' : ''}`}
+                        required autoComplete="new-password"
+                        value={createForm.confirmPassword}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                        onBlur={() => setCreateTouched((t) => ({ ...t, confirmPassword: true }))} />
+                      {createTouched.confirmPassword && createErrors.confirmPassword && (
+                        <div className="invalid-feedback">{createErrors.confirmPassword}</div>
+                      )}
+                    </div>
+
+                    {createForm.role === 'WORKER' && (
+                      <>
+                        <div className="col-12">
+                          <hr className="my-2" />
+                          <h6 className="fw-semibold mb-2">
+                            <i className="fa-solid fa-id-card me-2 text-primary" />Vetting Documents
+                          </h6>
+                          <p className="small text-muted mb-3">
+                            Required for artisan onboarding. Documents are restricted to admin access only.
+                          </p>
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">National ID Number *</label>
+                          <input type="text"
+                            className={`form-control${createTouched.nationalId && createErrors.nationalId ? ' is-invalid' : ''}`}
+                            placeholder="e.g. 12345678"
+                            value={createForm.nationalId}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, nationalId: e.target.value }))}
+                            onBlur={() => setCreateTouched((t) => ({ ...t, nationalId: true }))} />
+                          {createTouched.nationalId && createErrors.nationalId && (
+                            <div className="invalid-feedback">{createErrors.nationalId}</div>
+                          )}
+                        </div>
+
+                        <div className="col-sm-6">
+                          <label className="form-label small fw-medium">ID Document Upload *</label>
+                          <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf"
+                            className={`form-control${createTouched.idDocumentImage && createErrors.idDocumentImage ? ' is-invalid' : ''}`}
+                            onChange={(e) => handleDocUpload('idDocumentImage', 'idDocumentName', e)} />
+                          {createForm.idDocumentName && (
+                            <div className="form-text text-success">
+                              <i className="fa-solid fa-circle-check me-1" />{createForm.idDocumentName}
+                            </div>
+                          )}
+                          {createErrors.idDocumentImage && (
+                            <div className="text-danger small mt-1">{createErrors.idDocumentImage}</div>
+                          )}
+                        </div>
+
+                        <div className="col-sm-6">
+                          <label className="form-label small fw-medium">Certificate of Good Conduct *</label>
+                          <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf"
+                            className={`form-control${createTouched.certificateOfGoodConduct && createErrors.certificateOfGoodConduct ? ' is-invalid' : ''}`}
+                            onChange={(e) => handleDocUpload('certificateOfGoodConduct', 'certificateName', e)} />
+                          {createForm.certificateName && (
+                            <div className="form-text text-success">
+                              <i className="fa-solid fa-circle-check me-1" />{createForm.certificateName}
+                            </div>
+                          )}
+                          {createErrors.certificateOfGoodConduct && (
+                            <div className="text-danger small mt-1">{createErrors.certificateOfGoodConduct}</div>
+                          )}
+                        </div>
+
+                        <div className="col-12">
+                          <hr className="my-2" />
+                          <h6 className="fw-semibold mb-2">
+                            <i className="fa-solid fa-screwdriver-wrench me-2 text-primary" />Service Profile
+                          </h6>
+                          <p className="small text-muted mb-3">
+                            Helps customers find this artisan and is required to go live.
+                          </p>
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">Primary Service Category *</label>
+                          <select
+                            className={`form-select${createTouched.skillType && createErrors.skillType ? ' is-invalid' : ''}`}
+                            value={createForm.skillType}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, skillType: e.target.value }))}
+                            onBlur={() => setCreateTouched((t) => ({ ...t, skillType: true }))}
+                          >
+                            <option value="">Select a service…</option>
+                            {SKILL_CATEGORIES.map((c) => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                          </select>
+                          {createTouched.skillType && createErrors.skillType && (
+                            <div className="invalid-feedback">{createErrors.skillType}</div>
+                          )}
+                        </div>
+
+                        <div className="col-sm-6">
+                          <label className="form-label small fw-medium">Years of Experience</label>
+                          <input type="number" min="0" className="form-control"
+                            placeholder="e.g. 5"
+                            value={createForm.experienceYears}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, experienceYears: e.target.value }))} />
+                          {createErrors.experienceYears && (
+                            <div className="text-danger small mt-1">{createErrors.experienceYears}</div>
+                          )}
+                        </div>
+
+                        <div className="col-sm-6">
+                          <label className="form-label small fw-medium">Hourly Rate (KES)</label>
+                          <input type="number" min="0" className="form-control"
+                            placeholder="e.g. 500"
+                            value={createForm.hourlyRate}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, hourlyRate: e.target.value }))} />
+                          {createErrors.hourlyRate && (
+                            <div className="text-danger small mt-1">{createErrors.hourlyRate}</div>
+                          )}
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">Service Area / Location *</label>
+                          <div className="input-group">
+                            <input type="text"
+                              className={`form-control${createTouched.locationName && createErrors.locationName ? ' is-invalid' : ''}`}
+                              placeholder="e.g. Westlands, Nairobi"
+                              value={createForm.locationName}
+                              onChange={(e) => setCreateForm((f) => ({ ...f, locationName: e.target.value }))}
+                              onBlur={() => setCreateTouched((t) => ({ ...t, locationName: true }))} />
+                            <button type="button" className="btn btn-outline-secondary"
+                              onClick={handleDetectLocation} disabled={locating}
+                              title="Detect location">
+                              {locating
+                                ? <span className="spinner-border spinner-border-sm" />
+                                : <i className="fa-solid fa-location-crosshairs" />}
+                            </button>
+                            {createTouched.locationName && createErrors.locationName && (
+                              <div className="invalid-feedback">{createErrors.locationName}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">Bio / Description</label>
+                          <textarea className="form-control" rows={3}
+                            placeholder="Short description of the artisan’s experience and services…"
+                            value={createForm.bio}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, bio: e.target.value }))} />
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">Profile Photo (optional)</label>
+                          <div className="d-flex align-items-center gap-3">
+                            {createForm.profileImage ? (
+                              <img src={createForm.profileImage} alt="Profile preview"
+                                className="rounded-circle border"
+                                style={{ width: 56, height: 56, objectFit: 'cover' }} />
+                            ) : (
+                              <div className="rounded-circle bg-light d-inline-flex align-items-center justify-content-center border"
+                                style={{ width: 56, height: 56 }}>
+                                <i className="fa-solid fa-camera text-muted" />
+                              </div>
+                            )}
+                            <input type="file" accept="image/png,image/jpeg,image/webp"
+                              className="form-control"
+                              onChange={handleProfileImageUpload} />
+                          </div>
+                          {createErrors.profileImage && (
+                            <div className="text-danger small mt-1">{createErrors.profileImage}</div>
+                          )}
+                        </div>
+
+                        <div className="col-12">
+                          <div className="form-check">
+                            <input className="form-check-input" type="checkbox" id="autoApprove"
+                              checked={createForm.autoApprove}
+                              onChange={(e) => setCreateForm((f) => ({ ...f, autoApprove: e.target.checked }))} />
+                            <label className="form-check-label small" htmlFor="autoApprove">
+                              <strong>Auto-approve on creation</strong>
+                              <span className="text-muted d-block" style={{ fontSize: 12 }}>
+                                If unchecked, the artisan will be created with status <em>Pending</em> until manually approved.
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="modal-footer border-0">
                   <button type="button" className="btn btn-outline-secondary rounded-3"
-                    onClick={() => setShowCreateModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary rounded-3" disabled={creating}>
-                    {creating ? <span className="spinner-border spinner-border-sm me-2" /> : null}
-                    Create User
+                    onClick={() => { setShowCreateModal(false); resetCreateForm(); }}>Cancel</button>
+                  <button type="submit" className="btn btn-primary rounded-3"
+                    disabled={creating || phoneStatus === 'taken' || phoneStatus === 'checking'}>
+                    {creating ? <span className="spinner-border spinner-border-sm me-2" /> : <i className="fa-solid fa-user-plus me-2" />}
+                    {createForm.role === 'WORKER' ? 'Onboard Artisan' : 'Create User'}
                   </button>
                 </div>
               </form>
@@ -454,7 +991,7 @@ export default function AdminUsersPage() {
                         <span className={`badge text-bg-${STATUS_COLORS[selectedUser.accountStatus] || 'secondary'}`}>
                           {selectedUser.accountStatus || 'ACTIVE'}
                         </span>
-                        {selectedUser.role === 'WORKER' && <ApprovalBadge approved={selectedUser.isApproved} />}
+                        {selectedUser.role === 'WORKER' && <ApprovalBadge user={selectedUser} />}
                         {selectedUser.isVerified && <span className="badge text-bg-info">Verified</span>}
                       </div>
                       <div className="text-muted small mt-2">Joined: {formatDate(selectedUser.createdAt)}</div>
@@ -518,10 +1055,26 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="d-flex gap-2 flex-wrap">
-                  {selectedUser.role === 'WORKER' && !selectedUser.isApproved && (
+                  {selectedUser.role === 'WORKER' && (selectedUser.approvalStatus !== 'APPROVED') && (
                     <button className="btn btn-success btn-sm rounded-3"
                       onClick={() => { handleApprove(selectedUser.id); setSelectedUser(null); }}>
                       <i className="fa-solid fa-check me-1" />Approve Artisan
+                    </button>
+                  )}
+                  {selectedUser.role === 'WORKER' && selectedUser.approvalStatus !== 'REJECTED' && (
+                    <button className="btn btn-outline-danger btn-sm rounded-3"
+                      onClick={async () => {
+                        const reason = prompt('Reason for rejection (optional):') || undefined;
+                        setActionLoading(selectedUser.id);
+                        try {
+                          await adminUsersAPI.rejectArtisan(selectedUser.id, reason);
+                          showToast('Artisan rejected', 'success');
+                          setSelectedUser(null);
+                          loadUsers();
+                        } catch { showToast('Failed to reject artisan', 'danger'); }
+                        finally { setActionLoading(null); }
+                      }}>
+                      <i className="fa-solid fa-ban me-1" />Reject
                     </button>
                   )}
                   {selectedUser.role === 'WORKER' && selectedUser.isApproved && (
@@ -535,6 +1088,11 @@ export default function AdminUsersPage() {
                     <i className="fa-solid fa-trash me-1" />Soft Delete
                   </button>
                 </div>
+                {selectedUser.rejectionReason && (
+                  <div className="alert alert-danger mt-3 small mb-0">
+                    <strong>Rejection reason:</strong> {selectedUser.rejectionReason}
+                  </div>
+                )}
               </div>
               <div className="modal-footer border-0">
                 <button className="btn btn-outline-secondary rounded-3" onClick={() => setSelectedUser(null)}>Close</button>

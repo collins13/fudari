@@ -45,6 +45,15 @@ public class EstateController {
         return ResponseEntity.ok(estateService.getEstateBySlug(slug));
     }
 
+    /**
+     * Public: list approved artisan profiles for an estate (by slug).
+     * Returns full UserDTO so the estate booking page can display artisan cards.
+     */
+    @GetMapping("/resolve/{slug}/artisans")
+    public ResponseEntity<?> listApprovedArtisanProfilesBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(estateService.getApprovedArtisanProfiles(slug));
+    }
+
     // ── Admin: Estate CRUD ───────────────────────────────────────────────────
 
     @PostMapping
@@ -104,5 +113,32 @@ public class EstateController {
             @PathVariable Long artisanId) {
         estateService.removeArtisanApproval(id, artisanId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Approval Workflow ────────────────────────────────────────────────────
+
+    /** Approve or reject a pending artisan application */
+    @PutMapping("/{id}/artisans/{approvalId}/decision")
+    public ResponseEntity<EstateDTO.ApprovedArtisanResponse> decideApproval(
+            @PathVariable Long id,
+            @PathVariable Long approvalId,
+            @Valid @RequestBody EstateDTO.ApprovalDecisionRequest request) {
+        return ResponseEntity.ok(estateService.decideApproval(id, approvalId, request));
+    }
+
+    /** List artisans pending verification for this estate */
+    @GetMapping("/{id}/artisans/pending")
+    public ResponseEntity<List<EstateDTO.ApprovedArtisanResponse>> listPendingApprovals(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(estateService.listPendingApprovals(id));
+    }
+
+    // ── Short Code Resolve ───────────────────────────────────────────────────
+
+    /** Resolve estate by 4-digit short code (used by WhatsApp START_ESTATE_{CODE}) */
+    @GetMapping("/resolve/code/{shortCode}")
+    public ResponseEntity<EstateDTO.EstateResponse> resolveByShortCode(
+            @PathVariable String shortCode) {
+        return ResponseEntity.ok(estateService.resolveByShortCode(shortCode));
     }
 }

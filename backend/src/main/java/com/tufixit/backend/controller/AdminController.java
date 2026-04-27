@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,7 +44,6 @@ public class AdminController {
     private final ListingRepository listingRepository;
     private final EscrowTransactionRepository escrowRepository;
     private final PublicReviewService publicReviewService;
-    private final PasswordEncoder passwordEncoder;
     private final WhatsAppSessionRepository whatsAppSessionRepository;
     private final AuditService auditService;
 
@@ -94,37 +92,14 @@ public class AdminController {
         return ResponseEntity.ok(users);
     }
 
-    /** Admin - create a new user */
+    /** Admin - create a new user (extended for artisan onboarding) */
     @PostMapping("/users")
-    public ResponseEntity<AuthDTO.UserDTO> createUser(@Valid @RequestBody AuthDTO.AdminCreateUserRequest request) {
-        if (request.getPhoneNumber() != null && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            return ResponseEntity.badRequest().build();
+    public ResponseEntity<?> createUser(@Valid @RequestBody AuthDTO.AdminCreateUserRequest request) {
+        try {
+            return ResponseEntity.ok(authService.adminCreateUser(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
-        if (request.getEmail() != null && !request.getEmail().isBlank()
-                && userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        User.UserRole role = request.getRole() != null ? request.getRole() : User.UserRole.CLIENT;
-        User user = User.builder()
-                .phoneNumber(request.getPhoneNumber())
-                .email(request.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(role)
-                .vettingLevel(User.VettingLevel.STANDARD)
-                .accountStatus(User.AccountStatus.ACTIVE)
-                .trustScore(0.0)
-                .totalJobsCompleted(0)
-                .totalReviews(0)
-                .isActive(true)
-                .isVerified(false)
-                // Admin-created users are auto-approved
-                .isApproved(true)
-                .build();
-        user = userRepository.save(user);
-        return ResponseEntity.ok(authService.getUserById(user.getId()));
     }
 
     /** Admin - update user role */
@@ -200,13 +175,16 @@ public class AdminController {
     /** Admin - approve an artisan (makes them visible to customers) */
     @PutMapping("/users/{id:[0-9]+}/approve")
     public ResponseEntity<AuthDTO.UserDTO> approveUser(@PathVariable Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setIsApproved(true);
-        userRepository.save(user);
-        auditService.logAction(AdminAuditLog.AuditAction.USER_APPROVED, "USER", id,
-                "Approved artisan: " + user.getFirstName() + " " + user.getLastName());
-        return ResponseEntity.ok(authService.getUserById(id));
+        return ResponseEntity.ok(authService.adminApproveArtisan(id));
+    }
+
+    /** Admin - reject an artisan onboarding application */
+    @PutMapping("/users/{id:[0-9]+}/reject")
+    public ResponseEntity<AuthDTO.UserDTO> rejectArtisan(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) AuthDTO.AdminRejectArtisanRequest body) {
+        String reason = body != null ? body.getReason() : null;
+        return ResponseEntity.ok(authService.adminRejectArtisan(id, reason));
     }
 
     /** Admin - revoke approval from an artisan */
@@ -215,6 +193,7 @@ public class AdminController {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsApproved(false);
+        user.setApprovalStatus(User.ApprovalStatus.PENDING);
         userRepository.save(user);
         auditService.logAction(AdminAuditLog.AuditAction.USER_APPROVAL_REVOKED, "USER", id,
                 "Revoked approval for: " + user.getFirstName() + " " + user.getLastName());

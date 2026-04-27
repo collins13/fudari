@@ -137,7 +137,7 @@ public class SecurityConfig {
                         // PUBLIC: Twilio WhatsApp webhooks
                         .requestMatchers("/api/whatsapp/twilio/**").permitAll()
 
-                        // PUBLIC: Estate slug resolution (branded booking pages)
+                        // PUBLIC: Estate slug / short-code resolution (branded booking pages)
                         .requestMatchers("/api/estates/resolve/**").permitAll()
 
                         // PUBLIC: Health check
@@ -148,6 +148,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/jobs/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/categories/all").hasRole("ADMIN")
                         .requestMatchers("/api/reports/admin/**").hasRole("ADMIN")
+
+                        // ESTATE_MANAGER: estate-scoped management endpoints
+                        .requestMatchers("/api/estates/*/artisans/**").hasAnyRole("ADMIN", "ESTATE_MANAGER")
+                        .requestMatchers("/api/estates/*/analytics").hasAnyRole("ADMIN", "ESTATE_MANAGER")
 
                         // Everything else requires auth
                         .anyRequest().authenticated()

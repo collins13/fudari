@@ -17,4 +17,10 @@ public interface EstateRepository extends JpaRepository<Estate, Long> {
     List<Estate> findByIsActiveTrueOrderByNameAsc();
 
     List<Estate> findByAreaIgnoreCaseAndIsActiveTrue(String area);
+
+    Optional<Estate> findByShortCodeAndIsActive(String shortCode, Boolean isActive);
+
+    Optional<Estate> findByShortCode(String shortCode);
+
+    boolean existsByShortCode(String shortCode);
 }

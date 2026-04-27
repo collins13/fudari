@@ -39,6 +39,16 @@ public class EstateDTO {
         private Integer monthlyFee;
         private LocalDateTime contractStart;
         private LocalDateTime contractEnd;
+
+        // Branding
+        @Size(max = 10)
+        private String brandPrimaryColor;
+        @Size(max = 500)
+        private String brandLogoUrl;
+        @Size(max = 300)
+        private String brandWelcomeMessage;
+
+        private Double commissionRate;
     }
 
     // ── Response ─────────────────────────────────────────────────────────────
@@ -61,6 +71,17 @@ public class EstateDTO {
         private LocalDateTime contractStart;
         private LocalDateTime contractEnd;
         private LocalDateTime createdAt;
+
+        // Branding (used by frontend TenantContext)
+        private String brandPrimaryColor;
+        private String brandLogoUrl;
+        private String brandWelcomeMessage;
+
+        // Short code for WhatsApp
+        private String shortCode;
+        private String whatsappStartCommand;
+
+        private Double commissionRate;
     }
 
     // ── Artisan Approval ─────────────────────────────────────────────────────
@@ -72,6 +93,13 @@ public class EstateDTO {
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class ApprovalDecisionRequest {
+        @NotBlank
+        private String decision; // APPROVED or REJECTED
+        private String rejectionReason;
+    }
+
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class ApprovedArtisanResponse {
         private Long approvalId;
         private Long artisanId;
@@ -79,6 +107,8 @@ public class EstateDTO {
         private String skillType;
         private Double rating;
         private String note;
+        private String approvalStatus;
+        private String rejectionReason;
         private LocalDateTime approvedAt;
     }
 
@@ -94,6 +124,12 @@ public class EstateDTO {
         private long cancelledBookings;
         private double avgRating;
         private int approvedArtisans;
+
+        // Service Health
+        private long activeJobs;
+        private long totalJobValue;
+        private double estateCommission;
+
         /** Top artisans by completed jobs for this estate */
         private List<TopArtisan> topArtisans;
     }

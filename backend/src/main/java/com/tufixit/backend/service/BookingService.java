@@ -141,7 +141,27 @@ public class BookingService {
 
         Job savedJob = jobRepository.save(job);
 
-        // 6. SMS artisan about new request
+        // 6a. GatePass: generate 6-digit access code for estate bookings
+        if (savedJob.getEstateId() != null) {
+            String accessCode = generateAccessCode();
+            savedJob.setAccessCode(accessCode);
+            savedJob = jobRepository.save(savedJob);
+            log.info("[BOOKING] GatePass {} generated for estate job {}", accessCode, savedJob.getBookingCode());
+
+            // Notify artisan with access code
+            smsService.notifyGatePass(artisan.getPhoneNumber(), accessCode, bookingCode,
+                    savedJob.getCustomerLocation());
+
+            // Notify estate manager
+            estateRepository.findById(savedJob.getEstateId()).ifPresent(estate -> {
+                if (estate.getManagerPhone() != null) {
+                    smsService.notifyGatePass(estate.getManagerPhone(), accessCode, bookingCode,
+                            estate.getName());
+                }
+            });
+        }
+
+        // 7. SMS artisan about new request
         smsService.notifyArtisanNewBooking(artisan.getPhoneNumber(),
                 req.getCustomerName(), bookingCode);
 
@@ -633,6 +653,12 @@ public class BookingService {
     private String generatePin() {
         int pin = SECURE_RANDOM.nextInt(10000);
         return String.format("%04d", pin);
+    }
+
+    /** Generate a 6-digit GatePass access code for estate bookings. */
+    private String generateAccessCode() {
+        int code = 100000 + SECURE_RANDOM.nextInt(900000);
+        return String.valueOf(code);
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
