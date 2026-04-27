@@ -4,11 +4,15 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import com.tufixit.backend.entity.User;
+import com.tufixit.backend.repository.UserRepository;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +37,9 @@ public class JwtTokenProvider {
 
     private SecretKey key;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PostConstruct
     public void init() {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -46,13 +53,21 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .signWith(key);
+
+        // Add estate_id claim for ESTATE_MANAGER tokens
+        if ("ESTATE_MANAGER".equals(role)) {
+            userRepository.findByEmail(userDetails.getUsername())
+                    .filter(u -> u.getEstateId() != null)
+                    .ifPresent(u -> builder.claim("estate_id", u.getEstateId()));
+        }
+
+        return builder.compact();
     }
 
     public String generateTokenFromUsername(String username) {
@@ -72,13 +87,20 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .signWith(key);
+
+        if ("ESTATE_MANAGER".equals(role)) {
+            userRepository.findByEmail(username)
+                    .filter(u -> u.getEstateId() != null)
+                    .ifPresent(u -> builder.claim("estate_id", u.getEstateId()));
+        }
+
+        return builder.compact();
     }
 
     private String getRoleFromAuthorities(Collection<? extends GrantedAuthority> authorities) {
@@ -94,7 +116,7 @@ public class JwtTokenProvider {
     private long getExpirationForRole(String role) {
         return switch (role) {
             case "ADMIN" -> adminExpiration;
-            case "WORKER" -> workerExpiration;
+            case "WORKER", "ESTATE_MANAGER" -> workerExpiration;
             default -> jwtExpiration;
         };
     }

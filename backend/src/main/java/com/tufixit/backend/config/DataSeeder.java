@@ -24,6 +24,8 @@ public class DataSeeder implements CommandLineRunner {
     private final JobRepository jobRepository;
     private final ReviewRepository reviewRepository;
     private final LeadTrackingRepository leadTrackingRepository;
+    private final EstateRepository estateRepository;
+    private final EstateArtisanApprovalRepository estateArtisanApprovalRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -528,6 +530,138 @@ public class DataSeeder implements CommandLineRunner {
         }
         log.info("  → {} lead tracking records seeded", leadCount);
 
+        // ═══════════════════════════════════════════════════════════════════
+        //  11. ESTATES — B2B partner estates with approved artisans
+        // ═══════════════════════════════════════════════════════════════════
+        Estate fedha = estateRepository.save(Estate.builder()
+                .name("Fedha Estate")
+                .slug("fedha-estate")
+                .area("Embakasi, Nairobi")
+                .latitude(-1.3226).longitude(36.8946)
+                .unitCount(320)
+                .managerName("Alice Wanjiku")
+                .managerPhone("+254700100001")
+                .managerEmail("alice@fedha-estate.co.ke")
+                .monthlyFee(15000)
+                .contractStart(now.minusDays(90))
+                .contractEnd(now.plusDays(275))
+                .shortCode("FDH1")
+                .brandPrimaryColor("#1B5E20")
+                .brandLogoUrl(null)
+                .brandWelcomeMessage("Welcome to Fedha Estate maintenance services!")
+                .commissionRate(0.05)
+                .build());
+
+        Estate greenpark = estateRepository.save(Estate.builder()
+                .name("Greenpark Estate")
+                .slug("greenpark-estate")
+                .area("Athi River, Machakos")
+                .latitude(-1.4580).longitude(36.9820)
+                .unitCount(540)
+                .managerName("James Oloo")
+                .managerPhone("+254700100002")
+                .managerEmail("james@greenpark.co.ke")
+                .monthlyFee(20000)
+                .contractStart(now.minusDays(60))
+                .contractEnd(now.plusDays(305))
+                .shortCode("GPK1")
+                .brandPrimaryColor("#0D47A1")
+                .brandLogoUrl(null)
+                .brandWelcomeMessage("Greenpark Estate — Quality home maintenance at your doorstep")
+                .commissionRate(0.08)
+                .build());
+
+        Estate safari = estateRepository.save(Estate.builder()
+                .name("Safari Park Estate")
+                .slug("safari-park-estate")
+                .area("Kasarani, Nairobi")
+                .latitude(-1.2200).longitude(36.8900)
+                .unitCount(180)
+                .managerName("Martha Njeri")
+                .managerPhone("+254700100003")
+                .managerEmail("martha@safaripark.co.ke")
+                .monthlyFee(12000)
+                .contractStart(now.minusDays(30))
+                .contractEnd(now.plusDays(335))
+                .shortCode("SPK1")
+                .brandPrimaryColor("#E65100")
+                .brandLogoUrl(null)
+                .brandWelcomeMessage(null)
+                .commissionRate(0.06)
+                .build());
+
+        log.info("  → 3 estates seeded (Fedha, Greenpark, Safari Park)");
+
+        // ── Estate Artisan Approvals ─────────────────────────────────────────
+        // Fedha: 4 approved artisans (electrician, plumber, painter, carpenter)
+        for (int i : new int[]{0, 1, 2, 4}) {
+            estateArtisanApprovalRepository.save(EstateArtisanApproval.builder()
+                    .estate(fedha).artisan(workers.get(i))
+                    .approvedBy("Alice Wanjiku").note("Approved for Fedha Estate")
+                    .approvalStatus(EstateArtisanApproval.ApprovalStatus.APPROVED)
+                    .build());
+        }
+        // Fedha: 1 pending
+        estateArtisanApprovalRepository.save(EstateArtisanApproval.builder()
+                .estate(fedha).artisan(workers.get(5))
+                .approvedBy("Alice Wanjiku").note("Applied via referral")
+                .approvalStatus(EstateArtisanApproval.ApprovalStatus.PENDING)
+                .build());
+
+        // Greenpark: 5 approved artisans
+        for (int i : new int[]{0, 1, 3, 5, 6}) {
+            estateArtisanApprovalRepository.save(EstateArtisanApproval.builder()
+                    .estate(greenpark).artisan(workers.get(i))
+                    .approvedBy("James Oloo").note("Approved for Greenpark")
+                    .approvalStatus(EstateArtisanApproval.ApprovalStatus.APPROVED)
+                    .build());
+        }
+        // Greenpark: 2 pending
+        for (int i : new int[]{8, 9}) {
+            estateArtisanApprovalRepository.save(EstateArtisanApproval.builder()
+                    .estate(greenpark).artisan(workers.get(i))
+                    .approvedBy("James Oloo").note("Pending verification")
+                    .approvalStatus(EstateArtisanApproval.ApprovalStatus.PENDING)
+                    .build());
+        }
+
+        // Safari Park: 3 approved
+        for (int i : new int[]{2, 4, 7}) {
+            estateArtisanApprovalRepository.save(EstateArtisanApproval.builder()
+                    .estate(safari).artisan(workers.get(i))
+                    .approvedBy("Martha Njeri").note("Approved for Safari Park")
+                    .approvalStatus(EstateArtisanApproval.ApprovalStatus.APPROVED)
+                    .build());
+        }
+
+        log.info("  → Estate artisan approvals seeded (Fedha: 4+1, Greenpark: 5+2, Safari: 3)");
+
+        // ── Estate-tagged jobs (3 completed jobs for Fedha) ──────────────────
+        for (int i = 0; i < 3; i++) {
+            Object[] jd = completedJobs[i];
+            Job estateJob = jobRepository.save(Job.builder()
+                    .client((User) jd[0]).assignedWorker(workers.get(i))
+                    .title("Estate: " + jd[2])
+                    .description("Estate maintenance: " + jd[2])
+                    .skillType((WorkerSkill.SkillType) jd[3])
+                    .status(Job.JobStatus.COMPLETED)
+                    .agreedPrice((String) jd[4])
+                    .locationName("Fedha Estate, Embakasi")
+                    .latitude(-1.3226).longitude(36.8946)
+                    .address("Fedha Estate, Embakasi")
+                    .estateId(fedha.getId())
+                    .referralSource("estate:fedha-estate")
+                    .allowBidding(false).isUrgent(false)
+                    .bookingCode("TUF-E" + String.format("%05d", i))
+                    .startTime(now.minusDays(20 - i * 5))
+                    .completionTime(now.minusDays(19 - i * 5))
+                    .paymentRecorded(true)
+                    .paymentMethod(Job.PaymentMethod.MPESA)
+                    .paymentAmount(Integer.parseInt((String) jd[4]))
+                    .build());
+        }
+        log.info("  → 3 estate-tagged jobs seeded for Fedha");
+
         log.info("DataSeeder: ✅ seeding complete!");
         log.info("  Login credentials — all users: Password123!");
         log.info("  Admin: admin@tufixit.co.ke");
@@ -535,5 +669,7 @@ public class DataSeeder implements CommandLineRunner {
         log.info("  Sample PRO worker: samuel.mwangi@tufixit.co.ke");
         log.info("  Sample BASIC worker: patrick.mutua@tufixit.co.ke");
         log.info("  Sample FREE worker: john.kariuki@tufixit.co.ke");
+        log.info("  Estates: /estate/fedha-estate, /estate/greenpark-estate, /estate/safari-park-estate");
+        log.info("  WhatsApp short codes: FDH1, GPK1, SPK1");
     }
 }

@@ -192,6 +192,16 @@ public class Job {
     @Column(name = "estate_id")
     private Long estateId;
 
+    // ── GatePass ─────────────────────────────────────────────────────────────
+
+    /**
+     * 6-digit access code for estate gate security verification.
+     * Generated when a booking is confirmed for an estate-linked job.
+     * Sent to artisan + estate manager so the gate guard can verify.
+     */
+    @Column(name = "access_code", length = 6)
+    private String accessCode;
+
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Bid> bids = new ArrayList<>();

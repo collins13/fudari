@@ -28,11 +28,27 @@ public class SmsService {
     @Value("${africastalking.sender-id:TUFIXIT}")
     private String senderId;
 
+    @Value("${africastalking.environment:live}")
+    private String environment;
+
+    @jakarta.annotation.PostConstruct
+    void logConfig() {
+        String maskedKey = (apiKey != null && apiKey.length() > 8)
+                ? apiKey.substring(0, 8) + "…" : "(empty)";
+        log.info("[SMS] Config — env={}, username={}, apiKey={}, senderId={}",
+                environment, username, maskedKey,
+                (senderId == null || senderId.isBlank()) ? "(default)" : senderId);
+    }
+
     // ── Public send method ────────────────────────────────────────────────────
 
     public void send(String phone, String message) {
         if (phone == null || phone.isBlank()) return;
         String normalised = normalise(phone);
+        if (normalised == null) {
+            log.warn("[SMS] Skipping send — phone could not be normalised: {}", phone);
+            return;
+        }
         if (apiKey == null || apiKey.isBlank()) {
             log.info("[SMS-STUB] To: {} | {}", normalised, message);
             return;
@@ -107,11 +123,31 @@ public class SmsService {
             ". The booking has been declined.");
     }
 
+    public void notifyGatePass(String phone, String accessCode, String bookingCode, String location) {
+        send(phone,
+            "TUFIXIT GATEPASS: Access code " + accessCode + " for job " + bookingCode +
+            " at " + location + ". Show this code at the estate gate for entry.");
+    }
+
+    public void notifyArtisanOnboarded(String artisanPhone, String firstName,
+                                        String tempPassword, boolean autoApproved) {
+        String status = autoApproved
+                ? "Your account is APPROVED and live."
+                : "Your account is PENDING admin review.";
+        send(artisanPhone,
+            "TUFIXIT: Karibu " + firstName + "! " + status +
+            " Login at tufixit.com/login with phone " + artisanPhone +
+            " and temp password: " + tempPassword + ". Change it after login.");
+    }
+
     // ── Africa's Talking HTTP call ────────────────────────────────────────────
 
     private void sendViaat(String phone, String message) throws Exception {
-        // Africa's Talking REST API
-        java.net.URL url = new java.net.URL("https://api.africastalking.com/version1/messaging");
+        // Africa's Talking REST API — use sandbox URL for testing
+        String baseUrl = "sandbox".equalsIgnoreCase(environment)
+                ? "https://api.sandbox.africastalking.com/version1/messaging"
+                : "https://api.africastalking.com/version1/messaging";
+        java.net.URL url = new java.net.URL(baseUrl);
         java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
@@ -121,18 +157,40 @@ public class SmsService {
 
         String body = "username=" + java.net.URLEncoder.encode(username, "UTF-8") +
                       "&to=" + java.net.URLEncoder.encode(phone, "UTF-8") +
-                      "&message=" + java.net.URLEncoder.encode(message, "UTF-8") +
-                      "&from=" + java.net.URLEncoder.encode(senderId, "UTF-8");
+                      "&message=" + java.net.URLEncoder.encode(message, "UTF-8");
+
+        // Only include sender ID if it is explicitly configured (approved IDs only)
+        if (senderId != null && !senderId.isBlank()) {
+            body += "&from=" + java.net.URLEncoder.encode(senderId, "UTF-8");
+        }
 
         try (java.io.OutputStream os = conn.getOutputStream()) {
             os.write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
 
         int responseCode = conn.getResponseCode();
+        String responseBody = readStream(
+                responseCode >= 200 && responseCode < 300
+                        ? conn.getInputStream()
+                        : conn.getErrorStream());
+
         if (responseCode == 201 || responseCode == 200) {
-            log.info("[SMS] Sent to {}", phone);
+            log.info("[SMS] Sent to {} — AT response: {}", phone, responseBody);
         } else {
-            log.warn("[SMS] AT returned HTTP {} for {}", responseCode, phone);
+            log.warn("[SMS] AT returned HTTP {} for {} — response: {}", responseCode, phone, responseBody);
+        }
+    }
+
+    /** Read an input stream fully into a String, returning "" on null/error. */
+    private static String readStream(java.io.InputStream is) {
+        if (is == null) return "";
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
         }
     }
 

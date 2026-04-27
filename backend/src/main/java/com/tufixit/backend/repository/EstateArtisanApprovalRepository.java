@@ -27,4 +27,16 @@ public interface EstateArtisanApprovalRepository extends JpaRepository<EstateArt
     /** Get all artisan IDs approved for a given estate — used by RankingService. */
     @Query("SELECT ea.artisan.id FROM EstateArtisanApproval ea WHERE ea.estate.id = :estateId")
     List<Long> findArtisanIdsByEstateId(Long estateId);
+
+    // ── Status-aware queries ─────────────────────────────────────────────────
+
+    /** Approved artisans for the priority-tier matcher. */
+    @Query("SELECT ea.artisan.id FROM EstateArtisanApproval ea WHERE ea.estate.id = :estateId AND ea.approvalStatus = 'APPROVED'")
+    List<Long> findApprovedArtisanIdsByEstateId(Long estateId);
+
+    /** Pending approval queue for estate manager dashboard. */
+    List<EstateArtisanApproval> findByEstateIdAndApprovalStatus(
+            Long estateId, EstateArtisanApproval.ApprovalStatus approvalStatus);
+
+    long countByEstateIdAndApprovalStatus(Long estateId, EstateArtisanApproval.ApprovalStatus approvalStatus);
 }

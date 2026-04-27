@@ -11,8 +11,8 @@ import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.PublicReviewRepository;
 import com.tufixit.backend.repository.SubscriptionRepository;
 import com.tufixit.backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class BookingService {
 
@@ -41,6 +40,21 @@ public class BookingService {
     private final PublicReviewRepository publicReviewRepository;
     private final EstateRepository estateRepository;
     private final SmsService smsService;
+    private final WhatsAppBotService whatsAppBotService;
+
+    public BookingService(JobRepository jobRepository, UserRepository userRepository,
+                          SubscriptionRepository subscriptionRepository,
+                          PublicReviewRepository publicReviewRepository,
+                          EstateRepository estateRepository, SmsService smsService,
+                          @Lazy WhatsAppBotService whatsAppBotService) {
+        this.jobRepository = jobRepository;
+        this.userRepository = userRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.publicReviewRepository = publicReviewRepository;
+        this.estateRepository = estateRepository;
+        this.smsService = smsService;
+        this.whatsAppBotService = whatsAppBotService;
+    }
 
     // ── Customer: Create booking (no login) ──────────────────────────────────
 
@@ -117,13 +131,37 @@ public class BookingService {
                         job.setReferralSource("estate:" + estate.getSlug());
                     });
         }
+        // Allow explicit referral source override (e.g. "whatsapp")
+        if (job.getReferralSource() == null && req.getReferralSource() != null && !req.getReferralSource().isBlank()) {
+            job.setReferralSource(req.getReferralSource());
+        }
         if (job.getReferralSource() == null) {
             job.setReferralSource("web");
         }
 
         Job savedJob = jobRepository.save(job);
 
-        // 6. SMS artisan about new request
+        // 6a. GatePass: generate 6-digit access code for estate bookings
+        if (savedJob.getEstateId() != null) {
+            String accessCode = generateAccessCode();
+            savedJob.setAccessCode(accessCode);
+            savedJob = jobRepository.save(savedJob);
+            log.info("[BOOKING] GatePass {} generated for estate job {}", accessCode, savedJob.getBookingCode());
+
+            // Notify artisan with access code
+            smsService.notifyGatePass(artisan.getPhoneNumber(), accessCode, bookingCode,
+                    savedJob.getCustomerLocation());
+
+            // Notify estate manager
+            estateRepository.findById(savedJob.getEstateId()).ifPresent(estate -> {
+                if (estate.getManagerPhone() != null) {
+                    smsService.notifyGatePass(estate.getManagerPhone(), accessCode, bookingCode,
+                            estate.getName());
+                }
+            });
+        }
+
+        // 7. SMS artisan about new request
         smsService.notifyArtisanNewBooking(artisan.getPhoneNumber(),
                 req.getCustomerName(), bookingCode);
 
@@ -283,6 +321,12 @@ public class BookingService {
 
         smsService.notifyCustomerAccepted(job.getCustomerPhone(),
                 artisan.getFirstName() + " " + artisan.getLastName(), job.getBookingCode());
+        notifyViaWhatsApp(job.getCustomerPhone(),
+                "\u2705 *Job Accepted!*\n\n" +
+                "\ud83d\udc77 " + artisan.getFirstName() + " " + artisan.getLastName() +
+                " has accepted your booking *" + job.getBookingCode() + "*\n" +
+                "\ud83d\udcb0 Agreed price: KES " + req.getPrice() + "\n\n" +
+                "Track: tufixit.com/track/" + job.getBookingCode());
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job accepted successfully.").build();
@@ -306,6 +350,11 @@ public class BookingService {
 
         smsService.notifyCustomerDeclined(job.getCustomerPhone(),
                 job.getBookingCode(), req.getReason());
+        notifyViaWhatsApp(job.getCustomerPhone(),
+                "\u274c *Job Declined*\n\n" +
+                "Booking *" + job.getBookingCode() + "* was declined.\n" +
+                (req.getReason() != null ? "Reason: " + req.getReason() + "\n\n" : "\n") +
+                "Type *Hi* to find another artisan, or visit tufixit.com/artisans");
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job declined.").build();
@@ -417,6 +466,11 @@ public class BookingService {
         // Send START PIN to customer
         smsService.notifyCustomerArtisanArrived(job.getCustomerPhone(),
                 job.getStartPin(), job.getBookingCode());
+        notifyViaWhatsApp(job.getCustomerPhone(),
+                "\ud83d\udea8 *Artisan Has Arrived!*\n\n" +
+                "Booking: *" + job.getBookingCode() + "*\n" +
+                "\ud83d\udd10 Your START PIN: *" + job.getStartPin() + "*\n\n" +
+                "_Share this PIN with the artisan to begin the job._");
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Arrival recorded. START PIN sent to customer.").build();
@@ -483,6 +537,11 @@ public class BookingService {
 
         smsService.notifyCustomerJobCompleted(job.getCustomerPhone(),
                 artisan.getFirstName() + " " + artisan.getLastName(), job.getBookingCode());
+        notifyViaWhatsApp(job.getCustomerPhone(),
+                "\ud83c\udf89 *Job Completed!*\n\n" +
+                "Booking *" + job.getBookingCode() + "* is done.\n\n" +
+                "\u2b50 Please rate your experience: tufixit.com/track/" + job.getBookingCode() + "\n\n" +
+                "Thank you for using TuFixIt!");
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job completed and payment recorded successfully.").build();
@@ -594,6 +653,12 @@ public class BookingService {
     private String generatePin() {
         int pin = SECURE_RANDOM.nextInt(10000);
         return String.format("%04d", pin);
+    }
+
+    /** Generate a 6-digit GatePass access code for estate bookings. */
+    private String generateAccessCode() {
+        int code = 100000 + SECURE_RANDOM.nextInt(900000);
+        return String.valueOf(code);
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
@@ -795,5 +860,13 @@ public class BookingService {
 
     private Integer parseIntSafe(String s) {
         try { return Integer.parseInt(s); } catch (Exception e) { return null; }
+    }
+
+    private void notifyViaWhatsApp(String customerPhone, String message) {
+        try {
+            whatsAppBotService.notifyCustomerViaWhatsApp(customerPhone, message);
+        } catch (Exception e) {
+            log.warn("WhatsApp notification failed for {}: {}", customerPhone, e.getMessage());
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.tufixit.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -17,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,10 +50,15 @@ public class User {
     @Column(nullable = false)
     private VettingLevel vettingLevel = VettingLevel.STANDARD;
 
-    @Column
+    @Column(unique = true)
     private String nationalId;
 
-    @Column
+    /** Base64-encoded national ID document image (admin/self access only). */
+    @Column(name = "id_document_image", columnDefinition = "TEXT")
+    private String idDocumentImage;
+
+    /** Base64-encoded Certificate of Good Conduct image (admin/self access only). */
+    @Column(name = "certificate_of_good_conduct", columnDefinition = "TEXT")
     private String certificateOfGoodConduct;
 
     @Column
@@ -89,6 +96,27 @@ public class User {
     @Column
     private Boolean isApproved = false;
 
+    /** Onboarding lifecycle state. Mirrors isApproved + adds REJECTED. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false)
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
+
+    /** Timestamp when the artisan was approved by an admin. */
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    /** Admin user ID that approved (or last actioned) this artisan. */
+    @Column(name = "approved_by_admin_id")
+    private Long approvedByAdminId;
+
+    /** Reason supplied if the artisan was rejected during onboarding. */
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    /** Admin user ID that created this account (admin-assisted onboarding). Null for self-signup. */
+    @Column(name = "created_by_admin_id")
+    private Long createdByAdminId;
+
     @Column
     private String mpesaAccountNumber;
 
@@ -120,8 +148,12 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    /** FK — the estate this user manages (only when role = ESTATE_MANAGER). */
+    @Column(name = "estate_id")
+    private Long estateId;
+
     public enum UserRole {
-        CLIENT, WORKER, ADMIN
+        CLIENT, WORKER, ADMIN, ESTATE_MANAGER
     }
 
     public enum VettingLevel {
@@ -130,5 +162,9 @@ public class User {
 
     public enum AccountStatus {
         ACTIVE, SUSPENDED, LOCKED, DISABLED, SOFT_DELETED
+    }
+
+    public enum ApprovalStatus {
+        PENDING, APPROVED, REJECTED
     }
 }

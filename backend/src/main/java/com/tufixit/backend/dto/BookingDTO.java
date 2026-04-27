@@ -51,6 +51,9 @@ public class BookingDTO {
          * e.g. "greenpark-athi-river". Used for attribution and estate analytics.
          */
         private String estateSlug;
+
+        /** Referral source — e.g. "whatsapp", "web". Overrides the default "web" attribution. */
+        private String referralSource;
     }
 
     // ── Customer: Track Booking ───────────────────────────────────────────────

@@ -55,7 +55,23 @@ public class EstateArtisanApproval {
     @Column(length = 255)
     private String note;
 
+    /** Approval workflow status — new artisans go through PENDING verification first. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false, length = 20)
+    @Builder.Default
+    private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
+
+    /** Reason for rejection (set when status = REJECTED). */
+    @Column(name = "rejection_reason", length = 300)
+    private String rejectionReason;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public enum ApprovalStatus {
+        PENDING,
+        APPROVED,
+        REJECTED
+    }
 }

@@ -14,6 +14,7 @@ com/tufixit/backend/controller/CategoryController.class
 com/tufixit/backend/dto/SubscriptionDTO$InitiatePaymentRequest$InitiatePaymentRequestBuilder.class
 com/tufixit/backend/dto/PaymentDTO$InitiatePaymentRequest$InitiatePaymentRequestBuilder.class
 com/tufixit/backend/controller/JobController.class
+com/tufixit/backend/service/GeocodingService.class
 com/tufixit/backend/dto/BookingDTO$ArriveRequest.class
 com/tufixit/backend/entity/Report$ReportBuilder.class
 com/tufixit/backend/dto/AiDTO$TrustBreakdown$TrustBreakdownBuilder.class
@@ -37,14 +38,18 @@ com/tufixit/backend/dto/JobDTO.class
 com/tufixit/backend/dto/SubscriptionDTO$PlanInfo$PlanInfoBuilder.class
 com/tufixit/backend/dto/AuthDTO$AdminCreateUserRequest$AdminCreateUserRequestBuilder.class
 com/tufixit/backend/dto/MessageDTO$ConversationSummary.class
+com/tufixit/backend/service/whatsapp/InboundMessage$InboundMessageBuilder.class
 com/tufixit/backend/dto/AiDTO$JobScopingResponse$JobScopingResponseBuilder.class
 com/tufixit/backend/entity/AdminAuditLog.class
 com/tufixit/backend/dto/AiDTO.class
 com/tufixit/backend/entity/Job$JobBuilder.class
 com/tufixit/backend/dto/BookingDTO$ArriveRequest$ArriveRequestBuilder.class
 com/tufixit/backend/dto/CategoryDTO$CategoryResponse$CategoryResponseBuilder.class
+com/tufixit/backend/service/whatsapp/TwilioWhatsAppProvider.class
+com/tufixit/backend/service/whatsapp/MetaWhatsAppProvider.class
 com/tufixit/backend/repository/EscrowTransactionRepository.class
 com/tufixit/backend/dto/MessageDTO$MessageResponse.class
+com/tufixit/backend/service/whatsapp/WhatsAppProviderManager.class
 com/tufixit/backend/dto/ReportDTO$CreateReportRequest.class
 com/tufixit/backend/dto/BookingDTO$ArtisanJobDetail.class
 com/tufixit/backend/dto/BookingDTO$PaymentRecord.class
@@ -104,9 +109,9 @@ com/tufixit/backend/controller/ListingController.class
 com/tufixit/backend/dto/BookingDTO$AdminJobView.class
 com/tufixit/backend/repository/EstateArtisanApprovalRepository.class
 com/tufixit/backend/entity/AdminAuditLog$AdminAuditLogBuilder.class
-com/tufixit/backend/dto/WhatsAppDTO.class
 com/tufixit/backend/dto/AiDTO$PriceBreakdown.class
 com/tufixit/backend/dto/AiDTO$DemandInsight.class
+com/tufixit/backend/dto/WhatsAppDTO.class
 com/tufixit/backend/dto/BookingDTO$RateBookingRequest.class
 com/tufixit/backend/entity/Subscription$SubscriptionBuilder.class
 com/tufixit/backend/dto/AuthDTO$AdminCreateUserRequest.class
@@ -124,6 +129,7 @@ com/tufixit/backend/entity/User$VettingLevel.class
 com/tufixit/backend/dto/SubscriptionDTO$VerifyPaymentRequest$VerifyPaymentRequestBuilder.class
 com/tufixit/backend/dto/CategoryDTO$UpdateCategoryRequest$UpdateCategoryRequestBuilder.class
 com/tufixit/backend/controller/SubscriptionController.class
+com/tufixit/backend/controller/TwilioWhatsAppWebhookController.class
 com/tufixit/backend/dto/EstateDTO$EstateAnalytics.class
 com/tufixit/backend/service/MpesaDarajaService$StkQueryResult.class
 com/tufixit/backend/security/CustomUserDetailsService.class
@@ -134,8 +140,8 @@ com/tufixit/backend/dto/AiDTO$PriceEstimateRequest.class
 com/tufixit/backend/entity/LeadTracking.class
 com/tufixit/backend/controller/BookingController.class
 com/tufixit/backend/dto/PaymentDTO.class
-com/tufixit/backend/dto/WhatsAppDTO$InteractiveBody.class
 com/tufixit/backend/dto/AiDTO$TrustScoreResponse$TrustScoreResponseBuilder.class
+com/tufixit/backend/dto/WhatsAppDTO$InteractiveBody.class
 com/tufixit/backend/controller/PublicReviewController.class
 com/tufixit/backend/service/QualityVerificationService.class
 com/tufixit/backend/dto/BookingDTO$ArtisanJobSummary$ArtisanJobSummaryBuilder.class
@@ -145,6 +151,7 @@ com/tufixit/backend/dto/AuthDTO$UserDTO$UserDTOBuilder.class
 com/tufixit/backend/dto/SubscriptionDTO$CreateSubscriptionRequest.class
 com/tufixit/backend/entity/LeadTracking$LeadType.class
 com/tufixit/backend/dto/EstateDTO$ApproveArtisanRequest$ApproveArtisanRequestBuilder.class
+com/tufixit/backend/service/whatsapp/DeliveryStatus$DeliveryStatusBuilder.class
 com/tufixit/backend/dto/WhatsAppDTO$OutboundMessage.class
 com/tufixit/backend/dto/PaymentDTO$MpesaCallbackRequest.class
 com/tufixit/backend/entity/Report$AdminAction.class
@@ -172,8 +179,9 @@ com/tufixit/backend/dto/CategoryDTO$CreateCategoryRequest.class
 com/tufixit/backend/dto/CategoryDTO$CategoryResponse.class
 com/tufixit/backend/controller/LeadTrackingController.class
 com/tufixit/backend/entity/WorkerSkill.class
-com/tufixit/backend/service/PaymentService.class
 com/tufixit/backend/service/WorkerService.class
+com/tufixit/backend/service/PaymentService.class
+com/tufixit/backend/service/whatsapp/DeliveryStatus$Status.class
 com/tufixit/backend/dto/ListingDTO$CreateListingRequest$CreateListingRequestBuilder.class
 com/tufixit/backend/dto/WhatsAppDTO$OutboundTemplate.class
 com/tufixit/backend/dto/MessageDTO$SendMessageRequest.class
@@ -191,8 +199,8 @@ com/tufixit/backend/dto/EstateDTO$EstateAnalytics$EstateAnalyticsBuilder.class
 com/tufixit/backend/entity/Bid$BidBuilder.class
 com/tufixit/backend/dto/SubscriptionDTO$CreateSubscriptionRequest$CreateSubscriptionRequestBuilder.class
 com/tufixit/backend/dto/AiDTO$QualityVerifyResponse.class
-com/tufixit/backend/dto/WhatsAppDTO$Contact.class
 com/tufixit/backend/dto/AiDTO$TrustBreakdown.class
+com/tufixit/backend/dto/WhatsAppDTO$Contact.class
 com/tufixit/backend/repository/ListingRepository.class
 com/tufixit/backend/dto/AiDTO$QualityVerifyRequest.class
 com/tufixit/backend/dto/JobDTO$ReviewRequest.class
@@ -234,13 +242,14 @@ com/tufixit/backend/config/DataSeeder$1.class
 com/tufixit/backend/dto/PublicReviewDTO.class
 com/tufixit/backend/dto/BookingDTO$ResolveDisputeRequest.class
 com/tufixit/backend/dto/AuthDTO$RegisterRequest.class
+com/tufixit/backend/entity/EstateArtisanApproval$ApprovalStatus.class
 com/tufixit/backend/dto/WhatsAppDTO$Interactive.class
 com/tufixit/backend/entity/Review$ReviewBuilder.class
 com/tufixit/backend/dto/PaymentDTO$ReleaseLaborRequest$ReleaseLaborRequestBuilder.class
 com/tufixit/backend/service/CategoryService.class
 com/tufixit/backend/entity/Category$CategoryBuilder.class
-com/tufixit/backend/dto/ReportDTO$AdminActionRequest$AdminActionRequestBuilder.class
 com/tufixit/backend/dto/AiDTO$PricingAdvice.class
+com/tufixit/backend/dto/ReportDTO$AdminActionRequest$AdminActionRequestBuilder.class
 com/tufixit/backend/dto/WhatsAppDTO$TemplateLanguage.class
 com/tufixit/backend/dto/BookingDTO$DeclineJobRequest.class
 com/tufixit/backend/dto/MessageDTO.class
@@ -261,6 +270,7 @@ com/tufixit/backend/config/GlobalExceptionHandler.class
 com/tufixit/backend/dto/CategoryDTO$UpdateCategoryRequest.class
 com/tufixit/backend/entity/EstateArtisanApproval.class
 com/tufixit/backend/dto/BookingDTO$ReportIssueRequest.class
+com/tufixit/backend/service/whatsapp/InboundMessage.class
 com/tufixit/backend/dto/BookingDTO$CreateBookingRequest.class
 com/tufixit/backend/service/EstateService.class
 com/tufixit/backend/service/PublicReviewService.class
@@ -268,6 +278,7 @@ com/tufixit/backend/service/SmartPricingService.class
 com/tufixit/backend/dto/AiDTO$ScopingMessage.class
 com/tufixit/backend/dto/BookingDTO$BookingTrackResponse$BookingTrackResponseBuilder.class
 com/tufixit/backend/dto/ReportDTO$ReportResponse.class
+com/tufixit/backend/dto/EstateDTO$ApprovalDecisionRequest$ApprovalDecisionRequestBuilder.class
 com/tufixit/backend/dto/AiDTO$ScopingMessage$ScopingMessageBuilder.class
 com/tufixit/backend/service/LeadTrackingService.class
 com/tufixit/backend/dto/BookingDTO$CounterOfferRequest$CounterOfferRequestBuilder.class
@@ -310,7 +321,9 @@ com/tufixit/backend/dto/CategoryDTO.class
 com/tufixit/backend/dto/JobDTO$CreateJobRequest$CreateJobRequestBuilder.class
 com/tufixit/backend/dto/BookingDTO$CreateBookingRequest$CreateBookingRequestBuilder.class
 com/tufixit/backend/entity/WorkerSkill$WorkerSkillBuilder.class
+com/tufixit/backend/dto/EstateDTO$ApprovalDecisionRequest.class
 com/tufixit/backend/dto/WhatsAppDTO$Change.class
+com/tufixit/backend/service/whatsapp/WhatsAppProvider.class
 com/tufixit/backend/dto/AiDTO$DemandTrend.class
 com/tufixit/backend/controller/ArtisanJobController.class
 com/tufixit/backend/dto/WhatsAppDTO$Profile.class
@@ -339,6 +352,7 @@ com/tufixit/backend/service/RankingService$1.class
 com/tufixit/backend/dto/WhatsAppDTO$TextBody.class
 com/tufixit/backend/dto/ListingDTO$UpdateListingRequest$UpdateListingRequestBuilder.class
 com/tufixit/backend/dto/ListingDTO$ListingResponse$ListingResponseBuilder.class
+com/tufixit/backend/service/whatsapp/DeliveryStatus.class
 com/tufixit/backend/dto/BookingDTO$ArtisanJobDetail$ArtisanJobDetailBuilder.class
 com/tufixit/backend/entity/AdminAuditLog$AuditAction.class
 com/tufixit/backend/dto/WhatsAppDTO$InteractiveAction.class

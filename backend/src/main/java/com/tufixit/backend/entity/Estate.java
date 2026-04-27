@@ -24,7 +24,8 @@ import java.time.LocalDateTime;
     name = "estates",
     indexes = {
         @Index(name = "idx_estate_slug", columnList = "slug", unique = true),
-        @Index(name = "idx_estate_active", columnList = "is_active")
+        @Index(name = "idx_estate_active", columnList = "is_active"),
+        @Index(name = "idx_estate_short_code", columnList = "short_code", unique = true)
     }
 )
 @EntityListeners(AuditingEntityListener.class)
@@ -88,6 +89,37 @@ public class Estate {
 
     @Column(name = "contract_end")
     private LocalDateTime contractEnd;
+
+    // ── Branding (multi-tenant) ──────────────────────────────────────────────
+
+    /** Primary brand colour hex, e.g. "#2563EB". Used by the frontend TenantContext. */
+    @Column(name = "brand_primary_color", length = 10)
+    private String brandPrimaryColor;
+
+    /** URL to the estate's logo image (optional). */
+    @Column(name = "brand_logo_url", length = 500)
+    private String brandLogoUrl;
+
+    /** Welcome message shown on the branded booking page. */
+    @Column(name = "brand_welcome_message", length = 300)
+    private String brandWelcomeMessage;
+
+    // ── WhatsApp short code ──────────────────────────────────────────────────
+
+    /**
+     * Unique 4-digit short code for WhatsApp referral.
+     * Customers text "START_ESTATE_{code}" to the bot to begin a booking
+     * tagged with this estate.
+     */
+    @Column(name = "short_code", unique = true, length = 4)
+    private String shortCode;
+
+    // ── Commission ───────────────────────────────────────────────────────────
+
+    /** Estate commission percentage on completed job values (e.g. 10.0 = 10%). */
+    @Column(name = "commission_rate")
+    @Builder.Default
+    private Double commissionRate = 0.0;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

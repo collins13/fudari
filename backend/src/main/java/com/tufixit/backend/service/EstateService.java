@@ -1,5 +1,6 @@
 package com.tufixit.backend.service;
 
+import com.tufixit.backend.dto.AuthDTO;
 import com.tufixit.backend.dto.EstateDTO;
 import com.tufixit.backend.entity.Estate;
 import com.tufixit.backend.entity.EstateArtisanApproval;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,6 +29,9 @@ public class EstateService {
     private final EstateArtisanApprovalRepository approvalRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final WorkerService workerService;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     // ── Estate CRUD ──────────────────────────────────────────────────────────
 
@@ -37,6 +42,8 @@ public class EstateService {
         if (estateRepository.findBySlug(slug).isPresent()) {
             throw new IllegalArgumentException("An estate with a similar name already exists (slug: " + slug + ")");
         }
+
+        String shortCode = generateUniqueShortCode();
 
         Estate estate = Estate.builder()
                 .name(req.getName())
@@ -51,6 +58,11 @@ public class EstateService {
                 .monthlyFee(req.getMonthlyFee())
                 .contractStart(req.getContractStart())
                 .contractEnd(req.getContractEnd())
+                .shortCode(shortCode)
+                .brandPrimaryColor(req.getBrandPrimaryColor())
+                .brandLogoUrl(req.getBrandLogoUrl())
+                .brandWelcomeMessage(req.getBrandWelcomeMessage())
+                .commissionRate(req.getCommissionRate() != null ? req.getCommissionRate() : 0.0)
                 .build();
 
         estate = estateRepository.save(estate);
@@ -91,6 +103,10 @@ public class EstateService {
         if (req.getMonthlyFee() != null) estate.setMonthlyFee(req.getMonthlyFee());
         if (req.getContractStart() != null) estate.setContractStart(req.getContractStart());
         if (req.getContractEnd() != null) estate.setContractEnd(req.getContractEnd());
+        if (req.getBrandPrimaryColor() != null) estate.setBrandPrimaryColor(req.getBrandPrimaryColor());
+        if (req.getBrandLogoUrl() != null) estate.setBrandLogoUrl(req.getBrandLogoUrl());
+        if (req.getBrandWelcomeMessage() != null) estate.setBrandWelcomeMessage(req.getBrandWelcomeMessage());
+        if (req.getCommissionRate() != null) estate.setCommissionRate(req.getCommissionRate());
 
         estate = estateRepository.save(estate);
         return toResponse(estate);
@@ -128,6 +144,7 @@ public class EstateService {
                 .artisan(artisan)
                 .approvedBy(estate.getManagerName())
                 .note(req.getNote())
+                .approvalStatus(EstateArtisanApproval.ApprovalStatus.PENDING)
                 .build();
 
         approval = approvalRepository.save(approval);
@@ -146,6 +163,57 @@ public class EstateService {
     public void removeArtisanApproval(Long estateId, Long artisanId) {
         approvalRepository.deleteByEstateIdAndArtisanId(estateId, artisanId);
         log.info("[ESTATE] Removed artisan {} approval from estate {}", artisanId, estateId);
+    }
+
+    @Transactional
+    public EstateDTO.ApprovedArtisanResponse decideApproval(Long estateId, Long approvalId,
+                                                            EstateDTO.ApprovalDecisionRequest req) {
+        EstateArtisanApproval approval = approvalRepository.findById(approvalId)
+                .orElseThrow(() -> new IllegalArgumentException("Approval not found"));
+        if (!approval.getEstate().getId().equals(estateId)) {
+            throw new IllegalArgumentException("Approval does not belong to this estate");
+        }
+
+        EstateArtisanApproval.ApprovalStatus decision;
+        try {
+            decision = EstateArtisanApproval.ApprovalStatus.valueOf(req.getDecision().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid decision. Use APPROVED or REJECTED");
+        }
+
+        approval.setApprovalStatus(decision);
+        if (decision == EstateArtisanApproval.ApprovalStatus.REJECTED && req.getRejectionReason() != null) {
+            approval.setRejectionReason(req.getRejectionReason());
+        }
+        approval = approvalRepository.save(approval);
+        log.info("[ESTATE] Approval {} for estate {} set to {}", approvalId, estateId, decision);
+        return toApprovalResponse(approval, approval.getArtisan());
+    }
+
+    public List<EstateDTO.ApprovedArtisanResponse> listPendingApprovals(Long estateId) {
+        return approvalRepository.findByEstateIdAndApprovalStatus(
+                estateId, EstateArtisanApproval.ApprovalStatus.PENDING).stream()
+                .map(a -> toApprovalResponse(a, a.getArtisan()))
+                .collect(Collectors.toList());
+    }
+
+    public EstateDTO.EstateResponse resolveByShortCode(String shortCode) {
+        Estate estate = estateRepository.findByShortCodeAndIsActive(shortCode, true)
+                .orElseThrow(() -> new IllegalArgumentException("Estate not found for code: " + shortCode));
+        return toResponse(estate);
+    }
+
+    /**
+     * Public: Get full worker profiles for APPROVED artisans attached to an estate (by slug).
+     * Used on the estate booking page to show only approved artisans.
+     */
+    public List<AuthDTO.UserDTO> getApprovedArtisanProfiles(String slug) {
+        Estate estate = estateRepository.findBySlugAndIsActive(slug, true)
+                .orElseThrow(() -> new IllegalArgumentException("Estate not found: " + slug));
+        List<Long> artisanIds = approvalRepository.findApprovedArtisanIdsByEstateId(estate.getId());
+        if (artisanIds.isEmpty()) return List.of();
+        List<User> artisans = userRepository.findAllById(artisanIds);
+        return workerService.mapUsersToDTOs(artisans);
     }
 
     /**
@@ -201,6 +269,12 @@ public class EstateService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
+        // Service health
+        long activeJobs = jobRepository.findActiveJobsByEstateId(estateId).size();
+        Long totalJobValue = jobRepository.sumAgreedPriceByEstateId(estateId);
+        long totalValue = totalJobValue != null ? totalJobValue : 0L;
+        double commissionRate = estate.getCommissionRate() != null ? estate.getCommissionRate() : 0.0;
+
         return EstateDTO.EstateAnalytics.builder()
                 .estateId(estateId)
                 .estateName(estate.getName())
@@ -210,6 +284,9 @@ public class EstateService {
                 .cancelledBookings(cancelled)
                 .avgRating(avgRating)
                 .approvedArtisans((int) approvedArtisans)
+                .activeJobs(activeJobs)
+                .totalJobValue(totalValue)
+                .estateCommission(totalValue * commissionRate)
                 .topArtisans(topArtisans)
                 .build();
     }
@@ -230,10 +307,17 @@ public class EstateService {
                 .managerEmail(estate.getManagerEmail())
                 .monthlyFee(estate.getMonthlyFee())
                 .isActive(estate.getIsActive())
-                .bookingUrl("https://tufixit.com/book?estate=" + estate.getSlug())
+                .bookingUrl("/estate/" + estate.getSlug())
                 .contractStart(estate.getContractStart())
                 .contractEnd(estate.getContractEnd())
                 .createdAt(estate.getCreatedAt())
+                .brandPrimaryColor(estate.getBrandPrimaryColor())
+                .brandLogoUrl(estate.getBrandLogoUrl())
+                .brandWelcomeMessage(estate.getBrandWelcomeMessage())
+                .shortCode(estate.getShortCode())
+                .whatsappStartCommand(estate.getShortCode() != null
+                        ? "START_ESTATE_" + estate.getShortCode() : null)
+                .commissionRate(estate.getCommissionRate())
                 .build();
     }
 
@@ -248,6 +332,8 @@ public class EstateService {
                 .skillType(skillLabel)
                 .rating(artisan.getTrustScore())
                 .note(a.getNote())
+                .approvalStatus(a.getApprovalStatus() != null ? a.getApprovalStatus().name() : "PENDING")
+                .rejectionReason(a.getRejectionReason())
                 .approvedAt(a.getCreatedAt())
                 .build();
     }
@@ -259,5 +345,17 @@ public class EstateService {
         return normalized.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-|-$", "");
+    }
+
+    /** Generate a unique 4-digit alphanumeric short code. */
+    private String generateUniqueShortCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I confusion
+        for (int attempt = 0; attempt < 100; attempt++) {
+            StringBuilder sb = new StringBuilder(4);
+            for (int i = 0; i < 4; i++) sb.append(chars.charAt(RANDOM.nextInt(chars.length())));
+            String code = sb.toString();
+            if (!estateRepository.existsByShortCode(code)) return code;
+        }
+        throw new IllegalStateException("Failed to generate unique short code after 100 attempts");
     }
 }

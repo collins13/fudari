@@ -1,6 +1,7 @@
 package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.AuthDTO;
+import com.tufixit.backend.entity.AdminAuditLog;
 import com.tufixit.backend.entity.Subscription;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
@@ -37,6 +38,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final SmsService smsService;
+    private final AuditService auditService;
+    private final EmailService emailService;
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
@@ -70,6 +73,8 @@ public class AuthService {
                 .isVerified(false)
                 // Clients and admins are auto-approved; workers require admin approval
                 .isApproved(assignedRole != User.UserRole.WORKER)
+                .approvalStatus(assignedRole == User.UserRole.WORKER
+                        ? User.ApprovalStatus.PENDING : User.ApprovalStatus.APPROVED)
                 .referralCode(generateReferralCode())
                 .build();
 
@@ -198,6 +203,8 @@ public class AuthService {
                     .isVerified(s.getIsVerified())
                     .build()).collect(java.util.stream.Collectors.toList());
         }
+        // Sensitive vetting docs are only returned to ADMIN callers or the user themselves.
+        boolean canSeeDocs = canSeeSensitiveDocs(user);
         return AuthDTO.UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -217,13 +224,36 @@ public class AuthService {
                 .isActive(user.getIsActive())
                 .accountStatus(user.getAccountStatus() != null ? user.getAccountStatus().name() : "ACTIVE")
                 .isApproved(user.getIsApproved())
-                .nationalId(user.getNationalId())
-                .certificateOfGoodConduct(user.getCertificateOfGoodConduct())
-                .tvetCertification(user.getTvetCertification())
+                .approvalStatus(user.getApprovalStatus() != null ? user.getApprovalStatus().name() : null)
+                .approvedAt(user.getApprovedAt() != null ? user.getApprovedAt().toString() : null)
+                .approvedByAdminId(user.getApprovedByAdminId())
+                .rejectionReason(user.getRejectionReason())
+                .createdByAdminId(user.getCreatedByAdminId())
+                .nationalId(canSeeDocs ? user.getNationalId() : null)
+                .idDocumentImage(canSeeDocs ? user.getIdDocumentImage() : null)
+                .certificateOfGoodConduct(canSeeDocs ? user.getCertificateOfGoodConduct() : null)
+                .tvetCertification(canSeeDocs ? user.getTvetCertification() : null)
                 .skills(skillInfos)
                 .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null)
                 .referralCode(user.getReferralCode())
                 .build();
+    }
+
+    /** Vetting docs visible only to admins or the user themselves. */
+    private boolean canSeeSensitiveDocs(User target) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) return false;
+            for (var authority : authentication.getAuthorities()) {
+                if ("ROLE_ADMIN".equals(authority.getAuthority())) return true;
+            }
+            String principal = authentication.getName();
+            if (principal == null) return false;
+            if (principal.equals(target.getEmail()) || principal.equals(target.getPhoneNumber())) {
+                return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 
     @Transactional
@@ -516,5 +546,224 @@ public class AuthService {
                 "referralCount", referralCount,
                 "rewardDescription", "Invite a pro — get 1 month free BASIC plan"
         );
+    }
+
+    // ── Admin-assisted onboarding ────────────────────────────────────────────
+
+    /**
+     * Admin-assisted artisan/user onboarding. Reuses the same validation rules
+     * as self-registration (uniqueness on phone/email, password strength via
+     * bean validation on the DTO), and additionally enforces National ID
+     * uniqueness and document presence for the WORKER role.
+     */
+    @Transactional
+    public AuthDTO.UserDTO adminCreateUser(AuthDTO.AdminCreateUserRequest request) {
+        User.UserRole role = request.getRole() != null ? request.getRole() : User.UserRole.CLIENT;
+
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number already exists");
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        String nationalId = request.getNationalId() != null ? request.getNationalId().trim() : null;
+        if (nationalId != null && nationalId.isBlank()) nationalId = null;
+
+        WorkerSkill.SkillType skillType = null;
+        if (role == User.UserRole.WORKER) {
+            if (nationalId == null) {
+                throw new IllegalArgumentException("National ID is required for artisans");
+            }
+            if (request.getIdDocumentImage() == null || request.getIdDocumentImage().isBlank()) {
+                throw new IllegalArgumentException("ID document upload is required for artisans");
+            }
+            if (request.getCertificateOfGoodConduct() == null
+                    || request.getCertificateOfGoodConduct().isBlank()) {
+                throw new IllegalArgumentException("Certificate of Good Conduct is required for artisans");
+            }
+            if (request.getSkillType() == null || request.getSkillType().isBlank()) {
+                throw new IllegalArgumentException("Service category (skill type) is required for artisans");
+            }
+            try {
+                skillType = WorkerSkill.SkillType.valueOf(request.getSkillType().trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Invalid service category: " + request.getSkillType());
+            }
+            if (request.getLocationName() == null || request.getLocationName().isBlank()) {
+                throw new IllegalArgumentException("Service area / location is required for artisans");
+            }
+        }
+        if (nationalId != null && userRepository.existsByNationalId(nationalId)) {
+            throw new IllegalArgumentException("National ID already registered");
+        }
+
+        boolean autoApprove = Boolean.TRUE.equals(request.getAutoApprove());
+        boolean isWorker = role == User.UserRole.WORKER;
+
+        Long adminId = currentAdminIdOrNull();
+
+        User user = User.builder()
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(role)
+                .vettingLevel(User.VettingLevel.STANDARD)
+                .accountStatus(User.AccountStatus.ACTIVE)
+                .trustScore(0.0)
+                .totalJobsCompleted(0)
+                .totalReviews(0)
+                .isActive(true)
+                .isVerified(false)
+                .isApproved(!isWorker || autoApprove)
+                .approvalStatus(!isWorker
+                        ? User.ApprovalStatus.APPROVED
+                        : (autoApprove ? User.ApprovalStatus.APPROVED : User.ApprovalStatus.PENDING))
+                .approvedAt(!isWorker || autoApprove ? LocalDateTime.now() : null)
+                .approvedByAdminId(!isWorker || autoApprove ? adminId : null)
+                .createdByAdminId(adminId)
+                .nationalId(nationalId)
+                .idDocumentImage(request.getIdDocumentImage())
+                .certificateOfGoodConduct(request.getCertificateOfGoodConduct())
+                .locationName(request.getLocationName())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .profileImage(request.getProfileImage())
+                .referralCode(generateReferralCode())
+                .build();
+
+        User saved = userRepository.save(user);
+
+        if (isWorker) {
+            Subscription subscription = Subscription.builder()
+                    .artisan(saved)
+                    .planType(Subscription.PlanType.FREE)
+                    .startDate(LocalDateTime.now())
+                    .endDate(LocalDateTime.now().plusYears(10))
+                    .status(Subscription.SubscriptionStatus.ACTIVE)
+                    .autoRenew(false)
+                    .build();
+            subscriptionRepository.save(subscription);
+
+            // Create primary skill profile (mirrors /complete-profile flow).
+            WorkerSkill skill = WorkerSkill.builder()
+                    .worker(saved)
+                    .skillType(skillType)
+                    .description(request.getBio())
+                    .experienceYears(request.getExperienceYears())
+                    .hourlyRate(request.getHourlyRate())
+                    .isVerified(false)
+                    .build();
+            workerSkillRepository.save(skill);
+        }
+
+        auditService.logAction(AdminAuditLog.AuditAction.USER_CREATED, "USER", saved.getId(),
+                "Admin onboarded " + role + ": " + saved.getFirstName() + " " + saved.getLastName()
+                        + (autoApprove && isWorker ? " (auto-approved)" : ""));
+
+        if (isWorker && autoApprove) {
+            auditService.logAction(AdminAuditLog.AuditAction.USER_APPROVED, "USER", saved.getId(),
+                    "Auto-approved on admin onboarding");
+        }
+
+        // Send onboarding confirmation via SMS + email (best-effort, async).
+        try {
+            smsService.notifyArtisanOnboarded(saved.getPhoneNumber(), saved.getFirstName(),
+                    request.getPassword(), !isWorker || autoApprove);
+        } catch (Exception e) {
+            log.warn("[ONBOARD] SMS notification failed for {}: {}", saved.getPhoneNumber(), e.getMessage());
+        }
+        if (saved.getEmail() != null && !saved.getEmail().isBlank()) {
+            try {
+                emailService.sendArtisanOnboardedEmail(saved.getEmail(), saved.getFirstName(),
+                        request.getPassword(), saved.getPhoneNumber(), !isWorker || autoApprove);
+            } catch (Exception e) {
+                log.warn("[ONBOARD] Email notification failed for {}: {}", saved.getEmail(), e.getMessage());
+            }
+        }
+
+        return mapToUserDTO(saved);
+    }
+
+    /** Approve an artisan and stamp approvedAt/approvedByAdminId. */
+    @Transactional
+    public AuthDTO.UserDTO adminApproveArtisan(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        boolean wasAlreadyApproved = Boolean.TRUE.equals(user.getIsApproved());
+        user.setIsApproved(true);
+        user.setApprovalStatus(User.ApprovalStatus.APPROVED);
+        user.setApprovedAt(LocalDateTime.now());
+        user.setApprovedByAdminId(currentAdminIdOrNull());
+        user.setRejectionReason(null);
+        userRepository.save(user);
+        auditService.logAction(AdminAuditLog.AuditAction.USER_APPROVED, "USER", userId,
+                "Approved artisan: " + user.getFirstName() + " " + user.getLastName());
+        if (!wasAlreadyApproved) {
+            try {
+                smsService.send(user.getPhoneNumber(),
+                        "TUFIXIT: Hi " + user.getFirstName() + ", your artisan account has been APPROVED. "
+                                + "You are now visible to customers. Login: tufixit.com/login");
+            } catch (Exception ignored) {}
+            if (user.getEmail() != null && !user.getEmail().isBlank()) {
+                try {
+                    emailService.sendText(user.getEmail(),
+                            "Your TUFIXIT artisan account is approved",
+                            "Hi " + user.getFirstName() + ",\n\nYour artisan account has been approved "
+                                    + "and is now visible to customers on TUFIXIT.\n\nLogin: https://tufixit.com/login\n\n— TUFIXIT");
+                } catch (Exception ignored) {}
+            }
+        }
+        return mapToUserDTO(user);
+    }
+
+    /** Reject an artisan onboarding application. */
+    @Transactional
+    public AuthDTO.UserDTO adminRejectArtisan(Long userId, String reason) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsApproved(false);
+        user.setApprovalStatus(User.ApprovalStatus.REJECTED);
+        user.setApprovedAt(LocalDateTime.now());
+        user.setApprovedByAdminId(currentAdminIdOrNull());
+        user.setRejectionReason(reason != null && !reason.isBlank() ? reason.trim() : null);
+        userRepository.save(user);
+        auditService.logAction(AdminAuditLog.AuditAction.USER_APPROVAL_REVOKED, "USER", userId,
+                "Rejected artisan onboarding"
+                        + (user.getRejectionReason() != null ? ": " + user.getRejectionReason() : ""));
+        try {
+            smsService.send(user.getPhoneNumber(),
+                    "TUFIXIT: Hi " + user.getFirstName() + ", your artisan application was not approved."
+                            + (user.getRejectionReason() != null ? " Reason: " + user.getRejectionReason() : "")
+                            + " Contact support@tufixit.com for more info.");
+        } catch (Exception ignored) {}
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            try {
+                emailService.sendText(user.getEmail(),
+                        "Your TUFIXIT artisan application",
+                        "Hi " + user.getFirstName() + ",\n\n"
+                                + "After review, your artisan application has not been approved at this time.\n"
+                                + (user.getRejectionReason() != null
+                                    ? "Reason: " + user.getRejectionReason() + "\n\n" : "\n")
+                                + "You may contact support@tufixit.com if you believe this was a mistake.\n\n— TUFIXIT");
+            } catch (Exception ignored) {}
+        }
+        return mapToUserDTO(user);
+    }
+
+    private Long currentAdminIdOrNull() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null) return null;
+            String principal = authentication.getName();
+            return userRepository.findByEmail(principal)
+                    .or(() -> userRepository.findByPhoneNumber(principal))
+                    .map(User::getId).orElse(null);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

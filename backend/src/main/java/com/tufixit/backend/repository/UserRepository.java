@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     
     boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByNationalId(String nationalId);
+
+    Optional<User> findByNationalId(String nationalId);
     
     @Query(value = "SELECT * FROM users u WHERE u.role = :#{#role.name()} AND u.is_active = true " +
            "ORDER BY CASE u.vetting_level WHEN 'PRO' THEN 0 WHEN 'VERIFIED' THEN 1 ELSE 2 END ASC, " +
@@ -62,6 +66,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /** Admin: count workers by approval status */
     long countByRoleAndIsApproved(User.UserRole role, Boolean isApproved);
+
+    /** Search workers by name (first or last, case-insensitive) */
+    @Query("SELECT u FROM User u WHERE u.role = 'WORKER' AND u.isActive = true " +
+           "AND u.isApproved = true " +
+           "AND (LOWER(u.firstName) LIKE LOWER(CONCAT('%', :name, '%')) " +
+           "  OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :name, '%')))")
+    List<User> searchWorkersByName(@Param("name") String name);
 
     /** Admin: count by account status */
     long countByAccountStatus(User.AccountStatus status);
