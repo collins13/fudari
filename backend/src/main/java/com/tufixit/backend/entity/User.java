@@ -99,6 +99,7 @@ public class User {
     /** Onboarding lifecycle state. Mirrors isApproved + adds REJECTED. */
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
+    @lombok.Builder.Default
     private ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
     /** Timestamp when the artisan was approved by an admin. */

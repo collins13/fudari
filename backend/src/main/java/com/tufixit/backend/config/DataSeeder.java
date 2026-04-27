@@ -82,6 +82,7 @@ public class DataSeeder implements CommandLineRunner {
                 .role(User.UserRole.ADMIN)
                 .vettingLevel(User.VettingLevel.PRO)
                 .accountStatus(User.AccountStatus.ACTIVE)
+                .approvalStatus(User.ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isActive(true)
                 .isApproved(true)
