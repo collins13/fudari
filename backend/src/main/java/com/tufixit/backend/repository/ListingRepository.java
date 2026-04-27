@@ -21,6 +21,8 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
 
     long countByArtisanIdAndStatus(Long artisanId, Listing.ListingStatus status);
 
+    long countByCategoryId(Long categoryId);
+
     long countByArtisanId(Long artisanId);
 
     Page<Listing> findByStatus(Listing.ListingStatus status, Pageable pageable);

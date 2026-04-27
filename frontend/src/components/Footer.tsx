@@ -74,11 +74,11 @@ export default function Footer() {
               <div className="mb-3">
                 <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="tel:+254703954539">
                   <i className="fa-solid fa-phone text-primary"></i>
-                  <span>+254 700 000 000</span>
+                  <span>+254703954539</span>
                 </a>
-                <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="mailto:info@tufixit.co.ke">
+                <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="mailto:info@tufixit.com">
                   <i className="fa-solid fa-envelope text-primary"></i>
-                  <span>info@tufixit.co.ke</span>
+                  <span>info@tufixit.com</span>
                 </a>
                 <div className="d-flex gap-2 align-items-center fw-medium mb-2">
                   <i className="fa-solid fa-location-dot text-primary"></i>

@@ -64,7 +64,21 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        long listingRefs = listingRepository.countByCategoryId(categoryId);
+
+        if (listingRefs > 0) {
+            // Soft-delete: cannot hard-delete because of FK references
+            category.setIsActive(false);
+            categoryRepository.save(category);
+            log.info("Category {} soft-deleted (has {} listings referencing it)", categoryId, listingRefs);
+            return;
+        }
+
         categoryRepository.deleteById(categoryId);
+        log.info("Category {} hard-deleted", categoryId);
     }
 
     public List<CategoryDTO.CategoryResponse> getActiveCategories() {

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import WhatsAppWidget from '@/components/WhatsAppWidget';
 import { workersAPI, categoriesAPI } from '@/lib/api';
 import { KENYA_MAJOR_TOWNS, formatKES } from '@/lib/kenya';
 
@@ -640,24 +641,7 @@ export default function HomePage() {
         </div>
       </div>
       {/* ===== END CTA ===== */}
-
-      {/* Floating WhatsApp CTA */}
-      <a
-        href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '254703954539'}?text=${encodeURIComponent('Hi, I need to book an artisan')}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="position-fixed shadow-lg d-flex align-items-center justify-content-center"
-        style={{
-          bottom: 24, right: 24, width: 60, height: 60, borderRadius: '50%',
-          backgroundColor: '#25d366', color: 'white', fontSize: 28, zIndex: 1050,
-          textDecoration: 'none', transition: 'transform 0.2s',
-        }}
-        title="Book via WhatsApp"
-        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
-        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-      >
-        <i className="fa-brands fa-whatsapp"></i>
-      </a>
+      <WhatsAppWidget />
 
       <Footer />
     </>
