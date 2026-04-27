@@ -9,10 +9,11 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests
+// Add auth token to requests (prefer real session, fall back to guest token)
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+    const token =
+      localStorage.getItem('token') || localStorage.getItem('guestToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

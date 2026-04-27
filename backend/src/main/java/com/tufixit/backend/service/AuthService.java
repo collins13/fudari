@@ -399,6 +399,7 @@ public class AuthService {
                     .lastName(parts.length > 1 ? parts[1] : "")
                     .role(User.UserRole.CLIENT)
                     .vettingLevel(User.VettingLevel.STANDARD)
+                    .accountStatus(User.AccountStatus.ACTIVE)
                     .trustScore(0.0)
                     .totalJobsCompleted(0)
                     .totalReviews(0)

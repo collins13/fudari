@@ -98,10 +98,12 @@ export default function CustomerChatPage() {
     });
   }, [artisanId]);
 
-  // ── 2. Check if already logged in ────────────────────────────────────────
+  // ── 2. Check if already logged in (real user OR returning guest) ─────────
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userRaw = localStorage.getItem('user');
+    const token =
+      localStorage.getItem('token') || localStorage.getItem('guestToken');
+    const userRaw =
+      localStorage.getItem('user') || localStorage.getItem('guestUser');
     if (token && userRaw) {
       try {
         const u = JSON.parse(userRaw);
@@ -139,7 +141,8 @@ export default function CustomerChatPage() {
   // ── 5. WebSocket connection ───────────────────────────────────────────────
   useEffect(() => {
     if (!chatReady) return;
-    const token = localStorage.getItem('token');
+    const token =
+      localStorage.getItem('token') || localStorage.getItem('guestToken');
     if (!token) return;
 
     const API_BASE =
@@ -206,8 +209,10 @@ export default function CustomerChatPage() {
         role: data.role,
         vettingLevel: data.vettingLevel,
       };
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Store under guest-specific keys so this does NOT auto-login the user
+      // into the main app (AuthContext only reads `token`/`user`).
+      localStorage.setItem('guestToken', data.token);
+      localStorage.setItem('guestUser', JSON.stringify(user));
       setCurrentUserId(user.id);
       setShowGuestModal(false);
       setChatReady(true);
