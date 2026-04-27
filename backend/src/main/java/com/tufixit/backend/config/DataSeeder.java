@@ -39,9 +39,9 @@ public class DataSeeder implements CommandLineRunner {
         String encodedPassword = passwordEncoder.encode("Password123!");
 
         // ═══════════════════════════════════════════════════════════════════
-        //  1. CATEGORIES
+        //  1. CATEGORIES (idempotent — only inserts missing ones by name)
         // ═══════════════════════════════════════════════════════════════════
-        List<Category> categories = categoryRepository.saveAll(List.of(
+        List<Category> seedCategories = List.of(
             Category.builder().name("Electrical").icon("fa-bolt").description("Electrical wiring, repairs, and installations").isActive(true).sortOrder(1).build(),
             Category.builder().name("Plumbing").icon("fa-faucet").description("Pipe fitting, drainage and water systems").isActive(true).sortOrder(2).build(),
             Category.builder().name("Mechanics").icon("fa-car").description("Vehicle repair and maintenance").isActive(true).sortOrder(3).build(),
@@ -56,10 +56,19 @@ public class DataSeeder implements CommandLineRunner {
             Category.builder().name("Gardening").icon("fa-leaf").description("Landscaping and garden maintenance").isActive(true).sortOrder(12).build(),
             Category.builder().name("Security").icon("fa-shield-halved").description("CCTV, alarms, and access control").isActive(true).sortOrder(13).build(),
             Category.builder().name("Appliance Repair").icon("fa-blender").description("Fridge, washer, microwave repair").isActive(true).sortOrder(14).build()
-        ));
+        );
+        Set<String> existingNames = new HashSet<>();
+        categoryRepository.findAll().forEach(c -> existingNames.add(c.getName()));
+        List<Category> toInsert = seedCategories.stream()
+                .filter(c -> !existingNames.contains(c.getName()))
+                .toList();
+        if (!toInsert.isEmpty()) {
+            categoryRepository.saveAll(toInsert);
+        }
+        List<Category> categories = categoryRepository.findAll();
         Map<String, Category> catMap = new HashMap<>();
         categories.forEach(c -> catMap.put(c.getName(), c));
-        log.info("  → {} categories seeded", categories.size());
+        log.info("  → {} categories present ({} newly seeded)", categories.size(), toInsert.size());
 
         // ═══════════════════════════════════════════════════════════════════
         //  2. ADMIN USER
