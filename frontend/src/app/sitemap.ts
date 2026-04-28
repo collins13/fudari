@@ -20,56 +20,77 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://tufixit.com';
   const now = new Date();
 
-  // Static pages
+  // Static indexable pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
-    { url: `${baseUrl}/artisans`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${baseUrl}/register`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${baseUrl}/login`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
-    { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: baseUrl,                     lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
+    { url: `${baseUrl}/artisans`,       lastModified: now, changeFrequency: 'daily',   priority: 0.95 },
+    { url: `${baseUrl}/pricing`,        lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+    { url: `${baseUrl}/terms`,          lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
+    { url: `${baseUrl}/privacy`,        lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
   ];
 
-  // Category pages — one per skill type
+  // Category landing pages — use clean query-param URLs (standard for filter-based SPAs)
   const categoryPages: MetadataRoute.Sitemap = SKILL_TYPES.map((skill) => ({
     url: `${baseUrl}/artisans?category=${skill}`,
     lastModified: now,
     changeFrequency: 'weekly' as const,
-    priority: 0.8,
+    priority: 0.85,
   }));
 
-  // Category + location combos (top 5 skills × top 5 cities)
-  const topSkills = SKILL_TYPES.slice(0, 5);
-  const topCities = MAJOR_LOCATIONS.slice(0, 5);
+  // Top skill × top city combos for local SEO
+  const topSkills = SKILL_TYPES.slice(0, 8);
+  const topCities = MAJOR_LOCATIONS.slice(0, 8);
   const comboPages: MetadataRoute.Sitemap = topSkills.flatMap((skill) =>
     topCities.map((city) => ({
       url: `${baseUrl}/artisans?category=${skill}&location=${city}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      priority: 0.75,
     })),
   );
 
-  // Dynamic artisan profile pages (fetch from API, with fallback)
+  // Dynamic artisan profile pages
   let artisanPages: MetadataRoute.Sitemap = [];
   try {
-    const res = await fetch(`${API_URL}/workers/search?page=0&size=500`, {
+    const res = await fetch(`${API_URL}/workers/search?page=0&size=1000`, {
       next: { revalidate: 86400 },
     });
     if (res.ok) {
       const data = await res.json();
-      const workers = data.content || data || [];
-      artisanPages = workers.map((w: { id: number; updatedAt?: string }) => ({
+      const workers: { id: number; updatedAt?: string; vettingLevel?: string }[] =
+        data.content || data || [];
+      artisanPages = workers.map((w) => ({
         url: `${baseUrl}/artisans/${w.id}`,
         lastModified: w.updatedAt ? new Date(w.updatedAt) : now,
         changeFrequency: 'weekly' as const,
-        priority: 0.6,
+        // PRO artisans updated more frequently / higher priority
+        priority: w.vettingLevel === 'PRO' ? 0.7 : w.vettingLevel === 'VERIFIED' ? 0.65 : 0.55,
       }));
     }
   } catch {
-    // API unavailable at build time — skip dynamic pages
+    // API unavailable at build time — skip
   }
 
-  return [...staticPages, ...categoryPages, ...comboPages, ...artisanPages];
+  // Dynamic estate portal pages
+  let estatePages: MetadataRoute.Sitemap = [];
+  try {
+    const res = await fetch(`${API_URL}/estates?page=0&size=200`, {
+      next: { revalidate: 86400 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const estates: { slug: string; updatedAt?: string }[] =
+        data.content || data || [];
+      estatePages = estates.map((e) => ({
+        url: `${baseUrl}/estate/${e.slug}`,
+        lastModified: e.updatedAt ? new Date(e.updatedAt) : now,
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }));
+    }
+  } catch {
+    // API unavailable at build time — skip
+  }
+
+  return [...staticPages, ...categoryPages, ...comboPages, ...artisanPages, ...estatePages];
 }

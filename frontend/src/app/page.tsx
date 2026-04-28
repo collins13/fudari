@@ -8,6 +8,7 @@ import WhatsAppWidget from '@/components/WhatsAppWidget';
 import { workersAPI, categoriesAPI } from '@/lib/api';
 import { KENYA_MAJOR_TOWNS, formatKES } from '@/lib/kenya';
 import { profileImageFor } from '@/lib/avatar';
+import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass } from '@/lib/skills';
 
 interface FeaturedArtisan {
   id: number;
@@ -30,23 +31,6 @@ interface CategoryItem {
   slug: string;
 }
 
-function getPackageBadgeClass(pkg: string) {
-  if (pkg === 'Gold') return 'text-bg-warning';
-  if (pkg === 'Silver') return 'text-bg-secondary';
-  return 'text-bg-dark';
-}
-
-function skillTypeToLabel(skillType: string): string {
-  const map: Record<string, string> = {
-    ELECTRICIAN: 'Electrician', PLUMBER: 'Plumber', MECHANIC: 'Mechanic',
-    CARPENTER: 'Carpenter', PAINTER: 'Painter', WELDER: 'Welder',
-    HVAC_TECHNICIAN: 'HVAC Technician', APPLIANCE_REPAIR: 'Appliance Repair',
-    ROOFING: 'Roofing', TILING: 'Tiling', MASON: 'Mason',
-    GARDENER: 'Gardener', CLEANER: 'Cleaner', SECURITY: 'Security', OTHER: 'Other',
-  };
-  return map[skillType] || skillType;
-}
-
 function renderStars(rating: number) {
   const stars = [];
   const full = Math.floor(rating);
@@ -61,12 +45,6 @@ function renderStars(rating: number) {
     stars.push(<i key={`e${i}`} className="fa-regular fa-star text-warning"></i>);
   }
   return stars;
-}
-
-function vettingToPackage(level: string): 'Gold' | 'Silver' | 'Bronze' {
-  if (level === 'PRO') return 'Gold';
-  if (level === 'VERIFIED') return 'Silver';
-  return 'Bronze';
 }
 
 interface PlatformStats {
@@ -193,7 +171,7 @@ export default function HomePage() {
       {/* ===== HERO SECTION ===== */}
       <div
         className="align-items-center d-flex hero-header dark-overlay mt-3 mx-3 overflow-hidden position-relative rounded-4"
-        style={{ minHeight: '90vh' }}
+        style={{ minHeight: '85dvh' }}
       >
         <img className="bg-image" src="/liston/images/header/lg-01.jpg" alt="Hero Background" />
         <div className="container overlay-content py-5">
@@ -256,7 +234,7 @@ export default function HomePage() {
                     autoComplete="off"
                   />
                   {showSuggestions && (
-                    <ul className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 1050 }}>
+                    <ul className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 9999 }}>
                       {locationSuggestions.map((town) => (
                         <li
                           key={town}
@@ -324,7 +302,7 @@ export default function HomePage() {
                       <i className={`fa-solid ${cat.icon} fs-4 text-primary`}></i>
                     </div>
                     <h6 className="fw-semibold mb-1">{cat.name}</h6>
-                    <small className="text-muted">{cat.count > 0 ? `${cat.count} Providers` : 'Browse'}</small>
+                    <small className="text-muted">{cat.count > 0 ? `${cat.count} Providers` : 'Available'}</small>
                   </Link>
                 </div>
               ))
@@ -411,26 +389,33 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="row g-4">
-            {loadingArtisans ? (
-              <div className="col-12 text-center py-5">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-                <p className="text-muted mt-2">Loading artisans...</p>
+          {loadingArtisans ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
-            ) : featuredArtisans.length === 0 ? (
-              <div className="col-12 text-center py-5">
-                <i className="fa-solid fa-users-slash fs-1 text-muted mb-2 d-block"></i>
-                <p className="text-muted">Artisans coming soon! Be the first to <Link href="/register">register as an artisan</Link>.</p>
-              </div>
-            ) : (
-              featuredArtisans.map((artisan) => (
+              <p className="text-muted mt-2">Finding artisans near you…</p>
+            </div>
+          ) : featuredArtisans.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="fa-solid fa-users-slash fs-1 text-muted mb-2 d-block"></i>
+              <p className="text-muted">Artisans coming soon! Be the first to <Link href="/register">register as an artisan</Link>.</p>
+            </div>
+          ) : (
+            <div className="row g-4">
+              {featuredArtisans.map((artisan) => (
                 <div key={artisan.id} className="col-md-6 col-lg-4 col-xl-3">
                   <div className="card rounded-4 overflow-hidden border-0 shadow-sm h-100">
-                    <div className="position-relative" style={{ height: 220 }}>
+                    <div className="position-relative overflow-hidden" style={{ height: 220 }}>
                       {artisan.image ? (
-                        <img src={artisan.image} alt={artisan.name} className="card-img-top" style={{ height: 220, objectFit: 'cover', width: '100%' }} />
+                        <img
+                          src={artisan.image}
+                          alt={artisan.name}
+                          className="w-100 h-100"
+                          style={{ objectFit: 'cover' }}
+                          loading="lazy"
+                          decoding="async"
+                        />
                       ) : (
                         <div
                           className="d-flex align-items-center justify-content-center w-100 h-100"
@@ -443,7 +428,7 @@ export default function HomePage() {
                       )}
                       <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
                         {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                        {artisan.package}
+                        {artisan.package === 'Gold' ? 'Pro' : artisan.package === 'Silver' ? 'Verified' : 'Standard'}
                       </span>
                     </div>
                     <div className="card-body d-flex flex-column p-4">
@@ -465,41 +450,27 @@ export default function HomePage() {
                           <span className="text-muted small">Contact for price</span>
                         )}
                         <Link href={`/artisans/${artisan.id}`} className="btn btn-primary btn-sm rounded-5">
-                          View Profile
+                          Hire
                         </Link>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       {/* ===== END FEATURED ARTISANS ===== */}
 
-      {/* ===== BROWSE LISTINGS BANNER ===== */}
-      <div className="py-4 bg-light mx-3 rounded-4 mb-4">
-        <div className="container">
-          <div className="row align-items-center g-4">
-            <div className="col-lg-7">
-              <h3 className="fw-bold mb-2">Looking for a specific service?</h3>
-              <p className="text-muted mb-0">
-                Browse approved listings from verified service providers — find the right job at the right price.
-              </p>
-            </div>
-            <div className="col-lg-5 text-lg-end d-flex gap-3 justify-content-lg-end">
-              <Link href="/artisans?tab=listings" className="btn btn-primary rounded-5 px-4">
-                <i className="fa-solid fa-list me-2"></i>Browse Listings
-              </Link>
-              <Link href="/artisans" className="btn btn-outline-primary rounded-5 px-4">
-                <i className="fa-solid fa-users me-2"></i>Browse Providers
-              </Link>
-            </div>
-          </div>
-        </div>
+      {/* ===== SEE ALL ARTISANS LINK ===== */}
+      <div className="text-center py-2 pb-5">
+        <Link href="/artisans" className="btn btn-outline-primary btn-lg rounded-5 px-5">
+          <i className="fa-solid fa-users me-2"></i>View All Providers
+          <i className="fa-solid fa-arrow-right ms-2"></i>
+        </Link>
       </div>
-      {/* ===== END BROWSE LISTINGS ===== */}
+      {/* ===== END SEE ALL ===== */}
 
       {/* ===== WHY TRUST TUFIXIT (Kenya-specific) ===== */}
       <div className="py-5">
@@ -585,25 +556,25 @@ export default function HomePage() {
           <div className="row justify-content-center text-center g-4">
             <div className="col-sm-6 col-lg-3" data-aos="fade-up">
               <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalArtisans}+` : '—'}
+                {platformStats ? `${platformStats.totalArtisans}+` : '100+'}
               </div>
               <div className="fs-5 mt-1 opacity-75">ID-Verified Pros</div>
             </div>
             <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
               <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalCompletedJobs}+` : '—'}
+                {platformStats ? `${platformStats.totalCompletedJobs}+` : '500+'}
               </div>
               <div className="fs-5 mt-1 opacity-75">Jobs Completed</div>
             </div>
             <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
               <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalCategories}` : '—'}
+                {platformStats ? `${platformStats.totalCategories}` : '20+'}
               </div>
               <div className="fs-5 mt-1 opacity-75">Service Categories</div>
             </div>
             <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
               <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalListings}+` : '—'}
+                {platformStats ? `${platformStats.totalListings}+` : '200+'}
               </div>
               <div className="fs-5 mt-1 opacity-75">Active Listings</div>
             </div>
@@ -625,7 +596,7 @@ export default function HomePage() {
               </h2>
               <p className="lead text-muted mb-4 col-lg-8 mx-auto">
                 Register your services, get found by thousands of customers across all 47 counties,
-                and boost your income with our affordable plans from KES 300/mo.
+                and boost your income with our affordable plans from KES 500/mo.
                 <span className="d-block mt-2 fw-medium text-dark">
                   Over {platformStats ? platformStats.totalArtisans : '100'}+ pros already growing with TUFIXIT.
                 </span>

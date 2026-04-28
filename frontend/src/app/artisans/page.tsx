@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, listingsAPI } from '@/lib/api';
+import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass } from '@/lib/skills';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -56,23 +57,6 @@ interface Listing {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function vettingToPackage(level: string): 'Gold' | 'Silver' | 'Bronze' {
-  if (level === 'PRO') return 'Gold';
-  if (level === 'VERIFIED') return 'Silver';
-  return 'Bronze';
-}
-
-function skillTypeToLabel(skillType: string): string {
-  const map: Record<string, string> = {
-    ELECTRICIAN: 'Electrician', PLUMBER: 'Plumber', MECHANIC: 'Mechanic',
-    CARPENTER: 'Carpenter', PAINTER: 'Painter', WELDER: 'Welder',
-    HVAC_TECHNICIAN: 'HVAC Technician', APPLIANCE_REPAIR: 'Appliance Repair',
-    ROOFING: 'Roofing', TILING: 'Tiling', MASON: 'Mason',
-    GARDENER: 'Gardener', CLEANER: 'Cleaner', SECURITY: 'Security', OTHER: 'Other',
-  };
-  return map[skillType] || skillType;
-}
-
 function getCategoryIcon(s: string) {
   const map: Record<string, string> = {
     ELECTRICIAN: 'fa-bolt', PLUMBER: 'fa-faucet', MECHANIC: 'fa-car',
@@ -98,12 +82,6 @@ function mapWorkerToArtisan(w: any): Artisan {
     rankingScore: w.rankingScore || 0,
     isFeatured: w.isFeatured || false,
   };
-}
-
-function getPackageBadgeClass(pkg: string) {
-  if (pkg === 'Gold') return 'text-bg-warning';
-  if (pkg === 'Silver') return 'text-bg-secondary';
-  return 'text-bg-dark';
 }
 
 function renderStars(rating: number) {
@@ -145,8 +123,8 @@ function ArtisansContent() {
   const [packageFilter, setPackageFilter] = useState('All');
   const [sortBy, setSortBy] = useState('ranking');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [maxPrice, setMaxPrice] = useState(5000);
-  const [rangeValue, setRangeValue] = useState(5000);
+  const [maxPrice, setMaxPrice] = useState(50000);
+  const [rangeValue, setRangeValue] = useState(50000);
   const [searchInput, setSearchInput] = useState('');
   const [locationInput, setLocationInput] = useState(searchParams.get('location') || '');
 
@@ -277,12 +255,70 @@ function ArtisansContent() {
     <>
       <Navbar />
 
-      {/* Search bar */}
+      {/* ── Off-canvas filter drawer (mobile) ─────────────────── */}
+      <div className="offcanvas offcanvas-start" tabIndex={-1} id="filterDrawer" aria-labelledby="filterDrawerLabel">
+        <div className="offcanvas-header border-bottom">
+          <h5 className="offcanvas-title fw-bold" id="filterDrawerLabel">
+            <i className="fa-solid fa-sliders me-2 text-primary"></i>Filter Providers
+          </h5>
+          <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close filters"></button>
+        </div>
+        <div className="offcanvas-body">
+          <div className="mb-4 border-bottom pb-4">
+            <h6 className="fw-semibold mb-1">Max Price</h6>
+            <p className="mb-2 small text-muted">Up to KES {rangeValue.toLocaleString()}/hr</p>
+            <input
+              type="range" className="form-range"
+              min={0} max={50000} step={500} value={rangeValue}
+              onChange={(e) => { setRangeValue(Number(e.target.value)); setMaxPrice(Number(e.target.value)); }}
+            />
+            <div className="d-flex justify-content-between small text-muted"><span>KES 0</span><span>KES 50,000</span></div>
+          </div>
+          <div className="mb-4 border-bottom pb-4">
+            <h6 className="fw-semibold mb-2">Category</h6>
+            {CATEGORIES.map((cat) => (
+              <div className="form-check mb-2" key={`mob-cat-${cat}`}>
+                <input className="form-check-input" type="radio" name="mobCategoryFilter"
+                  id={`mob-cat-${cat}`} checked={category === cat} onChange={() => setCategory(cat)} />
+                <label className="form-check-label" htmlFor={`mob-cat-${cat}`}>{cat}</label>
+              </div>
+            ))}
+          </div>
+          {tab === 'providers' && (
+            <div className="mb-4 border-bottom pb-4">
+              <h6 className="fw-semibold mb-2">Verification Tier</h6>
+              {PACKAGES.map((pkg) => (
+                <div className="form-check mb-2" key={`mob-pkg-${pkg}`}>
+                  <input className="form-check-input" type="radio" name="mobPackageFilter"
+                    id={`mob-pkg-${pkg}`} checked={packageFilter === pkg} onChange={() => setPackageFilter(pkg)} />
+                  <label className="form-check-label" htmlFor={`mob-pkg-${pkg}`}>
+                    {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}</span>}
+                    {pkg === 'All' ? 'All Tiers' : pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+          <button type="button" className="btn btn-primary w-100 mb-2"
+            data-bs-dismiss="offcanvas" onClick={() => {}}>Apply Filters</button>
+          <button type="button" className="btn btn-outline-secondary w-100" onClick={clearFilters}>Clear All</button>
+        </div>
+      </div>
       <div className="bg-white border-bottom py-3">
         <div className="container">
           <form onSubmit={(e) => e.preventDefault()}
             className="d-flex align-items-stretch gap-2">
-            {/* Search input */}
+            {/* Mobile filter trigger */}
+            <button
+              type="button"
+              className="btn btn-outline-secondary d-xl-none flex-shrink-0"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#filterDrawer"
+              aria-controls="filterDrawer"
+              aria-label="Open filters"
+            >
+              <i className="fa-solid fa-sliders"></i>
+            </button>
             <div className="flex-grow-1 position-relative">
               <i className="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
               <input
@@ -347,14 +383,14 @@ function ArtisansContent() {
                 <div className="sidebar-filters-body p-3 p-xl-0">
                   <div className="mb-4 border-bottom pb-4">
                     <h4 className="fs-5 fw-semibold mb-1">Price Range</h4>
-                    <p className="mb-0 small">Max: KES {rangeValue.toLocaleString()}</p>
+                    <p className="mb-0 small">Max: KES {rangeValue.toLocaleString()}/hr</p>
                     <input
                       type="range" className="form-range" id="priceRange"
-                      min={0} max={5000} step={100} value={rangeValue}
+                      min={0} max={50000} step={500} value={rangeValue}
                       onChange={(e) => { setRangeValue(Number(e.target.value)); setMaxPrice(Number(e.target.value)); }}
                     />
                     <div className="d-flex justify-content-between small text-muted">
-                      <span>KES 0</span><span>KES 5,000</span>
+                      <span>KES 0</span><span>KES 50,000</span>
                     </div>
                   </div>
 
@@ -371,14 +407,14 @@ function ArtisansContent() {
 
                   {tab === 'providers' && (
                     <div className="mb-4 border-bottom pb-4">
-                      <h4 className="fs-5 fw-semibold mb-2">Package Tier</h4>
+                      <h4 className="fs-5 fw-semibold mb-2">Verification Tier</h4>
                       {PACKAGES.map((pkg) => (
                         <div className="form-check mb-2" key={pkg}>
                           <input className="form-check-input" type="radio" name="packageFilter"
                             id={`pkg-${pkg}`} checked={packageFilter === pkg} onChange={() => setPackageFilter(pkg)} />
                           <label className="form-check-label" htmlFor={`pkg-${pkg}`}>
-                            {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{pkg}</span>}
-                            {pkg}
+                            {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}</span>}
+                            {pkg === 'All' ? 'All Tiers' : pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
                           </label>
                         </div>
                       ))}
@@ -394,7 +430,7 @@ function ArtisansContent() {
                     </div>
                   )}
 
-                  <button type="button" className="btn btn-primary w-100" onClick={clearFilters}>
+                  <button type="button" className="btn btn-outline-secondary w-100" onClick={clearFilters}>
                     Clear Filters
                   </button>
                 </div>
@@ -420,12 +456,12 @@ function ArtisansContent() {
                     </select>
                     <div className="border-0 card d-inline-flex flex-row gap-1 p-1 rounded-3 shadow-sm">
                       <button className={`btn btn-sm px-2 py-1 ${viewMode === 'list' ? 'btn-primary' : 'btn-light'}`}
-                        onClick={() => setViewMode('list')} title="List view">
-                        <i className="fa-solid fa-list"></i>
+                        onClick={() => setViewMode('list')} aria-label="List view" title="List view">
+                        <i className="fa-solid fa-list" aria-hidden="true"></i>
                       </button>
                       <button className={`btn btn-sm px-2 py-1 ${viewMode === 'grid' ? 'btn-primary' : 'btn-light'}`}
-                        onClick={() => setViewMode('grid')} title="Grid view">
-                        <i className="fa-solid fa-border-all"></i>
+                        onClick={() => setViewMode('grid')} aria-label="Grid view" title="Grid view">
+                        <i className="fa-solid fa-border-all" aria-hidden="true"></i>
                       </button>
                     </div>
                   </div>
@@ -488,8 +524,24 @@ function ArtisansContent() {
               {!loading && tab === 'providers' && filteredArtisans.length === 0 && (
                 <div className="text-center py-5">
                   <i className="fa-solid fa-search fs-1 text-muted mb-3 d-block"></i>
-                  <h5 className="text-muted">No providers found matching your criteria.</h5>
-                  <p className="text-muted">Try adjusting your filters.</p>
+                  <h5 className="text-muted">No providers found.</h5>
+                  <p className="text-muted mb-4">
+                    {category !== 'All'
+                      ? `No ${category} providers found${locationInput ? ` in "${locationInput}"` : ''}. Try removing a filter.`
+                      : 'Try adjusting your search or filters.'}
+                  </p>
+                  <div className="d-flex flex-wrap gap-2 justify-content-center">
+                    <button className="btn btn-outline-secondary rounded-5" onClick={clearFilters}>Clear Filters</button>
+                    <Link
+                      href={`/artisans/${locationInput ? `?tab=providers&location=${encodeURIComponent(locationInput)}` : ''}`}
+                      className="btn btn-primary rounded-5"
+                    >
+                      <i className="fa-brands fa-whatsapp me-2"></i>Post a Job Request
+                    </Link>
+                  </div>
+                  <p className="text-muted small mt-3">
+                    Can&apos;t find what you need? We&apos;ll match you with the right pro.
+                  </p>
                 </div>
               )}
 
@@ -513,11 +565,11 @@ function ArtisansContent() {
                               )}
                               <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
                                 {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                                {artisan.package}
+                                {artisan.package === 'Gold' ? 'Pro' : artisan.package === 'Silver' ? 'Verified' : 'Standard'}
                               </span>
-                              {artisan.rankingScore > 0 && (
-                                <span className="badge text-bg-dark position-absolute top-0 end-0 m-2" style={{ fontSize: 10 }}>
-                                  <i className="fa-solid fa-chart-line me-1"></i>{artisan.rankingScore.toFixed(1)}
+                              {artisan.package !== 'Bronze' && (
+                                <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
+                                  <i className="fa-solid fa-shield-halved me-1"></i>Verified
                                 </span>
                               )}
                             </div>
@@ -565,7 +617,7 @@ function ArtisansContent() {
                         <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
                         <div style={{ position: 'relative', height: 200 }}>
                           {artisan.image ? (
-                            <img src={artisan.image} className="w-100 h-100" style={{ objectFit: 'cover' }} alt={artisan.name} />
+                            <img src={artisan.image} className="w-100 h-100" style={{ objectFit: 'cover' }} alt={artisan.name} loading="lazy" decoding="async" />
                           ) : (
                             <div className="d-flex align-items-center justify-content-center w-100 h-100"
                               style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
@@ -574,11 +626,11 @@ function ArtisansContent() {
                           )}
                           <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
                             {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                            {artisan.package}
+                            {artisan.package === 'Gold' ? 'Pro' : artisan.package === 'Silver' ? 'Verified' : 'Standard'}
                           </span>
-                          {artisan.rankingScore > 0 && (
-                            <span className="badge text-bg-dark position-absolute top-0 end-0 m-2" style={{ fontSize: 10 }}>
-                              <i className="fa-solid fa-chart-line me-1"></i>{artisan.rankingScore.toFixed(1)}
+                          {artisan.package !== 'Bronze' && (
+                            <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
+                              <i className="fa-solid fa-shield-halved me-1"></i>Verified
                             </span>
                           )}
                         </div>
@@ -587,7 +639,7 @@ function ArtisansContent() {
                             {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-1"></i>}
                             {artisan.name}
                             {artisan.package !== 'Bronze' && (
-                              <i className="fa-solid fa-circle-check text-success ms-1" style={{fontSize:'0.75rem'}} title="Verified"></i>
+                              <i className="fa-solid fa-circle-check text-success ms-1" style={{fontSize:'0.75rem'}} title="Verified by TUFIXIT"></i>
                             )}
                           </h6>
                           <p className="text-primary small mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
@@ -602,7 +654,7 @@ function ArtisansContent() {
                             ) : (
                               <span className="text-muted small">Contact for price</span>
                             )}
-                            <span className="btn btn-primary btn-sm rounded-5 z-1">View</span>
+                            <span className="btn btn-primary btn-sm rounded-5 z-1" aria-hidden="true">View</span>
                           </div>
                         </div>
                       </div>
@@ -686,7 +738,7 @@ function ArtisansContent() {
                                       {renderStars(l.artisanRating)} <span className="text-muted">({l.artisanTotalReviews})</span>
                                     </div>
                                   )}
-                                  <span className="btn btn-primary btn-sm rounded-5 mt-1 z-1" style={{ pointerEvents: 'none' }}>
+                                  <span className="btn btn-primary btn-sm rounded-5 mt-1 z-1" aria-hidden="true" style={{ pointerEvents: 'none' }}>
                                     View &amp; Book
                                   </span>
                                 </div>

@@ -45,6 +45,15 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   output: 'standalone',
   turbopack: {},
+  images: {
+    remotePatterns: [
+      // Allow any HTTPS image (CDNs, user-uploaded, avatars)
+      { protocol: 'https', hostname: '**' },
+      // Allow HTTP images from localhost (backend dev server)
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'http', hostname: '127.0.0.1' },
+    ],
+  },
 };
 
 export default withPWA(nextConfig);

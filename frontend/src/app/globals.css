@@ -5,11 +5,11 @@
 }
 
 body {
-  font-family: 'Wix Madefor Display', sans-serif;
+  font-family: var(--font-wix-madefor, 'Wix Madefor Display', sans-serif);
 }
 
 .font-caveat {
-  font-family: 'Caveat', cursive;
+  font-family: var(--font-caveat, 'Caveat', cursive);
 }
 
 /* Ensure next/link styled like anchor tags */

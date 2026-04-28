@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
 import { profileImageFor } from '@/lib/avatar';
+import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass } from '@/lib/skills';
 import TrustScoreCard from '@/components/TrustScoreCard';
 
 interface WorkerSkillInfo {
@@ -45,33 +46,6 @@ interface PublicReview {
   createdAt: string;
 }
 
-function skillTypeToLabel(skillType: string): string {
-  const map: Record<string, string> = {
-    ELECTRICIAN: 'Electrician',
-    PLUMBER: 'Plumber',
-    MECHANIC: 'Mechanic',
-    CARPENTER: 'Carpenter',
-    PAINTER: 'Painter',
-    WELDER: 'Welder',
-    HVAC_TECHNICIAN: 'HVAC Technician',
-    APPLIANCE_REPAIR: 'Appliance Repair',
-    ROOFING: 'Roofing',
-    TILING: 'Tiling',
-    MASON: 'Mason',
-    GARDENER: 'Gardener',
-    CLEANER: 'Cleaner',
-    SECURITY: 'Security',
-    OTHER: 'Other',
-  };
-  return map[skillType] || skillType;
-}
-
-function vettingToPackage(level: string): 'Gold' | 'Silver' | 'Bronze' {
-  if (level === 'PRO') return 'Gold';
-  if (level === 'VERIFIED') return 'Silver';
-  return 'Bronze';
-}
-
 function renderStars(rating: number, size = '') {
   const stars = [];
   const full = Math.floor(rating);
@@ -86,12 +60,6 @@ function renderStars(rating: number, size = '') {
     stars.push(<i key={`e${i}`} className={`fa-regular fa-star text-warning ${size}`}></i>);
   }
   return stars;
-}
-
-function getPackageBadgeClass(pkg: string) {
-  if (pkg === 'Gold') return 'text-bg-warning';
-  if (pkg === 'Silver') return 'text-bg-secondary';
-  return 'text-bg-dark';
 }
 
 const REPORT_REASONS = [
@@ -114,6 +82,7 @@ export default function ArtisanProfilePage() {
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [bookingForm, setBookingForm] = useState({ service: '', date: '', message: '' });
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const [stickyVisible, setStickyVisible] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState<PublicReview[]>([]);
@@ -121,8 +90,6 @@ export default function ArtisanProfilePage() {
     rating: 5,
     comment: '',
     reviewerName: '',
-    reviewerPhone: '',
-    reviewerEmail: '',
   });
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -144,51 +111,6 @@ export default function ArtisanProfilePage() {
         setWorker(w);
 
         // Update SEO meta tags
-        const name = `${w.firstName} ${w.lastName}`;
-        const skill = w.skills?.[0]?.skillType?.replace(/_/g, ' ') || 'Artisan';
-        const loc = w.locationName || 'Kenya';
-        const title = `${name} - ${skill} in ${loc} | TUFIXIT`;
-        const desc = `Hire ${name}, a verified ${skill.toLowerCase()} in ${loc}. ${w.skills?.[0]?.description || 'Contact via phone or WhatsApp on TUFIXIT.'}`;
-
-        document.title = title;
-        const setMeta = (attr: string, key: string, content: string) => {
-          let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement;
-          if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
-          el.content = content;
-        };
-        setMeta('name', 'description', desc);
-        setMeta('property', 'og:title', title);
-        setMeta('property', 'og:description', desc);
-        setMeta('property', 'og:image', w.profileImage || 'https://tufixit.com/liston/images/header/lg-01.jpg');
-        setMeta('property', 'og:url', `https://tufixit.com/artisans/${workerId}`);
-        setMeta('name', 'twitter:title', title);
-        setMeta('name', 'twitter:description', desc);
-
-        // Add JSON-LD structured data
-        const existing = document.getElementById('artisan-jsonld');
-        if (existing) existing.remove();
-        const script = document.createElement('script');
-        script.id = 'artisan-jsonld';
-        script.type = 'application/ld+json';
-        script.textContent = JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "LocalBusiness",
-          name: name,
-          description: desc,
-          image: w.profileImage || undefined,
-          address: { "@type": "PostalAddress", addressLocality: loc, addressCountry: "KE" },
-          aggregateRating: w.trustScore > 0 ? {
-            "@type": "AggregateRating",
-            ratingValue: w.trustScore.toFixed(1),
-            reviewCount: w.totalReviews || 0,
-            bestRating: "5",
-          } : undefined,
-          priceRange: w.skills?.[0]?.hourlyRate ? `KES ${w.skills[0].hourlyRate}/hr` : undefined,
-          telephone: w.phoneNumber,
-          url: `https://tufixit.com/artisans/${workerId}`,
-        });
-        document.head.appendChild(script);
-
         // Track profile view
         leadsAPI.trackProfileView(workerId).catch(() => {});
       } catch (err: any) {
@@ -200,6 +122,10 @@ export default function ArtisanProfilePage() {
       }
     };
     fetchWorker();
+
+    // Scroll listener for sticky bar
+    const onScroll = () => setStickyVisible(window.scrollY > 350);
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     // Fetch public reviews
     publicReviewsAPI.getReviewsForArtisan(workerId)
@@ -223,6 +149,8 @@ export default function ArtisanProfilePage() {
         setPortfolioImages(imgs);
       })
       .catch(() => {});
+
+    return () => window.removeEventListener('scroll', onScroll);
   }, [workerId]);
 
   useEffect(() => {
@@ -263,11 +191,9 @@ export default function ArtisanProfilePage() {
         rating: reviewForm.rating,
         comment: reviewForm.comment || undefined,
         reviewerName: reviewForm.reviewerName || undefined,
-        reviewerPhone: reviewForm.reviewerPhone || undefined,
-        reviewerEmail: reviewForm.reviewerEmail || undefined,
       });
       setReviewSubmitted(true);
-      setReviewForm({ rating: 5, comment: '', reviewerName: '', reviewerPhone: '', reviewerEmail: '' });
+      setReviewForm({ rating: 5, comment: '', reviewerName: '' });
 
       // Refresh reviews
       const res = await publicReviewsAPI.getReviewsForArtisan(workerId);
@@ -323,7 +249,6 @@ export default function ArtisanProfilePage() {
   const pkg = vettingToPackage(worker.vettingLevel);
   const primarySkill = worker.skills?.[0];
   const skillLabel = primarySkill ? skillTypeToLabel(primarySkill.skillType) : 'General';
-  const maskedPhone = worker.phoneNumber.replace(/(\+\d{3})\d{5}(\d{3})/, '$1*****$2');
 
   return (
     <>
@@ -333,6 +258,15 @@ export default function ArtisanProfilePage() {
       <section className="dark-overlay hero mx-3 overflow-hidden position-relative py-4 py-lg-5 rounded-4 text-white mt-3">
         <img className="bg-image" src="/liston/images/header/04.jpg" alt="Cover" />
         <div className="container overlay-content py-5">
+          {/* Breadcrumb */}
+          <nav aria-label="breadcrumb" className="mb-4">
+            <ol className="breadcrumb breadcrumb-light mb-0" style={{ '--bs-breadcrumb-divider': "'/'" } as React.CSSProperties}>
+              <li className="breadcrumb-item"><Link href="/" className="text-white-50 text-decoration-none">Home</Link></li>
+              <li className="breadcrumb-item"><Link href="/artisans" className="text-white-50 text-decoration-none">Artisans</Link></li>
+              <li className="breadcrumb-item text-white-50">{skillLabel}</li>
+              <li className="breadcrumb-item active text-white" aria-current="page">{worker.firstName} {worker.lastName}</li>
+            </ol>
+          </nav>
           <div className="row align-items-end g-4">
             <div className="col-auto">
               <img
@@ -340,15 +274,16 @@ export default function ArtisanProfilePage() {
                 alt={`${worker.firstName} ${worker.lastName}`}
                 className="rounded-circle border border-3 border-white"
                 style={{ width: 120, height: 120, objectFit: 'cover' }}
+                loading="eager"
               />
             </div>
             <div className="col">
               <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <span className={`badge ${getPackageBadgeClass(pkg)}`}>
                   {pkg === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                  {pkg} Member
+                  {pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
                 </span>
-                {worker.isVerified && <span className="badge bg-success">Verified</span>}
+                {worker.isVerified && <span className="badge bg-success"><i className="fa-solid fa-shield-halved me-1"></i>TUFIXIT Verified</span>}
               </div>
               <h1 className="fw-bold mb-1">{worker.firstName} {worker.lastName}</h1>
               <p className="fs-5 mb-2 opacity-90">
@@ -366,18 +301,21 @@ export default function ArtisanProfilePage() {
               )}
             </div>
             <div className="col-auto d-flex gap-2 flex-wrap">
-              <button
-                className="btn btn-light rounded-5"
-                onClick={handleCallClick}
+              <Link
+                href={`/artisans/${worker.id}/book`}
+                className="btn btn-primary rounded-5 fw-medium"
               >
-                <i className="fa-solid fa-phone me-2"></i>Contact
-              </button>
-              <Link href={`/chat/${worker.id}`} className="btn btn-outline-light rounded-5">
-                <i className="fa-solid fa-message me-2"></i>Message
-              </Link>
-              <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary rounded-5">
                 <i className="fa-solid fa-calendar-check me-2"></i>Book Now
               </Link>
+              <a
+                href={whatsappBotLink(`Hi, I'd like to book ${worker.firstName} ${worker.lastName} (${skillLabel}) in ${worker.locationName || 'Nairobi'}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-success rounded-5"
+                onClick={handleWhatsAppClick}
+              >
+                <i className="fa-brands fa-whatsapp me-2"></i>WhatsApp
+              </a>
             </div>
           </div>
         </div>
@@ -508,28 +446,6 @@ export default function ArtisanProfilePage() {
                           onChange={(e) => setReviewForm({ ...reviewForm, reviewerName: e.target.value })}
                         />
                       </div>
-                      <div className="row mb-3">
-                        <div className="col-md-6">
-                          <label className="form-label fw-medium">Phone Number</label>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            placeholder="+254..."
-                            value={reviewForm.reviewerPhone}
-                            onChange={(e) => setReviewForm({ ...reviewForm, reviewerPhone: e.target.value })}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-medium">Email</label>
-                          <input
-                            type="email"
-                            className="form-control"
-                            placeholder="your@email.com"
-                            value={reviewForm.reviewerEmail}
-                            onChange={(e) => setReviewForm({ ...reviewForm, reviewerEmail: e.target.value })}
-                          />
-                        </div>
-                      </div>
                       <div className="mb-3">
                         <label className="form-label fw-medium">Comment</label>
                         <textarea
@@ -592,14 +508,14 @@ export default function ArtisanProfilePage() {
               <div className="card border-0 rounded-4 shadow-sm p-4 mb-4">
                 <h5 className="fw-semibold mb-3">Contact {worker.firstName}</h5>
                 <div className="d-grid gap-2">
-                  <button
+                  <a
+                    href={`tel:${worker.phoneNumber}`}
                     className="btn btn-outline-primary rounded-5"
                     onClick={handleCallClick}
                   >
                     <i className="fa-solid fa-phone me-2"></i>
-                    {phoneRevealed ? worker.phoneNumber : maskedPhone}
-                    {!phoneRevealed && <span className="ms-2 text-muted small">(tap to reveal)</span>}
-                  </button>
+                    {phoneRevealed ? worker.phoneNumber : 'Call Now'}
+                  </a>
                   <a
                     href={whatsappBotLink(`Hi, I'd like to book ${worker.firstName} ${worker.lastName} (${skillLabel}) in ${worker.locationName || 'Nairobi'}`)}
                     target="_blank"
@@ -609,48 +525,53 @@ export default function ArtisanProfilePage() {
                   >
                     <i className="fa-brands fa-whatsapp me-2"></i>Book via WhatsApp
                   </a>
-                  <Link href={`/chat/${worker.id}`} className="btn btn-outline-primary rounded-5">
-                    <i className="fa-solid fa-message me-2"></i>Message
-                  </Link>
                   <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary rounded-5">
                     <i className="fa-solid fa-calendar-check me-2"></i>Book Now
                   </Link>
                 </div>
-                <div className="mt-3 pt-3 border-top text-center">
-                  <p className="text-muted small mb-0">
+                <div className="mt-3 pt-3 border-top">
+                  <p className="text-muted small mb-1">
                     <i className="fa-solid fa-shield-halved text-success me-1"></i>
                     {worker.isVerified ? 'Verified by TUFIXIT' : 'TUFIXIT Member'}
+                  </p>
+                  <p className="text-success small mb-0">
+                    <i className="fa-solid fa-clock me-1"></i>
+                    {worker.vettingLevel === 'PRO'
+                      ? 'Typically responds within 1 hr'
+                      : worker.vettingLevel === 'VERIFIED'
+                        ? 'Typically responds within 3 hrs'
+                        : 'Typically responds same day'}
                   </p>
                 </div>
               </div>
 
-              {/* Package Info */}
+              {/* Tier Info — customer perspective */}
               <div className={`card border-0 rounded-4 shadow-sm p-4 mb-4`}>
-                <div className="d-flex align-items-center gap-2 mb-2">
+                <div className="d-flex align-items-center gap-2 mb-3">
                   <span className={`badge ${getPackageBadgeClass(pkg)} fs-6 px-3 py-2`}>
                     {pkg === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                    {pkg} Package
+                    {pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'} Provider
                   </span>
                 </div>
                 {pkg === 'Gold' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>Featured in search results</li>
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>Unlimited active listings</li>
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>Priority support</li>
-                    <li><i className="fa-solid fa-check text-success me-2"></i>Analytics dashboard</li>
+                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Fully vetted &amp; background-checked by TUFIXIT</li>
+                    <li className="mb-2"><i className="fa-solid fa-id-card text-success me-2"></i>Government ID verified</li>
+                    <li className="mb-2"><i className="fa-solid fa-star text-warning me-2"></i>Top-rated Pro — consistently high ratings</li>
+                    <li><i className="fa-solid fa-headset text-primary me-2"></i>Priority customer support included</li>
                   </ul>
                 )}
                 {pkg === 'Silver' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>Higher search visibility</li>
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>3 active listings</li>
-                    <li><i className="fa-solid fa-check text-success me-2"></i>Portfolio upload</li>
+                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Identity verified by TUFIXIT</li>
+                    <li className="mb-2"><i className="fa-solid fa-id-card text-success me-2"></i>National ID on file</li>
+                    <li><i className="fa-solid fa-star text-warning me-2"></i>Verified professional with track record</li>
                   </ul>
                 )}
                 {pkg === 'Bronze' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-1"><i className="fa-solid fa-check text-success me-2"></i>Basic listing</li>
-                    <li><i className="fa-solid fa-check text-success me-2"></i>1 active listing</li>
+                    <li className="mb-2"><i className="fa-solid fa-user-check text-primary me-2"></i>Registered TUFIXIT member</li>
+                    <li><i className="fa-solid fa-star text-muted me-2"></i>Building their review history</li>
                   </ul>
                 )}
               </div>
@@ -685,7 +606,7 @@ export default function ArtisanProfilePage() {
               <div className="card border-0 rounded-4 shadow-sm p-4">
                 {!showReportForm ? (
                   <button
-                    className="btn btn-link text-danger text-decoration-none p-0"
+                    className="btn btn-sm btn-outline-danger rounded-2 px-3 py-1 text-decoration-none"
                     onClick={() => setShowReportForm(true)}
                   >
                     <i className="fa-solid fa-flag me-2"></i>Report this artisan
@@ -745,6 +666,49 @@ export default function ArtisanProfilePage() {
       </div>
 
       <Footer />
+
+      {/* ===== STICKY BOOK BAR ===== */}
+      <div
+        className="position-fixed bottom-0 start-0 end-0 bg-white border-top shadow-lg py-2 px-3 d-flex align-items-center justify-content-between gap-3"
+        style={{
+          zIndex: 1050,
+          transform: stickyVisible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.25s ease-in-out',
+        }}
+        aria-hidden={!stickyVisible}
+      >
+        <div className="d-flex align-items-center gap-2 overflow-hidden">
+          <img
+            src={profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id)}
+            alt={worker.firstName}
+            width={40}
+            height={40}
+            className="rounded-circle flex-shrink-0"
+            style={{ objectFit: 'cover', width: 40, height: 40 }}
+            loading="lazy"
+          />
+          <div className="overflow-hidden">
+            <div className="fw-semibold small text-truncate">{worker.firstName} {worker.lastName}</div>
+            <div className="text-muted text-truncate" style={{ fontSize: 12 }}>{skillLabel}</div>
+          </div>
+        </div>
+        <div className="d-flex gap-2 flex-shrink-0">
+          <a
+            href={whatsappBotLink(`Hi, I'd like to book ${worker.firstName} ${worker.lastName} (${skillLabel}) in ${worker.locationName || 'Nairobi'}`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-success btn-sm rounded-5"
+            onClick={handleWhatsAppClick}
+          >
+            <i className="fa-brands fa-whatsapp me-1"></i>
+            <span className="d-none d-sm-inline">WhatsApp</span>
+          </a>
+          <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary btn-sm rounded-5">
+            <i className="fa-solid fa-calendar-check me-1"></i>Book Now
+          </Link>
+        </div>
+      </div>
+      {/* ===== END STICKY BAR ===== */}
     </>
   );
 }

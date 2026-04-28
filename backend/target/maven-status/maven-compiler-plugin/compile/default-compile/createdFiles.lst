@@ -1,5 +1,6 @@
 com/tufixit/backend/dto/JobDTO$BidResponse.class
 com/tufixit/backend/dto/ReportDTO.class
+com/tufixit/backend/service/EmailService.class
 com/tufixit/backend/dto/WhatsAppDTO$OutboundText.class
 com/tufixit/backend/dto/AuthDTO$LoginRequest.class
 com/tufixit/backend/dto/AiDTO$DemandInsight$DemandInsightBuilder.class
@@ -33,6 +34,7 @@ com/tufixit/backend/entity/User$AccountStatus.class
 com/tufixit/backend/config/DataSeeder.class
 com/tufixit/backend/service/JobScopingService.class
 com/tufixit/backend/dto/JobDTO$AcceptBidRequest$AcceptBidRequestBuilder.class
+com/tufixit/backend/entity/User$ApprovalStatus.class
 com/tufixit/backend/dto/AiDTO$DemandForecastResponse$DemandForecastResponseBuilder.class
 com/tufixit/backend/dto/JobDTO.class
 com/tufixit/backend/dto/SubscriptionDTO$PlanInfo$PlanInfoBuilder.class
@@ -55,6 +57,7 @@ com/tufixit/backend/dto/BookingDTO$ArtisanJobDetail.class
 com/tufixit/backend/dto/BookingDTO$PaymentRecord.class
 com/tufixit/backend/entity/Subscription$SubscriptionStatus.class
 com/tufixit/backend/dto/BookingDTO$CompleteJobRequest$CompleteJobRequestBuilder.class
+com/tufixit/backend/dto/AuthDTO$AdminRejectArtisanRequest$AdminRejectArtisanRequestBuilder.class
 com/tufixit/backend/dto/AiDTO$JobScopingRequest.class
 com/tufixit/backend/dto/EstateDTO$ApproveArtisanRequest.class
 com/tufixit/backend/controller/PaymentController.class
@@ -202,6 +205,7 @@ com/tufixit/backend/dto/AiDTO$QualityVerifyResponse.class
 com/tufixit/backend/dto/AiDTO$TrustBreakdown.class
 com/tufixit/backend/dto/WhatsAppDTO$Contact.class
 com/tufixit/backend/repository/ListingRepository.class
+com/tufixit/backend/dto/AuthDTO$AdminRejectArtisanRequest.class
 com/tufixit/backend/dto/AiDTO$QualityVerifyRequest.class
 com/tufixit/backend/dto/JobDTO$ReviewRequest.class
 com/tufixit/backend/config/RateLimitFilter$RateBucket.class

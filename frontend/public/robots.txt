@@ -1,8 +1,23 @@
 User-agent: *
 Allow: /
+Allow: /artisans
+Allow: /artisans/
+Allow: /pricing
+Allow: /terms
+Allow: /privacy
+Allow: /estate/
+
+# Private / non-indexable routes
 Disallow: /dashboard/
 Disallow: /login
 Disallow: /register
+Disallow: /forgot-password
+Disallow: /complete-profile/
+Disallow: /chat/
+Disallow: /track/
 Disallow: /api/
+
+# Keep crawl budget for valuable pages
+Crawl-delay: 1
 
 Sitemap: https://tufixit.com/sitemap.xml

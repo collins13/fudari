@@ -103,12 +103,14 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                   className="tx-user-chip"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
+                  data-bs-offset="0,4"
+                  data-bs-strategy="fixed"
                 >
                   <span className="tx-avatar">{initials}</span>
                   <span className="d-none d-sm-inline fw-medium">{user.firstName}</span>
                   <i className="fa-solid fa-chevron-down small"></i>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
+                <ul className="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2" style={{ minWidth: '220px', right: 0, left: 'auto' }}>
                   <li className="px-3 py-2 small text-muted">
                     Signed in as <strong className="d-block text-body">{user.email}</strong>
                   </li>
@@ -224,6 +226,16 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         .tx-navbar {
           padding-block: 0.75rem;
           transition: background 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+        }
+        @media (max-width: 575px) {
+          /* Keep user dropdown inside the viewport on small phones */
+          .tx-user-chip + .dropdown-menu {
+            position: fixed !important;
+            right: 0.75rem !important;
+            left: auto !important;
+            top: auto !important;
+            max-width: calc(100vw - 1.5rem);
+          }
         }
         .tx-navbar--solid {
           background: rgba(255, 255, 255, 0.92);
