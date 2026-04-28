@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432" 
     networks:
       - backend_net
     logging:
@@ -134,6 +136,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:size=64m
+      - /app/.next/cache:size=256m
     stop_grace_period: 30s
     networks:
       - edge_net
@@ -147,7 +150,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/ > /dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 20s
       timeout: 5s
       retries: 5
