@@ -127,6 +127,12 @@ function LoginForm() {
               <span className="text-muted small">Don&apos;t have an account?</span>{' '}
               <Link href="/register" className="fw-semibold small">Create Account</Link>
             </div>
+            <p className="text-center text-muted small mt-3 mb-0">
+              By signing in you agree to our{' '}
+              <Link href="/terms" className="text-decoration-underline">Terms of Service</Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-decoration-underline">Privacy Policy</Link>.
+            </p>
           </div>
 
           {/* Info Side */}

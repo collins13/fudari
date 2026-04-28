@@ -22,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     // Disable browser scroll restoration — prevents the browser from
@@ -78,6 +79,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
     fetchUnread();
   }, []);
+
+  // Close user dropdown on outside click / Escape
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.tufixit-user-menu')) setUserMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [userMenuOpen]);
+
+  // Close on route change
+  useEffect(() => { setUserMenuOpen(false); }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -349,79 +371,86 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span></span>
                 </div>
               </div>
-              <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                <div className="navbar-icon d-flex ms-auto">
-                  <ul className="navbar-nav flex-row align-items-center gap-2">
-                    <li className="nav-item">
-                      <Link href="/" className="btn btn-sm btn-outline-primary">
-                        ← Back to Site
-                      </Link>
-                    </li>
-                    <li className="nav-item dropdown user-menu user-menu-custom">
-                      <a
-                        className="nav-link dropdown-toggle"
-                        href="#"
-                        role="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <div className="profile-element d-flex align-items-center gap-2">
-                          <div className="avatar">
-                            <div
-                              className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                              style={{
-                                width: 36,
-                                height: 36,
-                                color: 'white',
-                                fontWeight: 'bold',
-                                fontSize: 14,
-                              }}
-                            >
-                              {user?.firstName?.[0] || 'A'}
-                            </div>
-                          </div>
-                          <div className="profile-text d-none d-md-block">
-                            <h6 className="m-0 fw-medium" style={{ fontSize: 14 }}>
-                              {user?.firstName} {user?.lastName}
-                            </h6>
-                            <span style={{ fontSize: 12, color: '#888' }}>{user?.email}</span>
-                          </div>
-                        </div>
-                      </a>
-                      <div className="dropdown-menu dropdown-menu-end">
-                        <Link href="/dashboard/profile" className="dropdown-item">
-                          <i className="fa-solid fa-user me-2"></i>My Profile
-                        </Link>
-                        <Link href="/dashboard/settings" className="dropdown-item">
-                          <i className="fa-solid fa-gear me-2"></i>Settings
-                        </Link>
-                        <div className="dropdown-divider"></div>
-                        <a
-                          href="#"
-                          className="dropdown-item text-danger"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleLogout();
+              <div className="navbar-icon d-flex align-items-center ms-auto">
+                <ul className="navbar-nav flex-row align-items-center gap-2">
+                  <li className="nav-item d-none d-sm-block">
+                    <Link href="/" className="btn btn-sm btn-outline-primary">
+                      ← Back to Site
+                    </Link>
+                  </li>
+                  <li className="nav-item tufixit-user-menu">
+                    <button
+                      type="button"
+                      className="btn btn-link nav-link p-1 d-flex align-items-center gap-2 text-decoration-none"
+                      onClick={() => setUserMenuOpen((o) => !o)}
+                      aria-expanded={userMenuOpen}
+                      aria-haspopup="menu"
+                    >
+                      <div className="avatar">
+                        <div
+                          className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                          style={{
+                            width: 36,
+                            height: 36,
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: 14,
                           }}
                         >
-                          <i className="fa-solid fa-right-from-bracket me-2"></i>Sign Out
-                        </a>
+                          {user?.firstName?.[0] || 'A'}
+                        </div>
                       </div>
-                    </li>
-                  </ul>
-                </div>
+                      <div className="profile-text d-none d-md-block text-start">
+                        <h6 className="m-0 fw-medium" style={{ fontSize: 14 }}>
+                          {user?.firstName} {user?.lastName}
+                        </h6>
+                        <span style={{ fontSize: 12, color: '#888' }}>{user?.email}</span>
+                      </div>
+                      <i
+                        className="fa-solid fa-chevron-down ms-1"
+                        style={{ fontSize: 10, color: '#888' }}
+                      />
+                    </button>
+                    {userMenuOpen && (
+                      <ul className="tufixit-user-menu-panel shadow border rounded-3" role="menu">
+                        <li className="px-3 py-2 text-muted small border-bottom">
+                          Signed in as<br />
+                          <strong className="text-body">{user?.email}</strong>
+                        </li>
+                        <li className="d-sm-none">
+                          <Link href="/" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                            <i className="fa-solid fa-arrow-left me-2 text-primary"></i>Back to Site
+                          </Link>
+                        </li>
+                        <li className="d-sm-none"><hr className="dropdown-divider my-1" /></li>
+                        <li>
+                          <Link href="/dashboard/profile" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                            <i className="fa-solid fa-user me-2"></i>My Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <Link href="/dashboard/settings" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                            <i className="fa-solid fa-gear me-2"></i>Settings
+                          </Link>
+                        </li>
+                        <li><hr className="dropdown-divider my-1" /></li>
+                        <li>
+                          <button
+                            type="button"
+                            className="dropdown-item text-danger"
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              handleLogout();
+                            }}
+                          >
+                            <i className="fa-solid fa-right-from-bracket me-2"></i>Sign Out
+                          </button>
+                        </li>
+                      </ul>
+                    )}
+                  </li>
+                </ul>
               </div>
-              <button
-                className="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-              >
-                <i className="fa-solid fa-bars"></i>
-              </button>
             </nav>
 
             {/* Page Body */}
@@ -672,6 +701,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .navbar-custom-menu.navbar.sidebar-collapsed-offset,
         .fixed .sidebar.sidebar-collapsed ~ .content-wrapper .navbar-custom-menu.navbar {
           left: 68px !important;
+        }
+
+        /* ── Topbar user dropdown: self-positioned (no Bootstrap/Popper
+              dependency). Anchored to the avatar button, right-aligned,
+              clamped to viewport so it never gets clipped on mobile. ── */
+        .tufixit-user-menu {
+          position: relative;
+        }
+        .tufixit-user-menu > button {
+          background: transparent;
+          border: 0;
+          color: inherit;
+          box-shadow: none !important;
+        }
+        .tufixit-user-menu > button:hover,
+        .tufixit-user-menu > button:focus {
+          background: rgba(0,0,0,0.04);
+          border-radius: 8px;
+        }
+        .tufixit-user-menu-panel {
+          list-style: none;
+          margin: 0;
+          padding: 0.5rem 0;
+          position: absolute;
+          top: calc(100% + 8px);
+          right: 0;
+          left: auto;
+          background: #fff;
+          min-width: 16rem;
+          max-width: calc(100vw - 1rem);
+          z-index: 1080;
+          border-color: #e9ecef !important;
+        }
+        .tufixit-user-menu-panel .dropdown-item {
+          display: flex;
+          align-items: center;
+          padding: 0.55rem 1rem;
+          font-size: 0.875rem;
+          color: #333;
+          text-decoration: none;
+          background: transparent;
+          border: 0;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .tufixit-user-menu-panel .dropdown-item:hover {
+          background: #f5f5f7;
+          color: var(--bs-primary);
+        }
+        .tufixit-user-menu-panel .dropdown-divider {
+          margin: 0.25rem 0;
+          border-top: 1px solid #eee;
+        }
+        @media (max-width: 575.98px) {
+          .tufixit-user-menu-panel {
+            min-width: 14rem;
+            right: 0;
+          }
         }
 
         /* ── Tablet (768px-1023px) ─────────────────────────── */

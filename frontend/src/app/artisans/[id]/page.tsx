@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
+import { profileImageFor } from '@/lib/avatar';
 import TrustScoreCard from '@/components/TrustScoreCard';
 
 interface WorkerSkillInfo {
@@ -335,7 +336,7 @@ export default function ArtisanProfilePage() {
           <div className="row align-items-end g-4">
             <div className="col-auto">
               <img
-                src={worker.profileImage || '/liston/images/avatar/01.jpg'}
+                src={profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id)}
                 alt={`${worker.firstName} ${worker.lastName}`}
                 className="rounded-circle border border-3 border-white"
                 style={{ width: 120, height: 120, objectFit: 'cover' }}

@@ -25,7 +25,7 @@ public class SmsService {
     @Value("${africastalking.username:sandbox}")
     private String username;
 
-    @Value("${africastalking.sender-id:TUFIXIT}")
+    @Value("${africastalking.sender-id:}")
     private String senderId;
 
     @Value("${africastalking.environment:live}")

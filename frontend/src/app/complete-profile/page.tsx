@@ -30,6 +30,8 @@ export default function CompleteProfilePage() {
     experienceYears: '',
     hourlyRate: '',
     locationName: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     bio: '',
     profileImage: '',
   });
@@ -86,28 +88,45 @@ export default function CompleteProfilePage() {
   const handleDetectLocation = () => {
     if (!navigator.geolocation) return;
     setLocating(true);
+    setError('');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&zoom=16`,
             { headers: { 'Accept-Language': 'en' } }
           );
           const data = await res.json();
           const addr = data.address || {};
-          const name =
+          // Build a precise local name from the most specific components first.
+          // Reject country-only matches (e.g. "Kenya") to avoid a misleading default.
+          const local =
             addr.suburb || addr.neighbourhood || addr.city_district ||
-            addr.town || addr.city || addr.county || data.display_name;
-          if (name) setForm((prev) => ({ ...prev, locationName: name }));
+            addr.village || addr.town || addr.city || addr.county || null;
+          const region = addr.state || addr.region || null;
+          const name = local
+            ? (region && region !== local ? `${local}, ${region}` : local)
+            : null;
+
+          if (name) {
+            setForm((prev) => ({ ...prev, locationName: name, latitude, longitude }));
+          } else {
+            setError(
+              "We couldn't pinpoint your area from GPS. Please type your service area (e.g. Westlands, Nairobi)."
+            );
+          }
         } catch {
-          // fallback: leave blank
+          setError('Could not detect location. Please type your service area manually.');
         } finally {
           setLocating(false);
         }
       },
-      () => setLocating(false),
-      { timeout: 8000 }
+      () => {
+        setLocating(false);
+        setError('Location permission denied. Please type your service area manually.');
+      },
+      { timeout: 8000, enableHighAccuracy: true }
     );
   };
 
@@ -146,6 +165,8 @@ export default function CompleteProfilePage() {
       // Save profile
       await authAPI.updateFullProfile({
         locationName: form.locationName || undefined,
+        latitude: form.latitude ?? undefined,
+        longitude: form.longitude ?? undefined,
         profileImage: form.profileImage || undefined,
       });
 

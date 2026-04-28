@@ -366,6 +366,11 @@ export default function CustomerChatPage() {
                 Already have an account?{' '}
                 <Link href={`/login?redirect=/chat/${artisanId}`} className="text-primary">Sign in</Link>
               </p>
+              <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: '0.7rem' }}>
+                By continuing you agree to our{' '}
+                <Link href="/terms" className="text-decoration-underline">Terms</Link> and{' '}
+                <Link href="/privacy" className="text-decoration-underline">Privacy Policy</Link>.
+              </p>
             </form>
           </div>
         </div>

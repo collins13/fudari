@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
 import { workersAPI, categoriesAPI } from '@/lib/api';
 import { KENYA_MAJOR_TOWNS, formatKES } from '@/lib/kenya';
+import { profileImageFor } from '@/lib/avatar';
 
 interface FeaturedArtisan {
   id: number;
@@ -129,16 +130,17 @@ export default function HomePage() {
           setFeaturedArtisans(
             workers.map((w: any) => {
               const skill = w.skills?.[0];
+              const fullName = `${w.firstName} ${w.lastName}`;
               return {
                 id: w.id,
-                name: `${w.firstName} ${w.lastName}`,
+                name: fullName,
                 skill: skill?.skillType ? skillTypeToLabel(skill.skillType) : 'General',
                 package: vettingToPackage(w.vettingLevel || 'STANDARD'),
                 rating: w.trustScore || 0,
                 reviews: w.totalReviews || 0,
                 location: w.locationName || 'Kenya',
                 price: skill?.hourlyRate ? Number(skill.hourlyRate) : 0,
-                image: w.profileImage || '/liston/images/place/01.jpg',
+                image: profileImageFor(w.profileImage, fullName, w.id),
               };
             })
           );

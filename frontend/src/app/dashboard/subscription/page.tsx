@@ -5,8 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface PlanInfo {
   name: string;
-  price: number;
-  monthlyPrice?: number;
+  monthlyPrice: number;
   weeklyPrice?: number;
   maxListings: number;
   featured: boolean;
@@ -212,8 +211,10 @@ export default function SubscriptionPage() {
         {plans.map((plan) => {
           const isCurrentPlan = currentSub?.planType === plan.name;
           const isPopular = plan.name === 'BASIC';
-          const displayPrice = billingCycle === 'WEEKLY' && plan.weeklyPrice ? plan.weeklyPrice : plan.price;
-          const periodLabel = plan.price === 0 ? '' : billingCycle === 'WEEKLY' ? '/week' : '/month';
+          const monthly = plan.monthlyPrice ?? 0;
+          const weekly = plan.weeklyPrice ?? 0;
+          const displayPrice = billingCycle === 'WEEKLY' && weekly ? weekly : monthly;
+          const periodLabel = monthly === 0 ? '' : billingCycle === 'WEEKLY' ? '/week' : '/month';
           return (
             <div key={plan.name} className="col-md-4">
               <div className={`card border-0 shadow-sm h-100 position-relative ${isPopular ? 'border-primary border-2' : ''}`}>
@@ -249,7 +250,7 @@ export default function SubscriptionPage() {
                       {subscribing === plan.name ? (
                         <span className="spinner-border spinner-border-sm me-1" />
                       ) : null}
-                      {plan.price === 0 ? 'Switch to Free' : `Upgrade to ${plan.name}`}
+                      {monthly === 0 ? 'Switch to Free' : `Upgrade to ${plan.name}`}
                     </button>
                   ) : (
                     <button className="btn btn-outline-primary w-100 rounded-5" disabled>
