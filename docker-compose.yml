@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432" 
+      - "5432:5432" 
     networks:
       - backend_net
     logging:
@@ -161,7 +161,7 @@ networks:
     driver: bridge
   backend_net:
     driver: bridge
-    internal: true
+    # internal: true
 
 volumes:
   postgres_data:

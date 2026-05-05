@@ -45,7 +45,39 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   output: 'standalone',
   turbopack: {},
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.tufixit.com' }],
+        destination: 'https://tufixit.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Allow any HTTPS image (CDNs, user-uploaded, avatars)
       { protocol: 'https', hostname: '**' },

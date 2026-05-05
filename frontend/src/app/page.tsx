@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
@@ -173,13 +174,20 @@ export default function HomePage() {
         className="align-items-center d-flex hero-header dark-overlay mt-3 mx-3 overflow-hidden position-relative rounded-4"
         style={{ minHeight: '85dvh' }}
       >
-        <img className="bg-image" src="/liston/images/header/lg-01.jpg" alt="Hero Background" />
+        <Image
+          className="bg-image"
+          src="/liston/images/header/lg-01.jpg"
+          alt="Verified artisans and service providers in Nairobi and Kenya"
+          fill
+          priority
+          sizes="100vw"
+        />
         <div className="container overlay-content py-5">
           <div className="hero-header-subtitle text-center text-white text-uppercase mb-3">
             Kenya&apos;s #1 Jua Kali Marketplace
           </div>
           <h1 className="display-1 fw-bold hero-header_title text-capitalize text-white text-center mb-4">
-            Get a <span className="font-caveat text-span">Vetted Pro</span> in Minutes
+            Hire <span className="font-caveat text-span">Verified Providers</span> in Nairobi and Kenya
           </h1>
           <p className="lead mb-3 text-center text-white">
             Verified artisans. Real reviews. Fast response. No login required.
@@ -408,13 +416,13 @@ export default function HomePage() {
                   <div className="card rounded-4 overflow-hidden border-0 shadow-sm h-100">
                     <div className="position-relative overflow-hidden" style={{ height: 220 }}>
                       {artisan.image ? (
-                        <img
+                        <Image
                           src={artisan.image}
                           alt={artisan.name}
+                          fill
                           className="w-100 h-100"
                           style={{ objectFit: 'cover' }}
-                          loading="lazy"
-                          decoding="async"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         />
                       ) : (
                         <div

@@ -20,11 +20,11 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: {
-    default: "TUFIXIT – Find Verified Artisans & Service Providers in Kenya",
+    default: "TUFIXIT Kenya: Hire Verified Artisans Fast",
     template: "%s | TUFIXIT Kenya",
   },
   description:
-    "Kenya's #1 Jua Kali marketplace. Book verified electricians, plumbers, mechanics, painters, carpenters & more near you in Nairobi, Mombasa, Kisumu and across Kenya. Direct contact via phone or WhatsApp.",
+    "Hire verified service providers in Nairobi and across Kenya. Book trusted electricians, plumbers, mechanics and more on TUFIXIT.",
   keywords: [
     // Brand
     "tufixit", "tufixit kenya", "tufixit nairobi",
@@ -123,16 +123,10 @@ export default function RootLayout({
         <meta name="geo.placename" content="Nairobi, Kenya" />
         <meta name="geo.position" content="-1.286389;36.817223" />
         <meta name="ICBM" content="-1.286389, 36.817223" />
-        {/* Template CSS */}
+        {/* Critical CSS */}
         <link rel="stylesheet" href="/liston/plugins/aos/aos.min.css" />
         <link rel="stylesheet" href="/liston/plugins/bootstrap/css/bootstrap.min.css" />
         <link rel="stylesheet" href="/liston/plugins/fontawesome/css/all.min.css" />
-        <link rel="stylesheet" href="/liston/plugins/OwlCarousel2/css/owl.carousel.min.css" />
-        <link rel="stylesheet" href="/liston/plugins/OwlCarousel2/css/owl.theme.default.min.css" />
-        <link rel="stylesheet" href="/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.css" />
-        <link rel="stylesheet" href="/liston/plugins/magnific-popup/magnific-popup.css" />
-        <link rel="stylesheet" href="/liston/plugins/select2/select2.min.css" />
-        <link rel="stylesheet" href="/liston/plugins/select2-bootstrap-5/select2-bootstrap-5-theme.min.css" />
         <link rel="stylesheet" href="/liston/css/style.css" />
 
         {/* JSON-LD Structured Data */}
@@ -257,23 +251,65 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <Script
+          id="load-noncritical-css"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              ['/liston/plugins/OwlCarousel2/css/owl.carousel.min.css',
+               '/liston/plugins/OwlCarousel2/css/owl.theme.default.min.css',
+               '/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.css',
+               '/liston/plugins/magnific-popup/magnific-popup.css',
+               '/liston/plugins/select2/select2.min.css',
+               '/liston/plugins/select2-bootstrap-5/select2-bootstrap-5-theme.min.css']
+              .forEach(function(href){
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                document.head.appendChild(link);
+              });
+            `,
+          }}
+        />
+
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);} 
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+                `,
+              }}
+            />
+          </>
+        ) : null}
+
         {/* Scripts - load in order */}
         <Script
           src="/liston/plugins/jQuery/jquery.min.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
         <Script src="/liston/plugins/bootstrap/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
         <Script src="/liston/plugins/aos/aos.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/OwlCarousel2/owl.carousel.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/magnific-popup/jquery.magnific-popup.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/select2/select2.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/theia-sticky-sidebar/ResizeSensor.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/theia-sticky-sidebar/theia-sticky-sidebar.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/waypoints/jquery.waypoints.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/counter-up/jquery.counterup.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/macy/macy.js" strategy="afterInteractive" />
-        <Script src="/liston/js/script.js" strategy="afterInteractive" />
+        <Script src="/liston/plugins/OwlCarousel2/owl.carousel.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/magnific-popup/jquery.magnific-popup.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/select2/select2.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/theia-sticky-sidebar/ResizeSensor.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/theia-sticky-sidebar/theia-sticky-sidebar.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/waypoints/jquery.waypoints.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/counter-up/jquery.counterup.min.js" strategy="lazyOnload" />
+        <Script src="/liston/plugins/macy/macy.js" strategy="lazyOnload" />
+        <Script src="/liston/js/script.js" strategy="lazyOnload" />
       </body>
     </html>
   );
