@@ -394,8 +394,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="navbar-icon d-flex align-items-center ms-auto">
                 <ul className="navbar-nav flex-row align-items-center gap-2">
                   <li className="nav-item d-none d-sm-block">
-                    <Link href="/" className="btn btn-sm btn-outline-primary">
-                      ← Back to Site
+                    <Link href="/" className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                      <i className="fa-solid fa-arrow-left" style={{ fontSize: 11 }}></i>
+                      <span>Back to Site</span>
                     </Link>
                   </li>
                   <li className="nav-item tufixit-user-menu">
