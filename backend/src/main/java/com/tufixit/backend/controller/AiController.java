@@ -5,6 +5,7 @@ import com.tufixit.backend.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -178,6 +179,7 @@ public class AiController {
      * seasonal patterns, location hotspots, and pricing advice.
      */
     @GetMapping("/demand-forecast")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AiDTO.DemandForecastResponse> demandForecast(
             @RequestParam String skillType,
             @RequestParam(required = false) String location) {

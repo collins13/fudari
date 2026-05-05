@@ -186,6 +186,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </li>
                 )}
 
+                {user?.role !== 'ADMIN' && (
+                  <>
+                    <li className={isActive('/dashboard/post-job') ? 'mm-active' : ''}>
+                      <Link href="/dashboard/post-job">
+                        <i className="fa-solid fa-pen-to-square"></i>
+                        <span className="ms-2">Post a Job</span>
+                      </Link>
+                    </li>
+                    <li className={isActive('/dashboard/my-jobs') ? 'mm-active' : ''}>
+                      <Link href="/dashboard/my-jobs">
+                        <i className="fa-solid fa-briefcase"></i>
+                        <span className="ms-2">My Jobs</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+
                 <li className={isActive('/dashboard/wallet') ? 'mm-active' : ''}>
                   <Link href="/dashboard/wallet">
                     <i className="fa-solid fa-wallet"></i>

@@ -2,14 +2,19 @@ package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.AiDTO;
 import com.tufixit.backend.entity.Job;
+import com.tufixit.backend.entity.Subscription;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
 import com.tufixit.backend.repository.JobRepository;
+import com.tufixit.backend.repository.SubscriptionRepository;
 import com.tufixit.backend.repository.UserRepository;
 import com.tufixit.backend.repository.WorkerSkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -36,6 +41,7 @@ public class DemandForecastService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final WorkerSkillRepository workerSkillRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     // Kenyan seasonal patterns: skill type → months of high demand
     private static final Map<String, List<Month>> SEASONAL_PEAKS = Map.ofEntries(
@@ -53,6 +59,31 @@ public class DemandForecastService {
     );
 
     public AiDTO.DemandForecastResponse forecast(String skillTypeStr, String location) {
+        // Gate: only PRO and BASIC subscribers may access market intelligence
+        String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+        User caller = userRepository.findByEmail(principal)
+                .orElseGet(() -> userRepository.findByPhoneNumber(principal).orElse(null));
+        if (caller == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+        boolean hasPaidPlan = subscriptionRepository
+                .findByArtisanIdAndStatus(caller.getId(), Subscription.SubscriptionStatus.ACTIVE)
+                .map(s -> s.getPlanType() == Subscription.PlanType.PRO
+                        || s.getPlanType() == Subscription.PlanType.BASIC)
+                .orElse(false);
+        // Also allow if in grace period (fair — they recently had a paid plan)
+        if (!hasPaidPlan) {
+            hasPaidPlan = subscriptionRepository
+                    .findByArtisanIdAndStatus(caller.getId(), Subscription.SubscriptionStatus.GRACE_PERIOD)
+                    .map(s -> s.getPlanType() == Subscription.PlanType.PRO
+                            || s.getPlanType() == Subscription.PlanType.BASIC)
+                    .orElse(false);
+        }
+        if (!hasPaidPlan) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Market Intelligence is available on BASIC and PRO plans. Upgrade to access demand forecasts.");
+        }
+
         WorkerSkill.SkillType skillType;
         try {
             skillType = WorkerSkill.SkillType.valueOf(skillTypeStr.toUpperCase());

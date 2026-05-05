@@ -57,6 +57,7 @@ export default function DemandForecastPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSkill, setSelectedSkill] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -72,9 +73,15 @@ export default function DemandForecastPage() {
   useEffect(() => {
     if (!selectedSkill) { setLoading(false); return; }
     setLoading(true);
+    setUpgradeRequired(false);
     aiAPI.demandForecast(selectedSkill, user?.locationName || undefined)
       .then(res => setForecast(res.data))
-      .catch(() => setForecast(null))
+      .catch((err) => {
+        if (err?.response?.status === 403) {
+          setUpgradeRequired(true);
+        }
+        setForecast(null);
+      })
       .finally(() => setLoading(false));
   }, [selectedSkill, user]);
 
@@ -109,7 +116,29 @@ export default function DemandForecastPage() {
         </div>
       )}
 
-      {!loading && !forecast && (
+      {!loading && upgradeRequired && (
+        <div className="text-center py-5">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mx-auto" style={{ maxWidth: 480 }}>
+            <div className="mb-3">
+              <span className="rounded-circle d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10"
+                style={{ width: 72, height: 72 }}>
+                <i className="fa-solid fa-lock fa-2x text-warning"></i>
+              </span>
+            </div>
+            <h5 className="fw-bold mb-2">Market Intelligence is a Paid Feature</h5>
+            <p className="text-muted mb-4 small">
+              Demand forecasts, pricing advice, and supply/demand insights are available on
+              the <strong>BASIC</strong> and <strong>PRO</strong> plans. Upgrade to unlock real-time
+              market data for your skills.
+            </p>
+            <Link href="/dashboard/subscription" className="btn btn-primary rounded-pill px-4">
+              <i className="fa-solid fa-arrow-up me-2"></i>Upgrade My Plan
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {!loading && !upgradeRequired && !forecast && (
         <div className="text-center py-5">
           <i className="fa-solid fa-chart-bar fa-3x text-muted mb-3" />
           <p className="text-muted">No forecast data available. Add a skill to your profile first.</p>

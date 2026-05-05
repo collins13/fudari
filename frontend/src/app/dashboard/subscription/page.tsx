@@ -176,7 +176,11 @@ export default function SubscriptionPage() {
             </div>
             <div className="text-end">
               <div className="text-muted small">
-                {currentSub.startDate && `${formatDate(currentSub.startDate)} - ${formatDate(currentSub.endDate)}`}
+                {currentSub.planType === 'FREE'
+                  ? 'No expiry'
+                  : currentSub.startDate
+                    ? `${formatDate(currentSub.startDate)} – ${formatDate(currentSub.endDate)}`
+                    : null}
               </div>
               <div className="text-muted small mt-1">
                 {currentSub.maxListings >= 999 ? 'Unlimited' : currentSub.maxListings} listing{currentSub.maxListings !== 1 ? 's' : ''} allowed
