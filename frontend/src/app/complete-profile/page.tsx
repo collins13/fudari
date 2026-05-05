@@ -46,10 +46,29 @@ export default function CompleteProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    // If user already has a profile, skip to dashboard
-    if (user.role === 'WORKER' && user.vettingLevel !== 'STANDARD') {
+
+    // Non-workers don't need the artisan onboarding steps
+    if (user.role !== 'WORKER') return;
+
+    // VERIFIED / PRO means admin already approved — profile is definitely complete
+    if (user.vettingLevel !== 'STANDARD') {
       router.push('/dashboard');
+      return;
     }
+
+    // For STANDARD workers, check if they have already filled the required fields
+    authAPI.getCurrentUser()
+      .then((res) => {
+        const data = res.data;
+        const hasSkills = Array.isArray(data.skills) && data.skills.length > 0;
+        const hasLocation = !!data.locationName;
+        if (hasSkills && hasLocation) {
+          router.push('/dashboard');
+        }
+      })
+      .catch(() => {
+        // Can't verify — show the form so they can fill it in
+      });
   }, [user]);
 
   const handleAiClassify = async () => {
@@ -171,9 +190,10 @@ export default function CompleteProfilePage() {
       });
 
       // Add skill if selected
-      if (form.skillType && user?.userId) {
+      const workerId = user?.id ?? user?.userId;
+      if (form.skillType && workerId) {
         try {
-          await workersAPI.addSkill(user.userId, {
+          await workersAPI.addSkill(workerId, {
             skillType: form.skillType,
             description: form.bio || undefined,
             experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,

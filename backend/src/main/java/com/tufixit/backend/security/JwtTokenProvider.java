@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.repository.UserRepository;
@@ -137,10 +138,17 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
-                    .parseSignedClaims(authToken);
+                    .parseSignedClaims(authToken)
+                    .getPayload();
+
+            if (!StringUtils.hasText(claims.getSubject())) {
+                log.error("JWT subject is missing");
+                return false;
+            }
+
             return true;
         } catch (MalformedJwtException ex) {
             log.error("Invalid JWT token");

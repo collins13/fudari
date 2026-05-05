@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -43,12 +44,14 @@ public class AuthService {
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
-        if (request.getEmail() != null && !request.getEmail().isBlank()
-                && userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = normalizeOptional(request.getEmail());
+        String normalizedPhone = normalizeRequired(request.getPhoneNumber(), "Phone number is required");
+
+        if (normalizedEmail != null && userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already exists");
         }
 
-        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+        if (userRepository.existsByPhoneNumber(normalizedPhone)) {
             throw new RuntimeException("Phone number already exists");
         }
 
@@ -58,8 +61,8 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
+            .email(normalizedEmail)
+            .phoneNumber(normalizedPhone)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -84,7 +87,7 @@ public class AuthService {
                     .ifPresent(referrer -> {
                         user.setReferredBy(referrer.getId());
                         log.info("[REFERRAL] User {} referred by {} (code: {})",
-                                request.getPhoneNumber(), referrer.getId(), request.getReferralCode());
+                            normalizedPhone, referrer.getId(), request.getReferralCode());
                     });
         }
 
@@ -107,7 +110,9 @@ public class AuthService {
             rewardReferrer(savedUser.getReferredBy());
         }
 
-        String principal = savedUser.getEmail() != null ? savedUser.getEmail() : savedUser.getPhoneNumber();
+        String principal = StringUtils.hasText(savedUser.getEmail())
+            ? savedUser.getEmail()
+            : savedUser.getPhoneNumber();
         String token = tokenProvider.generateTokenFromUsernameWithRole(principal, savedUser.getRole().name());
 
         return AuthDTO.AuthResponse.builder()
@@ -428,6 +433,21 @@ public class AuthService {
 
     public boolean isPhoneAvailable(String phone) {
         return !userRepository.existsByPhoneNumber(phone);
+    }
+
+    private String normalizeOptional(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private String normalizeRequired(String value, String errorMessage) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            throw new RuntimeException(errorMessage);
+        }
+        return normalized;
     }
 
     @Transactional

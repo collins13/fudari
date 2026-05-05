@@ -72,7 +72,7 @@ export const metadata: Metadata = {
       "Kenya's #1 Jua Kali marketplace. Book verified electricians, plumbers, mechanics, painters and more in Nairobi, Mombasa & beyond.",
     images: [
       {
-        url: "/liston/images/header/lg-01.jpg",
+        url: "https://tufixit.com/liston/images/header/lg-01.jpg",
         width: 1200,
         height: 630,
         alt: "TUFIXIT – Kenya's Jua Kali Marketplace",
@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     creator: "@tufixit_ke",
     title: "TUFIXIT – Verified Artisans Near You in Kenya",
     description: "Book verified Jua Kali workers in seconds. Electricians, plumbers, mechanics & more across Kenya.",
-    images: ["/liston/images/header/lg-01.jpg"],
+    images: ["https://tufixit.com/liston/images/header/lg-01.jpg"],
   },
   robots: {
     index: true,

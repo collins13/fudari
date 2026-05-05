@@ -16,7 +16,7 @@ export function avatarFor(
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   const bg = palette[hash % palette.length];
-  return `https://ui-avatars.com/api/?name=${initials}&background=${bg}&color=fff&size=${size}&bold=true&format=svg`;
+  return `https://ui-avatars.com/api/?name=${initials}&background=${bg}&color=fff&size=${size}&bold=true&format=png`;
 }
 
 /** Returns the user's profileImage if set, otherwise a per-user initials avatar. */

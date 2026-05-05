@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { messagesAPI } from '@/lib/api';
+import { authAPI, messagesAPI } from '@/lib/api';
 
 interface User {
   id: number;
@@ -23,6 +23,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const profileCheckDone = useRef(false);
+
+  // ── Profile completeness gate for artisans ─────────────────────────────
+  useEffect(() => {
+    if (!user || user.role !== 'WORKER' || profileCheckDone.current) return;
+    profileCheckDone.current = true;
+
+    authAPI.getCurrentUser()
+      .then((res) => {
+        const data = res.data;
+        const hasSkills = Array.isArray(data.skills) && data.skills.length > 0;
+        const hasLocation = !!data.locationName;
+        if (!hasSkills || !hasLocation) {
+          router.push('/complete-profile');
+        }
+      })
+      .catch(() => {
+        // Can't verify — don't block the dashboard
+      });
+  }, [user, router]);
 
   useEffect(() => {
     // Disable browser scroll restoration — prevents the browser from

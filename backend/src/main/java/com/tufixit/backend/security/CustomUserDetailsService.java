@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 
@@ -23,11 +24,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(username)
-                .orElseGet(() -> userRepository.findByPhoneNumber(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found with: " + username)));
+        if (!StringUtils.hasText(username)) {
+            throw new UsernameNotFoundException("User not found with: " + username);
+        }
 
-        String principal = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
+        String normalizedUsername = username.trim();
+        User user = userRepository.findByEmail(normalizedUsername)
+            .orElseGet(() -> userRepository.findByPhoneNumber(normalizedUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with: " + normalizedUsername)));
+
+        String principal = StringUtils.hasText(user.getEmail()) ? user.getEmail() : user.getPhoneNumber();
         return new org.springframework.security.core.userdetails.User(
                 principal,
                 user.getPassword(),
