@@ -22,7 +22,7 @@ public class WorkerSkill {
     @Column(nullable = false)
     private SkillType skillType;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column

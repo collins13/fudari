@@ -56,14 +56,35 @@ export default function CompleteProfilePage() {
       return;
     }
 
-    // For STANDARD workers, check if they have already filled the required fields
+    // For STANDARD workers, check existing profile data and pre-fill the form
     authAPI.getCurrentUser()
       .then((res) => {
         const data = res.data;
         const hasSkills = Array.isArray(data.skills) && data.skills.length > 0;
         const hasLocation = !!data.locationName;
+
         if (hasSkills && hasLocation) {
           router.push('/dashboard');
+          return;
+        }
+
+        // Pre-fill any fields already saved so the user doesn't re-enter them
+        const firstSkill = hasSkills ? data.skills[0] : null;
+        setForm((prev) => ({
+          ...prev,
+          skillType:       firstSkill?.skillType      || prev.skillType,
+          experienceYears: firstSkill?.experienceYears != null ? String(firstSkill.experienceYears) : prev.experienceYears,
+          hourlyRate:      firstSkill?.hourlyRate      || prev.hourlyRate,
+          bio:             firstSkill?.description     || prev.bio,
+          locationName:    data.locationName           || prev.locationName,
+          latitude:        data.latitude               ?? prev.latitude,
+          longitude:       data.longitude              ?? prev.longitude,
+          profileImage:    data.profileImage           || prev.profileImage,
+        }));
+
+        // If skills are already filled, jump straight to the location step
+        if (hasSkills && !hasLocation) {
+          setStep(2);
         }
       })
       .catch(() => {
