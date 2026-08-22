@@ -30,6 +30,9 @@ const SKILL_OPTIONS = [
   { value: 'LOCKSMITH', label: 'Locksmith' },
   { value: 'CCTV_INSTALLER', label: 'CCTV Installer' },
   { value: 'INTERIOR_DESIGNER', label: 'Interior Designer' },
+  { value: 'MOVER', label: 'Mover' },
+  { value: 'TRANSPORT_PROVIDER', label: 'Transport Provider' },
+  { value: 'EVENT_LIGHTING', label: 'Event Lighting' },
   { value: 'OTHER', label: 'Other' },
 ];
 

@@ -39,6 +39,8 @@ public class RateLimitFilter implements Filter {
             "/api/auth/register",
             "/api/auth/login",
             "/api/auth/forgot-password",
+            "/api/auth/otp/request",
+            "/api/auth/otp/verify",
             "/api/bookings/public",
             "/api/ai/",
             "/api/payments/initiate",
@@ -50,6 +52,9 @@ public class RateLimitFilter implements Filter {
     private static final Map<String, Integer> STRICT_LIMITS = Map.of(
             "/api/auth/register", 5,
             "/api/auth/forgot-password", 3,
+            // Each request sends a billable SMS.
+            "/api/auth/otp/request", 3,
+            "/api/auth/otp/verify", 10,
             "/api/payments/initiate", 10,
             "/api/ai/", 20
     );

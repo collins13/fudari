@@ -55,6 +55,9 @@ public class PriceEstimateService {
             Map.entry("LOCKSMITH",             new int[]{500,  3000}),
             Map.entry("CCTV_INSTALLER",        new int[]{2000, 15000}),
             Map.entry("INTERIOR_DESIGNER",     new int[]{3000, 25000}),
+                Map.entry("MOVER",                 new int[]{1500, 25000}),
+                Map.entry("TRANSPORT_PROVIDER",    new int[]{1200, 30000}),
+                Map.entry("EVENT_LIGHTING",        new int[]{2500, 40000}),
             Map.entry("OTHER",             new int[]{400,  4000})
     );
 

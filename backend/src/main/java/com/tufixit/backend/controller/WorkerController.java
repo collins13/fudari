@@ -46,6 +46,12 @@ public class WorkerController {
         return ResponseEntity.ok(workerService.getWorkerSkills(workerId));
     }
 
+    /** Worker toggles whether they can take a job right now. */
+    @PutMapping("/me/availability")
+    public ResponseEntity<AuthDTO.UserDTO> setAvailability(@RequestBody Map<String, Boolean> body) {
+        return ResponseEntity.ok(workerService.setAvailability(Boolean.TRUE.equals(body.get("availableNow"))));
+    }
+
     @PostMapping("/{workerId}/skills")
     public ResponseEntity<WorkerSkill> addSkill(
             @PathVariable Long workerId,

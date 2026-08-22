@@ -20,6 +20,7 @@ interface User {
   totalJobsCompleted?: number;
   totalReviews?: number;
   locationName?: string;
+  availableNow?: boolean;
   isVerified?: boolean;
 }
 
@@ -54,6 +55,15 @@ interface AuthContextType {
     role: 'CLIENT' | 'WORKER';
     referralCode?: string;
   }) => Promise<void>;
+  requestOtp: (phoneNumber: string) => Promise<boolean>;
+  verifyOtp: (data: {
+    phoneNumber: string;
+    otp: string;
+    firstName?: string;
+    lastName?: string;
+    role?: 'CLIENT' | 'WORKER';
+    referralCode?: string;
+  }) => Promise<User>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
 }
@@ -197,6 +207,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveSession(newToken, userData);
   };
 
+  const requestOtp = async (phoneNumber: string) => {
+    const response = await authAPI.requestOtp(phoneNumber);
+    return response.data.isNewAccount;
+  };
+
+  const verifyOtp = async (data: {
+    phoneNumber: string;
+    otp: string;
+    firstName?: string;
+    lastName?: string;
+    role?: 'CLIENT' | 'WORKER';
+    referralCode?: string;
+  }) => {
+    const response = await authAPI.verifyOtp(data);
+    const { token: newToken, ...rawUserData } = response.data;
+    const userData = normaliseUser(rawUserData);
+    lastActivity.current = Date.now();
+    saveSession(newToken, userData);
+    return userData;
+  };
+
   const updateUser = (data: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
@@ -206,7 +237,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, login, register, requestOtp, verifyOtp, logout, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

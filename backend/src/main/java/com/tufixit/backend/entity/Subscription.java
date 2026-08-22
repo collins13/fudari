@@ -40,8 +40,9 @@ public class Subscription {
     /**
      * MONTHLY — standard 30-day cycle (KES 500 BASIC / KES 3,000 PRO).
      * WEEKLY  — 7-day cycle (KES 150 BASIC / KES 800 PRO).
+     * DAILY   — 1-day cycle (KES 30 BASIC / KES 150 PRO).
      *           Matches informal-sector income patterns where artisans
-     *           are paid weekly or per-job rather than monthly.
+     *           are paid daily in cash rather than monthly.
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_cycle", nullable = false)
@@ -73,22 +74,33 @@ public class Subscription {
 
     public enum BillingCycle {
         MONTHLY,
-        WEEKLY
+        WEEKLY,
+        DAILY
     }
 
-    // ── Pricing constants (KES) ──────────────────────────────────────────────
+    // ── Pricing constants (KES) ────────────────────────────────────────────
 
     public static final int BASIC_MONTHLY_PRICE = 500;
     public static final int BASIC_WEEKLY_PRICE  = 150;   // ≈ KES 600/month — slight premium for flexibility
+    public static final int BASIC_DAILY_PRICE   = 30;    // ≈ KES 900/month — premium for lowest commitment
     public static final int PRO_MONTHLY_PRICE   = 3000;
     public static final int PRO_WEEKLY_PRICE    = 800;   // ≈ KES 3,200/month — slight premium for flexibility
+    public static final int PRO_DAILY_PRICE     = 150;   // ≈ KES 4,500/month — premium for lowest commitment
 
     /** Returns the price in KES for this subscription's plan + billing cycle. */
     public int getPriceKes() {
         return switch (planType) {
             case FREE  -> 0;
-            case BASIC -> billingCycle == BillingCycle.WEEKLY ? BASIC_WEEKLY_PRICE : BASIC_MONTHLY_PRICE;
-            case PRO   -> billingCycle == BillingCycle.WEEKLY ? PRO_WEEKLY_PRICE   : PRO_MONTHLY_PRICE;
+            case BASIC -> switch (billingCycle) {
+                case DAILY   -> BASIC_DAILY_PRICE;
+                case WEEKLY  -> BASIC_WEEKLY_PRICE;
+                case MONTHLY -> BASIC_MONTHLY_PRICE;
+            };
+            case PRO   -> switch (billingCycle) {
+                case DAILY   -> PRO_DAILY_PRICE;
+                case WEEKLY  -> PRO_WEEKLY_PRICE;
+                case MONTHLY -> PRO_MONTHLY_PRICE;
+            };
         };
     }
 

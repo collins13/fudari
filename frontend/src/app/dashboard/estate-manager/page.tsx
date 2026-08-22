@@ -59,6 +59,12 @@ export default function EstateManagerDashboard() {
   const [searching, setSearching] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [addNote, setAddNote] = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'danger' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'danger') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -108,8 +114,12 @@ export default function EstateManagerDashboard() {
       });
       setRejectionReason('');
       await loadData();
+      showToast(
+        decision === 'APPROVED' ? 'Application approved' : 'Application rejected',
+        'success',
+      );
     } catch {
-      alert('Failed to process decision');
+      showToast('Failed to process decision', 'danger');
     } finally {
       setProcessingId(null);
     }
@@ -143,8 +153,9 @@ export default function EstateManagerDashboard() {
       setSearchQuery('');
       setSearchResults([]);
       await loadData();
+      showToast('Artisan added to estate successfully', 'success');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to add artisan');
+      showToast(err?.response?.data?.message || 'Failed to add artisan', 'danger');
     } finally {
       setAddingId(null);
     }
@@ -170,6 +181,13 @@ export default function EstateManagerDashboard() {
           <p className="text-muted mb-0">Manage artisans, track bookings, and monitor service health</p>
         </div>
       </div>
+
+      {toast && (
+        <div className={`alert alert-${toast.type} alert-dismissible fade show`} role="alert">
+          {toast.msg}
+          <button type="button" className="btn-close" onClick={() => setToast(null)}></button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       {analytics && (
@@ -342,7 +360,7 @@ export default function EstateManagerDashboard() {
                       />
                       <button
                         className="btn btn-success btn-sm"
-                        disabled={addingId === r.id && addingId !== r.id}
+                        disabled={addingId === r.id}
                         onClick={() => handleAddArtisan(r.id)}
                       >
                         {addingId === r.id ? <span className="spinner-border spinner-border-sm" /> : <i className="fa-solid fa-plus"></i>}

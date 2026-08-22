@@ -54,7 +54,7 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
       <div className="card border-0 shadow-sm rounded-4 p-4">
         <div className="text-center py-3">
           <div className="spinner-border spinner-border-sm text-primary" />
-          <div className="text-muted small mt-2">Finding the best artisans...</div>
+          <div className="text-muted small mt-2">Finding the best match for you...</div>
         </div>
       </div>
     );

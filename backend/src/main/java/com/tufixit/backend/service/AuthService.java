@@ -435,6 +435,143 @@ public class AuthService {
         return !userRepository.existsByPhoneNumber(phone);
     }
 
+    // ── Passwordless phone + OTP ────────────────────────────────────────────
+
+    private static final int OTP_TTL_MINUTES = 10;
+    private static final int OTP_MAX_ATTEMPTS = 5;
+
+    /** Normalises 07xx/01xx/254xx/+254xx into a single canonical +254 form. */
+    private String normalizeKenyanPhone(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            throw new IllegalArgumentException("Phone number is required");
+        }
+        String digits = raw.trim().replaceAll("[^0-9+]", "");
+        if (digits.startsWith("+254")) digits = digits.substring(4);
+        else if (digits.startsWith("254")) digits = digits.substring(3);
+        else if (digits.startsWith("0")) digits = digits.substring(1);
+
+        if (!digits.matches("[17]\\d{8}")) {
+            throw new IllegalArgumentException("Enter a valid Kenyan phone number, e.g. 0712345678");
+        }
+        return "+254" + digits;
+    }
+
+    /**
+     * Issues a sign-in code. Deliberately reports whether the account is new so the
+     * client can ask for a name, but never reveals anything else about the account.
+     */
+    @Transactional
+    public boolean requestLoginOtp(String phoneNumber) {
+        String phone = normalizeKenyanPhone(phoneNumber);
+        boolean isNewAccount = !userRepository.existsByPhoneNumber(phone);
+
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+
+        User user = userRepository.findByPhoneNumber(phone).orElse(null);
+        if (user == null) {
+            // Placeholder account; it only becomes usable once the OTP is verified.
+            user = User.builder()
+                    .phoneNumber(phone)
+                    .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                    .firstName("")
+                    .lastName("")
+                    .role(User.UserRole.CLIENT)
+                    .vettingLevel(User.VettingLevel.STANDARD)
+                    .accountStatus(User.AccountStatus.ACTIVE)
+                    .trustScore(0.0)
+                    .totalJobsCompleted(0)
+                    .totalReviews(0)
+                    .isActive(false)
+                    .isVerified(false)
+                    .build();
+        }
+
+        user.setLoginOtp(passwordEncoder.encode(otp));
+        user.setLoginOtpExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
+        user.setLoginOtpAttempts(0);
+        userRepository.save(user);
+
+        smsService.send(phone, "TUFIXIT code: " + otp + ". Valid for " + OTP_TTL_MINUTES
+                + " minutes. Do not share this code with anyone.");
+        log.info("Login OTP sent to {} (newAccount={})", phone, isNewAccount);
+        return isNewAccount;
+    }
+
+    /** Verifies the code and returns a session, creating the account on first use. */
+    @Transactional
+    public AuthDTO.AuthResponse verifyLoginOtp(String phoneNumber, String otp,
+                                               String firstName, String lastName,
+                                               User.UserRole role, String referralCode) {
+        String phone = normalizeKenyanPhone(phoneNumber);
+        User user = userRepository.findByPhoneNumber(phone)
+                .orElseThrow(() -> new IllegalArgumentException("Request a code first"));
+
+        if (user.getLoginOtp() == null || user.getLoginOtpExpiresAt() == null) {
+            throw new IllegalStateException("Request a code first");
+        }
+        if (user.getLoginOtpExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Code has expired. Request a new one.");
+        }
+
+        int attempts = user.getLoginOtpAttempts() == null ? 0 : user.getLoginOtpAttempts();
+        if (attempts >= OTP_MAX_ATTEMPTS) {
+            throw new IllegalStateException("Too many incorrect attempts. Request a new code.");
+        }
+        if (otp == null || !passwordEncoder.matches(otp, user.getLoginOtp())) {
+            user.setLoginOtpAttempts(attempts + 1);
+            userRepository.save(user);
+            throw new IllegalArgumentException("Incorrect code. Please check and try again.");
+        }
+
+        if (user.getAccountStatus() == User.AccountStatus.SUSPENDED) {
+            throw new IllegalStateException("This account has been suspended. Contact support.");
+        }
+
+        // First successful verification completes the sign-up.
+        boolean isNewAccount = !Boolean.TRUE.equals(user.getIsActive());
+        if (isNewAccount) {
+            if (!StringUtils.hasText(firstName)) {
+                throw new IllegalArgumentException("First name is required to finish signing up");
+            }
+            user.setFirstName(firstName.trim());
+            user.setLastName(StringUtils.hasText(lastName) ? lastName.trim() : "");
+            user.setRole(role != null ? role : User.UserRole.CLIENT);
+            user.setIsActive(true);
+            if (!StringUtils.hasText(user.getReferralCode())) {
+                user.setReferralCode(generateReferralCode());
+            }
+            if (StringUtils.hasText(referralCode)) {
+                userRepository.findByReferralCode(referralCode.trim().toUpperCase())
+                        .ifPresent(referrer -> user.setReferredBy(referrer.getId()));
+            }
+        }
+
+        user.setIsVerified(true);
+        user.setLoginOtp(null);
+        user.setLoginOtpExpiresAt(null);
+        user.setLoginOtpAttempts(0);
+        userRepository.save(user);
+
+        if (isNewAccount && user.getReferredBy() != null && user.getRole() == User.UserRole.WORKER) {
+            rewardReferrer(user.getReferredBy());
+        }
+
+        String principal = StringUtils.hasText(user.getEmail()) ? user.getEmail() : user.getPhoneNumber();
+        String token = tokenProvider.generateTokenFromUsernameWithRole(principal, user.getRole().name());
+
+        return AuthDTO.AuthResponse.builder()
+                .token(token)
+                .type("Bearer")
+                .userId(user.getId())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole())
+                .vettingLevel(user.getVettingLevel())
+                .build();
+    }
+
     private String normalizeOptional(String value) {
         if (!StringUtils.hasText(value)) {
             return null;

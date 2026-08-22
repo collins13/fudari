@@ -1,24 +1,10 @@
 /** Shared skill/vetting utilities — used across homepage, artisan listing, and profile pages. */
 
+import { SKILL_LABELS_KE } from './kenya';
+
+/** Single source of truth is SKILL_LABELS_KE, so new categories never need a second edit. */
 export function skillTypeToLabel(skillType: string): string {
-  const map: Record<string, string> = {
-    ELECTRICIAN: 'Electrician',
-    PLUMBER: 'Plumber',
-    MECHANIC: 'Mechanic',
-    CARPENTER: 'Carpenter',
-    PAINTER: 'Painter',
-    WELDER: 'Welder',
-    HVAC_TECHNICIAN: 'HVAC Technician',
-    APPLIANCE_REPAIR: 'Appliance Repair',
-    ROOFING: 'Roofing',
-    TILING: 'Tiling',
-    MASON: 'Mason',
-    GARDENER: 'Gardener',
-    CLEANER: 'Cleaner',
-    SECURITY: 'Security',
-    OTHER: 'Other',
-  };
-  return map[skillType] || skillType;
+  return SKILL_LABELS_KE[skillType]?.en || skillType;
 }
 
 export function vettingToPackage(level: string): 'Gold' | 'Silver' | 'Bronze' {
@@ -33,8 +19,9 @@ export function getPackageBadgeClass(pkg: string): string {
   return 'text-bg-dark';
 }
 
+/** Trust tiers are shown as Gold/Silver/Bronze so "Pro" is free to mean "a provider". */
 export function packageLabel(pkg: string): string {
-  if (pkg === 'Gold') return 'Pro';
-  if (pkg === 'Silver') return 'Verified';
-  return 'Standard';
+  if (pkg === 'Gold') return 'Gold';
+  if (pkg === 'Silver') return 'Silver';
+  return 'Bronze';
 }

@@ -15,6 +15,109 @@ interface User {
   vettingLevel?: string;
 }
 
+type Role = 'WORKER' | 'CLIENT' | 'ADMIN' | 'ESTATE_MANAGER';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  /** Omit to show for every role. */
+  roles?: Role[];
+  /** Match only this exact path, not descendants. */
+  exact?: boolean;
+  badge?: 'unread';
+}
+
+interface NavGroup {
+  label: string;
+  roles?: Role[];
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/dashboard', label: 'Dashboard', icon: 'fa-gauge', exact: true },
+      { href: '/dashboard/messages', label: 'Messages', icon: 'fa-comment', badge: 'unread' },
+    ],
+  },
+  {
+    label: 'Work',
+    items: [
+      { href: '/dashboard/jobs', label: 'Jobs Marketplace', icon: 'fa-briefcase', roles: ['WORKER'] },
+      { href: '/dashboard/bookings', label: 'Bookings', icon: 'fa-calendar-check' },
+      { href: '/dashboard/my-jobs', label: 'My Jobs', icon: 'fa-clipboard-list', roles: ['WORKER', 'CLIENT'] },
+      { href: '/dashboard/post-job', label: 'Post a Job', icon: 'fa-pen-to-square', roles: ['WORKER', 'CLIENT'] },
+    ],
+  },
+  {
+    label: 'My Business',
+    roles: ['WORKER'],
+    items: [
+      { href: '/dashboard/my-listings', label: 'My Listings', icon: 'fa-list' },
+      { href: '/dashboard/add-listing', label: 'Add Listing', icon: 'fa-circle-plus' },
+      { href: '/dashboard/skills', label: 'My Skills', icon: 'fa-toolbox' },
+      { href: '/dashboard/verification', label: 'Verification', icon: 'fa-certificate' },
+    ],
+  },
+  {
+    label: 'Insights',
+    roles: ['WORKER'],
+    items: [
+      { href: '/dashboard/analytics', label: 'Lead Analytics', icon: 'fa-chart-line' },
+      { href: '/dashboard/demand-forecast', label: 'Market Intelligence', icon: 'fa-chart-bar' },
+      { href: '/dashboard/reviews', label: 'Reviews', icon: 'fa-star' },
+    ],
+  },
+  {
+    label: 'Money',
+    items: [
+      { href: '/dashboard/wallet', label: 'Wallet', icon: 'fa-wallet' },
+      { href: '/dashboard/subscription', label: 'Subscription', icon: 'fa-crown', roles: ['WORKER'] },
+    ],
+  },
+  {
+    label: 'Reviews',
+    roles: ['CLIENT'],
+    items: [
+      { href: '/dashboard/reviews', label: 'Reviews', icon: 'fa-star' },
+    ],
+  },
+  {
+    label: 'Admin',
+    roles: ['ADMIN'],
+    items: [
+      { href: '/dashboard/admin', label: 'Listing Approvals', icon: 'fa-shield-halved', exact: true },
+      { href: '/dashboard/admin/analytics', label: 'Platform Analytics', icon: 'fa-chart-pie' },
+      { href: '/dashboard/admin/jobs', label: 'Jobs Oversight', icon: 'fa-briefcase' },
+      { href: '/dashboard/admin/payments', label: 'Payments', icon: 'fa-money-bill-transfer' },
+      { href: '/dashboard/admin/categories', label: 'Categories', icon: 'fa-layer-group' },
+      { href: '/dashboard/admin/users', label: 'Manage Users', icon: 'fa-users' },
+      { href: '/dashboard/admin/reports', label: 'Reports', icon: 'fa-flag' },
+      { href: '/dashboard/admin/disputes', label: 'Disputes', icon: 'fa-gavel' },
+      { href: '/dashboard/admin/estates', label: 'Estate Partners', icon: 'fa-building' },
+      { href: '/dashboard/admin/whatsapp', label: 'WhatsApp Bot', icon: 'fa-brands fa-whatsapp' },
+    ],
+  },
+  {
+    label: 'Estate',
+    roles: ['ADMIN', 'ESTATE_MANAGER'],
+    items: [
+      { href: '/dashboard/estate-manager', label: 'Estate Operations', icon: 'fa-city' },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { href: '/dashboard/profile', label: 'Edit Profile', icon: 'fa-user-pen' },
+      { href: '/dashboard/settings', label: 'Settings', icon: 'fa-gear' },
+    ],
+  },
+];
+
+const visibleFor = (role: Role, roles?: Role[]) => !roles || roles.includes(role);
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -127,8 +230,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login');
   };
 
-  const isActive = (path: string) =>
-    pathname === path || (path !== '/dashboard' && pathname.startsWith(path + '/'));
+  const isActive = (item: NavItem) =>
+    item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(item.href + '/');
+
+  const role = (user?.role as Role) || 'CLIENT';
+
+  const pageTitle =
+    NAV_GROUPS.flatMap((g) => g.items).find((i) =>
+      i.exact ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')
+    )?.label ?? 'Dashboard';
 
   return (
     <>
@@ -159,232 +271,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="sidebar-body">
           <nav className="sidebar-nav">
             <ul className="metismenu" id="menu">
-                <li className="nav-label">
-                  <span className="nav-label_text">Main Menu</span>
-                </li>
-
-                <li className={pathname === '/dashboard' ? 'mm-active' : ''}>
-                  <Link href="/dashboard">
-                    <i className="fa-solid fa-gauge"></i>
-                    <span className="ms-2">Dashboard</span>
-                  </Link>
-                </li>
-
-                <li className={isActive('/dashboard/add-listing') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/add-listing">
-                    <i className="fa-solid fa-circle-plus"></i>
-                    <span className="ms-2">Add Listing</span>
-                  </Link>
-                </li>
-
-                {user?.role === 'WORKER' && (
-                  <li className={isActive('/dashboard/jobs') ? 'mm-active' : ''}>
-                    <Link href="/dashboard/jobs">
-                      <i className="fa-solid fa-briefcase"></i>
-                      <span className="ms-2">Jobs Marketplace</span>
-                    </Link>
+              {NAV_GROUPS.filter((g) => visibleFor(role, g.roles)).map((group) => {
+                const items = group.items.filter((i) => visibleFor(role, i.roles));
+                if (items.length === 0) return null;
+                return (
+                  <li key={group.label} className="nav-group">
+                    <span className="nav-label_text">{group.label}</span>
+                    <ul className="nav-group_items">
+                      {items.map((item) => (
+                        <li key={item.href} className={isActive(item) ? 'mm-active' : ''}>
+                          <Link href={item.href} title={item.label}>
+                            <i className={item.icon.startsWith('fa-brands') ? item.icon : `fa-solid ${item.icon}`}></i>
+                            <span className="nav-text">{item.label}</span>
+                            {item.badge === 'unread' && unreadCount > 0 && (
+                              <span className="badge rounded-pill bg-danger ms-auto">{unreadCount}</span>
+                            )}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
-                )}
+                );
+              })}
 
-                {user?.role !== 'ADMIN' && (
-                  <>
-                    <li className={isActive('/dashboard/post-job') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/post-job">
-                        <i className="fa-solid fa-pen-to-square"></i>
-                        <span className="ms-2">Post a Job</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/my-jobs') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/my-jobs">
-                        <i className="fa-solid fa-briefcase"></i>
-                        <span className="ms-2">My Jobs</span>
-                      </Link>
-                    </li>
-                  </>
-                )}
-
-                <li className={isActive('/dashboard/wallet') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/wallet">
-                    <i className="fa-solid fa-wallet"></i>
-                    <span className="ms-2">Wallet</span>
-                  </Link>
-                </li>
-
-                <li className={isActive('/dashboard/messages') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/messages">
-                    <i className="fa-solid fa-comment"></i>
-                    <span className="ms-2">Messages</span>
-                    {unreadCount > 0 && (
-                      <span className="badge rounded-pill bg-danger ms-1">{unreadCount}</span>
-                    )}
-                  </Link>
-                </li>
-
-                <li className="nav-label">
-                  <span className="nav-label_text">Listings</span>
-                </li>
-
-                <li className={isActive('/dashboard/my-listings') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/my-listings">
-                    <i className="fa-solid fa-list"></i>
-                    <span className="ms-2">My Listings</span>
-                  </Link>
-                </li>
-
-                {user?.role === 'WORKER' && (
-                  <>
-                    <li className={isActive('/dashboard/skills') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/skills">
-                        <i className="fa-solid fa-toolbox"></i>
-                        <span className="ms-2">My Skills</span>
-                      </Link>
-                    </li>
-
-                    <li className={isActive('/dashboard/analytics') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/analytics">
-                        <i className="fa-solid fa-chart-line"></i>
-                        <span className="ms-2">Lead Analytics</span>
-                      </Link>
-                    </li>
-
-                    <li className={isActive('/dashboard/verification') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/verification">
-                        <i className="fa-solid fa-certificate"></i>
-                        <span className="ms-2">Verification</span>
-                      </Link>
-                    </li>
-
-                    <li className={isActive('/dashboard/demand-forecast') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/demand-forecast">
-                        <i className="fa-solid fa-chart-bar"></i>
-                        <span className="ms-2">Market Intelligence</span>
-                      </Link>
-                    </li>
-                  </>
-                )}
-
-                <li className={isActive('/dashboard/reviews') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/reviews">
-                    <i className="fa-solid fa-star"></i>
-                    <span className="ms-2">Reviews</span>
-                  </Link>
-                </li>
-
-                <li className={isActive('/dashboard/bookings') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/bookings">
-                    <i className="fa-solid fa-calendar-check"></i>
-                    <span className="ms-2">Bookings</span>
-                  </Link>
-                </li>
-
-                {user?.role === 'WORKER' && (
-                  <li className={isActive('/dashboard/subscription') ? 'mm-active' : ''}>
-                    <Link href="/dashboard/subscription">
-                      <i className="fa-solid fa-crown"></i>
-                      <span className="ms-2">Subscription</span>
-                    </Link>
+              <li className="nav-group">
+                <ul className="nav-group_items">
+                  <li>
+                    <button type="button" className="nav-logout" onClick={handleLogout}>
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      <span className="nav-text">Logout</span>
+                    </button>
                   </li>
-                )}
-
-                {user?.role === 'ADMIN' && (
-                  <>
-                    <li className="nav-label">
-                      <span className="nav-label_text">Admin</span>
-                    </li>
-                    <li className={pathname === '/dashboard/admin' ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin">
-                        <i className="fa-solid fa-shield-halved"></i>
-                        <span className="ms-2">Listing Approvals</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/analytics') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/analytics">
-                        <i className="fa-solid fa-chart-pie"></i>
-                        <span className="ms-2">Platform Analytics</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/jobs') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/jobs">
-                        <i className="fa-solid fa-briefcase"></i>
-                        <span className="ms-2">Jobs Oversight</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/payments') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/payments">
-                        <i className="fa-solid fa-money-bill-transfer"></i>
-                        <span className="ms-2">Payments</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/categories') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/categories">
-                        <i className="fa-solid fa-layer-group"></i>
-                        <span className="ms-2">Categories</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/users') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/users">
-                        <i className="fa-solid fa-users"></i>
-                        <span className="ms-2">Manage Users</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/reports') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/reports">
-                        <i className="fa-solid fa-flag"></i>
-                        <span className="ms-2">Reports</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/disputes') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/disputes">
-                        <i className="fa-solid fa-gavel"></i>
-                        <span className="ms-2">Disputes</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/estates') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/estates">
-                        <i className="fa-solid fa-building"></i>
-                        <span className="ms-2">Estate Partners</span>
-                      </Link>
-                    </li>
-                    <li className={isActive('/dashboard/admin/whatsapp') ? 'mm-active' : ''}>
-                      <Link href="/dashboard/admin/whatsapp">
-                        <i className="fa-brands fa-whatsapp"></i>
-                        <span className="ms-2">WhatsApp Bot</span>
-                      </Link>
-                    </li>
-                  </>
-                )}
-
-                <li className="nav-label">
-                  <span className="nav-label_text">Account</span>
-                </li>
-
-                <li className={isActive('/dashboard/profile') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/profile">
-                    <i className="fa-solid fa-user-pen"></i>
-                    <span className="ms-2">Edit Profile</span>
-                  </Link>
-                </li>
-
-                <li className={isActive('/dashboard/settings') ? 'mm-active' : ''}>
-                  <Link href="/dashboard/settings">
-                    <i className="fa-solid fa-gear"></i>
-                    <span className="ms-2">Settings</span>
-                  </Link>
-                </li>
-
-                <li>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleLogout();
-                    }}
-                  >
-                    <i className="fa-solid fa-right-from-bracket"></i>
-                    <span className="ms-2">Logout</span>
-                  </a>
-                </li>
-              </ul>
+                </ul>
+              </li>
+            </ul>
             </nav>
           </div>
         </nav>
@@ -393,30 +313,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className={`content-wrapper${sidebarCollapsed ? ' sidebar-collapsed-offset' : ''}`}>
           <div className="main-content">
             {/* Top Navbar */}
-            <nav className={`navbar-custom-menu navbar navbar-expand-md m-0${sidebarCollapsed ? ' sidebar-collapsed-offset' : ''}`}>
-              <div className="sidebar-toggle d-md-none" onClick={() => setMobileSidebarOpen(true)}>
-                <div className="sidebar-toggle-icon">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
+            <nav className={`navbar-custom-menu navbar m-0${sidebarCollapsed ? ' sidebar-collapsed-offset' : ''}`}>
+              <div className="topbar-left">
+                <button
+                  type="button"
+                  className="sidebar-toggle d-md-none"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  aria-label="Open menu"
+                >
+                  <div className="sidebar-toggle-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-toggle d-none d-md-flex"
+                  id="sidebarCollapse"
+                  onClick={() => setSidebarCollapsed(c => !c)}
+                  aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  aria-expanded={!sidebarCollapsed}
+                >
+                  <div className="sidebar-toggle-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
+                <span className="topbar-title d-none d-lg-block">{pageTitle}</span>
               </div>
-              <div className="sidebar-toggle d-none d-md-flex" id="sidebarCollapse" onClick={() => setSidebarCollapsed(c => !c)}>
-                <div className="sidebar-toggle-icon">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-              <div className="navbar-icon d-flex align-items-center ms-auto">
-                <ul className="navbar-nav flex-row align-items-center gap-2">
-                  <li className="nav-item d-none d-sm-block">
-                    <Link href="/" className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
-                      <i className="fa-solid fa-arrow-left" style={{ fontSize: 11 }}></i>
-                      <span>Back to Site</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item tufixit-user-menu">
+
+              <div className="topbar-right">
+                <Link href="/" className="btn btn-sm btn-outline-primary topbar-back d-none d-sm-inline-flex">
+                  <i className="fa-solid fa-arrow-left"></i>
+                  <span>Back to Site</span>
+                </Link>
+                <div className="tufixit-user-menu">
                     <button
                       type="button"
                       className="btn btn-link nav-link p-1 d-flex align-items-center gap-2 text-decoration-none"
@@ -439,10 +372,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </div>
                       </div>
                       <div className="profile-text d-none d-md-block text-start">
-                        <h6 className="m-0 fw-medium" style={{ fontSize: 14 }}>
+                        <h6 className="m-0 fw-medium">
                           {user?.firstName} {user?.lastName}
                         </h6>
-                        <span style={{ fontSize: 12, color: '#888' }}>{user?.email}</span>
+                        <span>{user?.email}</span>
                       </div>
                       <i
                         className="fa-solid fa-chevron-down ms-1"
@@ -486,8 +419,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </li>
                       </ul>
                     )}
-                  </li>
-                </ul>
+                </div>
               </div>
             </nav>
 
@@ -531,18 +463,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           top: 0 !important;
           left: 0 !important;
           bottom: 0 !important;
-          min-width: 320px !important;
-          max-width: 320px !important;
+          min-width: 264px !important;
+          max-width: 264px !important;
           z-index: 10;
           background: #fff;
           overflow-y: auto;
+          overflow-x: hidden;
           border-right: 1px solid #e4e4e4;
           transition: min-width 0.25s ease, max-width 0.25s ease;
         }
         .content-wrapper,
         .fixed .sidebar + .content-wrapper {
-          margin-left: 320px !important;
-          margin-top: 80px !important;
+          margin-left: 264px !important;
+          margin-top: 72px !important;
           transition: margin-left 0.25s ease;
         }
         .navbar-custom-menu.navbar,
@@ -550,11 +483,139 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           position: fixed !important;
           top: 0 !important;
           right: 0 !important;
-          left: 320px !important;
+          left: 264px !important;
           z-index: 11;
-          height: 80px !important;
+          height: 72px !important;
           transition: left 0.25s ease;
         }
+
+        /* ── Top bar ────────────────────────────────────────
+           The theme's .navbar-icon/.navbar-nav let their contents shrink
+           below intrinsic width, so the user block overflowed and painted
+           on top of "Back to Site". Own the layout explicitly instead. */
+        .navbar-custom-menu.navbar {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          padding: 0 1rem !important;
+          background: #fff;
+          border-bottom: 1px solid #e9ecef;
+        }
+        .topbar-left,
+        .topbar-right {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+        .topbar-right {
+          flex-shrink: 0;
+          gap: 0.75rem;
+        }
+        .topbar-left { flex: 1 1 auto; }
+        .topbar-title {
+          font-size: 1.05rem;
+          font-weight: 600;
+          margin-left: 0.5rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .navbar-custom-menu .sidebar-toggle {
+          flex-shrink: 0;
+          background: transparent;
+          border: 0;
+          padding: 0;
+          cursor: pointer;
+        }
+        .topbar-back {
+          flex-shrink: 0;
+          align-items: center;
+          gap: 0.35rem;
+          white-space: nowrap;
+        }
+        .topbar-back i { font-size: 11px; }
+        .tufixit-user-menu > button {
+          flex-shrink: 0;
+          max-width: 260px;
+        }
+        .tufixit-user-menu .avatar { flex-shrink: 0; }
+        .tufixit-user-menu .profile-text {
+          min-width: 0;
+          max-width: 170px;
+        }
+        .tufixit-user-menu .profile-text h6,
+        .tufixit-user-menu .profile-text span {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .tufixit-user-menu .profile-text h6 { font-size: 14px; line-height: 1.2; }
+        .tufixit-user-menu .profile-text span { font-size: 12px; color: #888; }
+
+        /* ── Sidebar menu groups ────────────────────────────── */
+        .sidebar-nav .metismenu,
+        .sidebar-nav .nav-group_items {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+        .sidebar-nav .nav-group { margin-bottom: 0.25rem; }
+        .sidebar-nav .nav-group > .nav-label_text {
+          display: block;
+          padding: 1rem 1.25rem 0.35rem;
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #9aa0a6;
+        }
+        .sidebar-nav .nav-group_items a,
+        .sidebar-nav .nav-logout {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          width: 100%;
+          padding: 0.6rem 1.25rem;
+          font-size: 0.9rem;
+          color: #4a4a4a;
+          text-decoration: none;
+          background: transparent;
+          border: 0;
+          border-left: 3px solid transparent;
+          text-align: left;
+          cursor: pointer;
+        }
+        .sidebar-nav .nav-group_items a i,
+        .sidebar-nav .nav-logout i {
+          width: 18px;
+          flex-shrink: 0;
+          text-align: center;
+          font-size: 0.95rem;
+        }
+        .sidebar-nav .nav-text {
+          flex: 1 1 auto;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .sidebar-nav .nav-group_items a:hover,
+        .sidebar-nav .nav-logout:hover {
+          background: #f6f7f9;
+          color: var(--bs-primary, #F84525);
+        }
+        .sidebar-nav .nav-group_items .mm-active > a {
+          color: var(--bs-primary, #F84525);
+          background: rgba(248, 69, 37, 0.08);
+          border-left-color: var(--bs-primary, #F84525);
+          font-weight: 600;
+        }
+        .sidebar-nav .nav-logout { color: #d6336c; }
+        .sidebar-nav .nav-logout:hover { background: #fff5f5; color: #c92a52; }
 
         /* ── Mobile: sidebar off-canvas ─────────────────────── */
         @media (max-width: 767.98px) {
@@ -716,29 +777,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         /* ── Desktop sidebar collapse ───────────────────────── */
         .sidebar.sidebar-collapsed,
         .fixed .sidebar.sidebar-collapsed {
-          min-width: 68px !important;
-          max-width: 68px !important;
+          min-width: 72px !important;
+          max-width: 72px !important;
         }
         .sidebar.sidebar-collapsed .sidebar-brand_text,
-        .sidebar.sidebar-collapsed .sidebar-nav a span,
-        .sidebar.sidebar-collapsed .nav-label {
+        .sidebar.sidebar-collapsed .nav-text,
+        .sidebar.sidebar-collapsed .nav-label_text,
+        .sidebar.sidebar-collapsed .badge {
           display: none !important;
         }
-        .sidebar.sidebar-collapsed .sidebar-nav a {
+        .sidebar.sidebar-collapsed .nav-group > .nav-label_text { padding: 0 !important; }
+        .sidebar.sidebar-collapsed .nav-group { border-top: 1px solid #f1f1f1; padding-top: 0.25rem; }
+        .sidebar.sidebar-collapsed .nav-group:first-child { border-top: 0; }
+        .sidebar.sidebar-collapsed .sidebar-nav .nav-group_items a,
+        .sidebar.sidebar-collapsed .sidebar-nav .nav-logout {
           justify-content: center;
-          padding: 12px !important;
+          padding: 0.7rem 0 !important;
+          border-left-width: 0;
+          border-right: 3px solid transparent;
         }
-        .sidebar.sidebar-collapsed .sidebar-nav a i {
+        .sidebar.sidebar-collapsed .sidebar-nav .nav-group_items .mm-active > a {
+          border-right-color: var(--bs-primary, #F84525);
+        }
+        .sidebar.sidebar-collapsed .sidebar-nav .nav-group_items a i,
+        .sidebar.sidebar-collapsed .sidebar-nav .nav-logout i {
           margin: 0 !important;
-          font-size: 1.2rem;
+          font-size: 1.1rem;
         }
         .content-wrapper.sidebar-collapsed-offset,
         .fixed .sidebar.sidebar-collapsed + .content-wrapper {
-          margin-left: 68px !important;
+          margin-left: 72px !important;
         }
         .navbar-custom-menu.navbar.sidebar-collapsed-offset,
         .fixed .sidebar.sidebar-collapsed ~ .content-wrapper .navbar-custom-menu.navbar {
-          left: 68px !important;
+          left: 72px !important;
         }
 
         /* ── Topbar user dropdown: self-positioned (no Bootstrap/Popper
@@ -803,20 +875,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         /* ── Tablet (768px-1023px) ─────────────────────────── */
         @media (min-width: 768px) and (max-width: 1023.98px) {
-          .sidebar,
-          .fixed .sidebar {
-            min-width: 220px !important;
-            max-width: 220px !important;
-            width: 220px !important;
+          .sidebar:not(.sidebar-collapsed),
+          .fixed .sidebar:not(.sidebar-collapsed) {
+            min-width: 232px !important;
+            max-width: 232px !important;
           }
-          .content-wrapper,
-          .fixed .sidebar + .content-wrapper {
-            margin-left: 220px !important;
+          .content-wrapper:not(.sidebar-collapsed-offset),
+          .fixed .sidebar:not(.sidebar-collapsed) + .content-wrapper {
+            margin-left: 232px !important;
           }
           /* CRITICAL: navbar left must match the reduced sidebar width */
-          .navbar-custom-menu.navbar,
-          .fixed .navbar-custom-menu.navbar {
-            left: 220px !important;
+          .navbar-custom-menu.navbar:not(.sidebar-collapsed-offset),
+          .fixed .sidebar:not(.sidebar-collapsed) ~ .content-wrapper .navbar-custom-menu.navbar:not(.sidebar-collapsed-offset) {
+            left: 232px !important;
           }
           .row .col-xl-3 {
             flex: 0 0 50%;
@@ -828,9 +899,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .modal-dialog.modal-lg {
             max-width: 90% !important;
           }
-          /* Sidebar nav text smaller to fit 220px */
-          .sidebar-nav a span { font-size: 0.85rem; }
+          /* Long labels ellipsis rather than clip at this width */
+          .sidebar-nav .nav-text { font-size: 0.85rem; }
           .sidebar-brand_text { font-size: 1.1rem; }
+          .tufixit-user-menu .profile-text { max-width: 120px; }
         }
 
         /* ── Desktop overlay should not appear ─────────────── */

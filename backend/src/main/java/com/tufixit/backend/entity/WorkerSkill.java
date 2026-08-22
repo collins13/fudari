@@ -40,6 +40,8 @@ public class WorkerSkill {
         // Kenya-specific popular Jua Kali skills
         SOLAR_TECHNICIAN, BOREHOLE_DRILLING, FUMIGATION, WATER_TANK_CLEANING,
         GLASS_FITTER, CEILING_BOARD, LOCKSMITH, CCTV_INSTALLER, INTERIOR_DESIGNER,
+        // Expansion categories
+        MOVER, TRANSPORT_PROVIDER, EVENT_LIGHTING,
         OTHER
     }
 }

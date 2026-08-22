@@ -7,6 +7,7 @@ interface PlanInfo {
   name: string;
   monthlyPrice: number;
   weeklyPrice?: number;
+  dailyPrice?: number;
   maxListings: number;
   featured: boolean;
   rankingPriority: number;
@@ -50,11 +51,15 @@ export default function SubscriptionPage() {
   const [plans, setPlans] = useState<PlanInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Payment gate state
   const [pendingPlan, setPendingPlan] = useState<'BASIC' | 'PRO' | null>(null);
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'WEEKLY'>('MONTHLY');
-  const [mpesaRef, setMpesaRef] = useState('');
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'WEEKLY' | 'DAILY'>('MONTHLY');
+  const [stkPhone, setStkPhone] = useState('');
+  const [stkStage, setStkStage] = useState<'phone' | 'waiting' | 'done'>('phone');
+  const [checkoutId, setCheckoutId] = useState('');
   const [paymentError, setPaymentError] = useState('');
 
   // Ranking analytics
@@ -84,11 +89,20 @@ export default function SubscriptionPage() {
     fetchData();
   }, []);
 
+  const closePaymentModal = () => {
+    setPendingPlan(null);
+    setStkStage('phone');
+    setCheckoutId('');
+    setPaymentError('');
+    setSubscribing(null);
+  };
+
   const handleSubscribe = async (planType: 'FREE' | 'BASIC' | 'PRO') => {
     if (planType !== 'FREE') {
-      // Paid plan — show payment confirmation modal first
       setPendingPlan(planType);
-      setMpesaRef('');
+      setStkPhone(user?.phoneNumber || '');
+      setStkStage('phone');
+      setCheckoutId('');
       setPaymentError('');
       return;
     }
@@ -96,40 +110,87 @@ export default function SubscriptionPage() {
     try {
       const res = await subscriptionsAPI.createSubscription({ planType });
       setCurrentSub(res.data);
+      setActionMessage({ type: 'success', text: `Switched to ${planType} successfully.` });
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to subscribe');
+      setActionMessage({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to subscribe. Please try again.',
+      });
     } finally {
       setSubscribing(null);
     }
   };
 
-  const handleConfirmPayment = async () => {
+  const handleSendStk = async () => {
     if (!pendingPlan) return;
-    if (!mpesaRef.trim()) { setPaymentError('Please enter your M-Pesa transaction ID.'); return; }
+    if (!/^(?:\+?254|0)[17]\d{8}$/.test(stkPhone.trim())) {
+      setPaymentError('Enter a valid Safaricom number, e.g. 0712345678.');
+      return;
+    }
     setSubscribing(pendingPlan);
     setPaymentError('');
     try {
-      const res = await subscriptionsAPI.createSubscription({
+      const res = await subscriptionsAPI.initiatePayment({
         planType: pendingPlan,
         billingCycle,
-        mpesaTransactionId: mpesaRef.trim().toUpperCase(),
+        phoneNumber: stkPhone.trim(),
       });
-      setCurrentSub(res.data);
-      setPendingPlan(null);
-    } catch (err: any) {
-      setPaymentError(err?.response?.data?.message || 'Failed to activate subscription. Please check your transaction ID.');
-    } finally {
+      setCheckoutId(res.data.checkoutRequestId);
+      setStkStage('waiting');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      setPaymentError(e?.response?.data?.message || 'Could not send the M-Pesa prompt. Try again.');
       setSubscribing(null);
     }
   };
 
+  // Daraja only resolves the STK result once the user acts on the prompt, so poll until it settles.
+  useEffect(() => {
+    if (stkStage !== 'waiting' || !checkoutId || !pendingPlan) return;
+    let cancelled = false;
+    const deadline = Date.now() + 90_000;
+
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const res = await subscriptionsAPI.verifyPayment({
+          checkoutRequestId: checkoutId,
+          planType: pendingPlan,
+          billingCycle,
+        });
+        if (cancelled) return;
+        setCurrentSub(res.data);
+        setActionMessage({ type: 'success', text: `${pendingPlan} plan activated successfully.` });
+        setStkStage('done');
+        setSubscribing(null);
+        return;
+      } catch {
+        if (cancelled) return;
+        if (Date.now() > deadline) {
+          setPaymentError('We did not receive the payment. If your M-Pesa was debited, contact support with the code.');
+          setStkStage('phone');
+          setSubscribing(null);
+          return;
+        }
+        setTimeout(poll, 4000);
+      }
+    };
+
+    const timer = setTimeout(poll, 4000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [stkStage, checkoutId, pendingPlan, billingCycle]);
+
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription?')) return;
+    setShowCancelConfirm(false);
     try {
       const res = await subscriptionsAPI.cancelSubscription();
       setCurrentSub(res.data);
+      setActionMessage({ type: 'success', text: 'Subscription cancelled. Your access remains active until period end.' });
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to cancel');
+      setActionMessage({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to cancel. Please try again.',
+      });
     }
   };
 
@@ -145,6 +206,14 @@ export default function SubscriptionPage() {
 
   const isWorker = user?.role === 'WORKER';
 
+  const priceFor = (plan: PlanInfo | undefined, cycle: 'MONTHLY' | 'WEEKLY' | 'DAILY') => {
+    if (!plan) return 0;
+    if (cycle === 'DAILY') return plan.dailyPrice ?? 0;
+    if (cycle === 'WEEKLY') return plan.weeklyPrice ?? 0;
+    return plan.monthlyPrice ?? 0;
+  };
+  const pendingPlanPrice = priceFor(plans.find((p) => p.name === pendingPlan), billingCycle);
+
   return (
     <>
       {/* Page Header */}
@@ -154,6 +223,14 @@ export default function SubscriptionPage() {
           <p className="text-muted mb-0">Manage your listing plan and visibility</p>
         </div>
       </div>
+
+      {actionMessage && (
+        <div className={`alert alert-${actionMessage.type} alert-dismissible fade show rounded-3`} role="alert">
+          <i className={`fa-solid ${actionMessage.type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-check'} me-2`}></i>
+          {actionMessage.text}
+          <button type="button" className="btn-close" aria-label="Close" onClick={() => setActionMessage(null)}></button>
+        </div>
+      )}
 
       {/* Current Subscription Card */}
       {currentSub && (
@@ -189,7 +266,7 @@ export default function SubscriptionPage() {
           </div>
           {currentSub.planType !== 'FREE' && currentSub.status === 'ACTIVE' && (
             <div className="mt-3 pt-3 border-top">
-              <button className="btn btn-outline-danger btn-sm rounded-5" onClick={handleCancel}>
+              <button className="btn btn-outline-danger btn-sm rounded-5" onClick={() => setShowCancelConfirm(true)}>
                 <i className="fa-solid fa-xmark me-1"></i>Cancel Subscription
               </button>
             </div>
@@ -203,11 +280,15 @@ export default function SubscriptionPage() {
         <div className="col-12">
           <div className="d-flex justify-content-center mb-2">
             <div className="btn-group bg-light rounded-5 p-1" role="group">
-              <button className={`btn rounded-5 px-4 ${billingCycle === 'MONTHLY' ? 'btn-primary shadow-sm' : 'btn-light'}`}
-                onClick={() => setBillingCycle('MONTHLY')}>Monthly</button>
+              <button className={`btn rounded-5 px-4 ${billingCycle === 'DAILY' ? 'btn-primary shadow-sm' : 'btn-light'}`}
+                onClick={() => setBillingCycle('DAILY')}>
+                Daily <span className="badge bg-success ms-1 rounded-5">Pay as you earn</span>
+              </button>
               <button className={`btn rounded-5 px-4 ${billingCycle === 'WEEKLY' ? 'btn-primary shadow-sm' : 'btn-light'}`}
-                onClick={() => setBillingCycle('WEEKLY')}>
-                Weekly <span className="badge bg-success ms-1 rounded-5">Try first</span>
+                onClick={() => setBillingCycle('WEEKLY')}>Weekly</button>
+              <button className={`btn rounded-5 px-4 ${billingCycle === 'MONTHLY' ? 'btn-primary shadow-sm' : 'btn-light'}`}
+                onClick={() => setBillingCycle('MONTHLY')}>
+                Monthly <span className="badge bg-warning text-dark ms-1 rounded-5">Best value</span>
               </button>
             </div>
           </div>
@@ -216,9 +297,10 @@ export default function SubscriptionPage() {
           const isCurrentPlan = currentSub?.planType === plan.name;
           const isPopular = plan.name === 'BASIC';
           const monthly = plan.monthlyPrice ?? 0;
-          const weekly = plan.weeklyPrice ?? 0;
-          const displayPrice = billingCycle === 'WEEKLY' && weekly ? weekly : monthly;
-          const periodLabel = monthly === 0 ? '' : billingCycle === 'WEEKLY' ? '/week' : '/month';
+          const displayPrice = priceFor(plan, billingCycle) || monthly;
+          const periodLabel = monthly === 0
+            ? ''
+            : billingCycle === 'DAILY' ? '/day' : billingCycle === 'WEEKLY' ? '/week' : '/month';
           return (
             <div key={plan.name} className="col-md-4">
               <div className={`card border-0 shadow-sm h-100 position-relative ${isPopular ? 'border-primary border-2' : ''}`}>
@@ -268,7 +350,7 @@ export default function SubscriptionPage() {
         })}
       </div>
 
-      {/* M-Pesa Payment Confirmation Modal */}
+      {/* M-Pesa STK Push Modal */}
       {pendingPlan && (
         <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -276,48 +358,73 @@ export default function SubscriptionPage() {
               <div className="modal-header border-0">
                 <h5 className="modal-title fw-bold">
                   <i className="fa-solid fa-mobile-screen text-success me-2"></i>
-                  Pay via M-Pesa
+                  Lipa na M-Pesa
                 </h5>
-                <button type="button" className="btn-close" onClick={() => setPendingPlan(null)}></button>
+                <button type="button" className="btn-close" onClick={closePaymentModal}></button>
               </div>
-              <div className="modal-body">
-                <div className="alert alert-info rounded-3 small mb-4">
-                  <strong>Payment Instructions:</strong>
-                  <ol className="mb-0 mt-2 ps-3">
-                    <li>Go to M-Pesa &rarr; Lipa na M-Pesa &rarr; Pay Bill</li>
-                    <li>Business No: <strong>522522</strong></li>
-                    <li>Account No: <strong>TUFIXIT-{pendingPlan}</strong></li>
-                    <li>Amount: <strong>KES {
-                      pendingPlan === 'PRO'
-                        ? (billingCycle === 'WEEKLY' ? '800' : '3,000')
-                        : (billingCycle === 'WEEKLY' ? '150' : '500')
-                    }</strong> ({billingCycle === 'WEEKLY' ? 'weekly' : 'monthly'})</li>
-                    <li>Enter your PIN and confirm</li>
-                    <li>Copy the confirmation code (e.g. <em>QKA12345XYZ</em>) and paste below</li>
-                  </ol>
+
+              {stkStage === 'phone' && (
+                <>
+                  <div className="modal-body">
+                    <div className="d-flex justify-content-between align-items-center bg-light rounded-3 p-3 mb-4">
+                      <span className="fw-medium">{pendingPlan} &middot; {billingCycle.toLowerCase()}</span>
+                      <span className="fs-4 fw-bold text-primary">KES {pendingPlanPrice.toLocaleString()}</span>
+                    </div>
+
+                    {paymentError && (
+                      <div className="alert alert-danger small rounded-3 mb-3">{paymentError}</div>
+                    )}
+
+                    <label className="form-label fw-medium">M-Pesa number <span className="text-danger">*</span></label>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      className="form-control form-control-lg rounded-3"
+                      placeholder="0712 345 678"
+                      value={stkPhone}
+                      onChange={(e) => { setStkPhone(e.target.value); setPaymentError(''); }}
+                    />
+                    <small className="text-muted">
+                      We&apos;ll send a payment request to this phone. Just enter your M-Pesa PIN &mdash; no PayBill numbers to type.
+                    </small>
+                  </div>
+                  <div className="modal-footer border-0">
+                    <button className="btn btn-light rounded-3" onClick={closePaymentModal}>Cancel</button>
+                    <button
+                      className={`btn ${pendingPlan === 'PRO' ? 'btn-warning' : 'btn-primary'} rounded-3 fw-medium px-4`}
+                      onClick={handleSendStk}
+                      disabled={subscribing !== null}
+                    >
+                      {subscribing === pendingPlan ? <span className="spinner-border spinner-border-sm me-1" /> : null}
+                      Send M-Pesa prompt
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {stkStage === 'waiting' && (
+                <div className="modal-body text-center py-5">
+                  <div className="spinner-border text-success mb-4" style={{ width: '3rem', height: '3rem' }} />
+                  <h5 className="fw-bold mb-2">Check your phone</h5>
+                  <p className="text-muted mb-1">
+                    We sent a payment request to <strong>{stkPhone}</strong>.
+                  </p>
+                  <p className="text-muted small mb-0">Enter your M-Pesa PIN to confirm. This page updates automatically.</p>
                 </div>
+              )}
 
-                {paymentError && (
-                  <div className="alert alert-danger small rounded-3 mb-3">{paymentError}</div>
-                )}
-
-                <label className="form-label fw-medium">M-Pesa Transaction ID <span className="text-danger">*</span></label>
-                <input type="text" className="form-control form-control-lg rounded-3 text-uppercase font-monospace fw-bold"
-                  placeholder="e.g. QKA12345XYZ"
-                  value={mpesaRef} onChange={(e) => { setMpesaRef(e.target.value.toUpperCase()); setPaymentError(''); }} />
-                <small className="text-muted">This is the code in the confirmation SMS you received from M-Pesa.</small>
-              </div>
-              <div className="modal-footer border-0">
-                <button className="btn btn-light rounded-3" onClick={() => setPendingPlan(null)}>Cancel</button>
-                <button
-                  className={`btn ${pendingPlan === 'PRO' ? 'btn-warning' : 'btn-primary'} rounded-3 fw-medium px-4`}
-                  onClick={handleConfirmPayment}
-                  disabled={subscribing !== null}>
-                  {subscribing === pendingPlan
-                    ? <span className="spinner-border spinner-border-sm me-1" /> : null}
-                  Confirm &amp; Activate {pendingPlan}
-                </button>
-              </div>
+              {stkStage === 'done' && (
+                <>
+                  <div className="modal-body text-center py-5">
+                    <i className="fa-solid fa-circle-check text-success mb-3" style={{ fontSize: '3rem' }}></i>
+                    <h5 className="fw-bold mb-2">Payment received</h5>
+                    <p className="text-muted mb-0">Your {pendingPlan} plan is now active.</p>
+                  </div>
+                  <div className="modal-footer border-0 justify-content-center">
+                    <button className="btn btn-primary rounded-3 px-4" onClick={closePaymentModal}>Done</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -379,12 +486,12 @@ export default function SubscriptionPage() {
                   <div className="d-flex gap-2">
                     {rankingData.tier === 'FREE' && (
                       <button className="btn btn-sm btn-primary rounded-5"
-                        onClick={() => { setPendingPlan('BASIC'); setMpesaRef(''); setPaymentError(''); }}>
+                        onClick={() => handleSubscribe('BASIC')}>
                         <i className="fa-solid fa-arrow-up me-1"></i>Upgrade to Basic
                       </button>
                     )}
                     <button className="btn btn-sm btn-warning rounded-5"
-                      onClick={() => { setPendingPlan('PRO'); setMpesaRef(''); setPaymentError(''); }}>
+                      onClick={() => handleSubscribe('PRO')}>
                       <i className="fa-solid fa-crown me-1"></i>Go Pro
                     </button>
                   </div>
@@ -392,6 +499,33 @@ export default function SubscriptionPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showCancelConfirm && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold text-danger">
+                  <i className="fa-solid fa-triangle-exclamation me-2"></i>Cancel your subscription?
+                </h5>
+                <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowCancelConfirm(false)}></button>
+              </div>
+              <div className="modal-body pt-0">
+                <p className="mb-2">You are about to cancel your <strong>{currentSub?.planType}</strong> plan.</p>
+                <p className="text-muted small mb-0">Your current features remain available until the active billing period ends.</p>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-light rounded-3" onClick={() => setShowCancelConfirm(false)}>
+                  Keep Plan
+                </button>
+                <button className="btn btn-danger rounded-3" onClick={handleCancel}>
+                  Yes, Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

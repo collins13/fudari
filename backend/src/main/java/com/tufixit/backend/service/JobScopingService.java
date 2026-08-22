@@ -256,6 +256,9 @@ public class JobScopingService {
         if (text.matches(".*\\b(tile|floor|bathroom.*floor)\\b.*")) return "TILING";
         if (text.matches(".*\\b(lock|key|door.*lock)\\b.*")) return "LOCKSMITH";
         if (text.matches(".*\\b(cctv|camera|security.*camera)\\b.*")) return "CCTV_INSTALLER";
+        if (text.matches(".*\\b(move|moving|relocation|搬|house move|office move|moving truck)\\b.*")) return "MOVER";
+        if (text.matches(".*\\b(transport|delivery|pickup|pick up|truck|van|lorry|cargo|courier)\\b.*")) return "TRANSPORT_PROVIDER";
+        if (text.matches(".*\\b(event light|lighting setup|dj light|stage light|floodlight|party light|sound and light)\\b.*")) return "EVENT_LIGHTING";
         if (text.matches(".*\\b(solar|panel|inverter)\\b.*")) return "SOLAR_TECHNICIAN";
         if (text.matches(".*\\b(pest|fumigate|cockroach|termite|bug)\\b.*")) return "FUMIGATION";
         if (text.matches(".*\\b(garden|lawn|tree|hedge)\\b.*")) return "GARDENER";

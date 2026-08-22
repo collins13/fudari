@@ -32,6 +32,9 @@ const SKILL_CATEGORIES: { label: string; value: string }[] = [
   { label: 'Locksmith', value: 'LOCKSMITH' },
   { label: 'CCTV Installer', value: 'CCTV_INSTALLER' },
   { label: 'Interior Designer', value: 'INTERIOR_DESIGNER' },
+  { label: 'Mover', value: 'MOVER' },
+  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
+  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
   { label: 'Other', value: 'OTHER' },
 ];
 
@@ -130,6 +133,10 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
+  const [confirmSoftDeleteUser, setConfirmSoftDeleteUser] = useState<UserDTO | null>(null);
+  const [rejectUser, setRejectUser] = useState<UserDTO | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [submittingReject, setSubmittingReject] = useState(false);
 
   // Create form state — mirrors provider self-registration + artisan vetting + service profile
   const [createForm, setCreateForm] = useState({
@@ -238,7 +245,7 @@ export default function AdminUsersPage() {
   };
 
   const handleSoftDelete = async (userId: number) => {
-    if (!confirm('Are you sure you want to soft-delete this user? Their listings will be revoked.')) return;
+    setConfirmSoftDeleteUser(null);
     setActionLoading(userId);
     try {
       await adminUsersAPI.softDeleteUser(userId);
@@ -246,6 +253,24 @@ export default function AdminUsersPage() {
       loadUsers();
     } catch { showToast('Failed to delete user', 'danger'); }
     finally { setActionLoading(null); }
+  };
+
+  const handleRejectArtisan = async () => {
+    if (!rejectUser) return;
+    setSubmittingReject(true);
+    setActionLoading(rejectUser.id);
+    try {
+      await adminUsersAPI.rejectArtisan(rejectUser.id, rejectReason.trim() || undefined);
+      showToast('Artisan rejected', 'success');
+      setRejectUser(null);
+      setRejectReason('');
+      loadUsers();
+    } catch {
+      showToast('Failed to reject artisan', 'danger');
+    } finally {
+      setSubmittingReject(false);
+      setActionLoading(null);
+    }
   };
 
   const validateCreateForm = (): boolean => {
@@ -1063,16 +1088,10 @@ export default function AdminUsersPage() {
                   )}
                   {selectedUser.role === 'WORKER' && selectedUser.approvalStatus !== 'REJECTED' && (
                     <button className="btn btn-outline-danger btn-sm rounded-3"
-                      onClick={async () => {
-                        const reason = prompt('Reason for rejection (optional):') || undefined;
-                        setActionLoading(selectedUser.id);
-                        try {
-                          await adminUsersAPI.rejectArtisan(selectedUser.id, reason);
-                          showToast('Artisan rejected', 'success');
-                          setSelectedUser(null);
-                          loadUsers();
-                        } catch { showToast('Failed to reject artisan', 'danger'); }
-                        finally { setActionLoading(null); }
+                      onClick={() => {
+                        setRejectUser(selectedUser);
+                        setRejectReason('');
+                        setSelectedUser(null);
                       }}>
                       <i className="fa-solid fa-ban me-1" />Reject
                     </button>
@@ -1084,7 +1103,10 @@ export default function AdminUsersPage() {
                     </button>
                   )}
                   <button className="btn btn-outline-danger btn-sm rounded-3"
-                    onClick={() => { handleSoftDelete(selectedUser.id); setSelectedUser(null); }}>
+                    onClick={() => {
+                      setConfirmSoftDeleteUser(selectedUser);
+                      setSelectedUser(null);
+                    }}>
                     <i className="fa-solid fa-trash me-1" />Soft Delete
                   </button>
                 </div>
@@ -1096,6 +1118,66 @@ export default function AdminUsersPage() {
               </div>
               <div className="modal-footer border-0">
                 <button className="btn btn-outline-secondary rounded-3" onClick={() => setSelectedUser(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmSoftDeleteUser && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setConfirmSoftDeleteUser(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Confirm Soft Delete</h5>
+                <button className="btn-close" onClick={() => setConfirmSoftDeleteUser(null)} />
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-0">
+                  Soft-delete {confirmSoftDeleteUser.firstName} {confirmSoftDeleteUser.lastName}? Their listings will be revoked.
+                </p>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-outline-secondary rounded-3" onClick={() => setConfirmSoftDeleteUser(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger rounded-3" onClick={() => void handleSoftDelete(confirmSoftDeleteUser.id)}>
+                  Soft Delete User
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rejectUser && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setRejectUser(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Reject Artisan</h5>
+                <button className="btn-close" onClick={() => setRejectUser(null)} />
+              </div>
+              <div className="modal-body">
+                <p className="small text-muted mb-2">
+                  Optionally add a reason for rejecting {rejectUser.firstName} {rejectUser.lastName}.
+                </p>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="Reason (optional)"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-outline-secondary rounded-3" onClick={() => setRejectUser(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger rounded-3" onClick={() => void handleRejectArtisan()} disabled={submittingReject}>
+                  {submittingReject ? <span className="spinner-border spinner-border-sm me-1" /> : <i className="fa-solid fa-ban me-1" />}
+                  Reject Artisan
+                </button>
               </div>
             </div>
           </div>

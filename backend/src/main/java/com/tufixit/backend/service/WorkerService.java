@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +27,34 @@ public class WorkerService {
     private final WorkerSkillRepository workerSkillRepository;
     private final ReviewRepository reviewRepository;
     private final RankingService rankingService;
+
+    /** Availability goes stale so an artisan who forgot to switch it off is not shown as free. */
+    private static final long AVAILABILITY_TTL_HOURS = 8;
+
+    private boolean isAvailableNow(User user) {
+        if (!Boolean.TRUE.equals(user.getAvailableNow())) return false;
+        LocalDateTime updated = user.getAvailabilityUpdatedAt();
+        return updated != null && updated.isAfter(LocalDateTime.now().minusHours(AVAILABILITY_TTL_HOURS));
+    }
+
+    /** Sets the calling worker's "available now" flag and refreshes its TTL. */
+    @Transactional
+    public AuthDTO.UserDTO setAvailability(boolean availableNow) {
+        String emailOrPhone = SecurityContextHolder.getContext().getAuthentication().getName();
+        User worker = userRepository.findByEmail(emailOrPhone)
+                .or(() -> userRepository.findByPhoneNumber(emailOrPhone))
+                .orElseThrow(() -> new RuntimeException("Worker not found"));
+
+        if (worker.getRole() != User.UserRole.WORKER) {
+            throw new IllegalStateException("Only workers can set availability");
+        }
+
+        worker.setAvailableNow(availableNow);
+        worker.setAvailabilityUpdatedAt(LocalDateTime.now());
+        userRepository.save(worker);
+
+        return mapToUserDTOWithSkills(worker);
+    }
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm) {
         List<User> workers;
@@ -221,6 +250,7 @@ public class WorkerService {
                 .latitude(user.getLatitude())
                 .longitude(user.getLongitude())
                 .locationName(user.getLocationName())
+                .availableNow(isAvailableNow(user))
                 .isVerified(user.getIsVerified())
                 .skills(skillInfos)
                 .rankingScore(Math.round(score * 10) / 10.0)

@@ -123,6 +123,16 @@ function LoginForm() {
               </button>
             </form>
 
+            <div className="d-flex align-items-center gap-2 my-3">
+              <hr className="flex-grow-1 m-0" />
+              <span className="text-muted small">or</span>
+              <hr className="flex-grow-1 m-0" />
+            </div>
+
+            <Link href="/register" className="btn btn-outline-primary w-100 rounded-3 py-2 fw-medium">
+              <i className="fa-solid fa-comment-sms me-2"></i>Sign in with an SMS code
+            </Link>
+
             <div className="text-center mt-4 pt-3 border-top">
               <span className="text-muted small">Don&apos;t have an account?</span>{' '}
               <Link href="/register" className="fw-semibold small">Create Account</Link>

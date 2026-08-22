@@ -258,6 +258,9 @@ public class ListingService {
             case "GARDENER" -> "Gardener";
             case "CLEANER" -> "Cleaner";
             case "SECURITY" -> "Security";
+            case "MOVER" -> "Mover";
+            case "TRANSPORT_PROVIDER" -> "Transport Provider";
+            case "EVENT_LIGHTING" -> "Event Lighting";
             default -> skillType;
         };
     }

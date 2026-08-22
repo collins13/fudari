@@ -29,6 +29,7 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'danger' } | null>(null);
 
   const fetchListings = async () => {
     try {
@@ -51,8 +52,9 @@ export default function MyListingsPage() {
     try {
       await listingsAPI.deleteListing(deleteId);
       setListings((prev) => prev.filter((l) => l.id !== deleteId));
+      setToast({ msg: 'Listing deleted successfully', type: 'success' });
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to delete listing');
+      setToast({ msg: err?.response?.data?.message || 'Failed to delete listing', type: 'danger' });
     } finally {
       setDeleting(false);
       setDeleteId(null);
@@ -75,6 +77,13 @@ export default function MyListingsPage() {
           <i className="fa-solid fa-plus me-2"></i>Add New Listing
         </Link>
       </div>
+
+      {toast && (
+        <div className={`alert alert-${toast.type} alert-dismissible fade show`} role="alert">
+          {toast.msg}
+          <button type="button" className="btn-close" onClick={() => setToast(null)}></button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="row g-3 mb-4">

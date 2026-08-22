@@ -1,2 +1,2 @@
-/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/test/java/com/tufixit/backend/AuthBookingPaymentIntegrationTest.java
-/home/rashid13/Desktop/2025/dev/rashid/tufixit/backend/src/test/java/com/tufixit/backend/MpesaDarajaServiceTest.java
+/app/src/test/java/com/tufixit/backend/MpesaDarajaServiceTest.java
+/app/src/test/java/com/tufixit/backend/AuthBookingPaymentIntegrationTest.java

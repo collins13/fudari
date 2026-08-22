@@ -29,6 +29,7 @@ export default function AdminCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [deleteCategory, setDeleteCategory] = useState<Category | null>(null);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -102,7 +103,7 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = async (cat: Category) => {
-    if (!confirm(`Delete category "${cat.name}"? This cannot be undone.`)) return;
+    setDeleteCategory(null);
     try {
       await categoriesAPI.deleteCategory(cat.id);
       setToast({ msg: 'Category deleted', type: 'success' });
@@ -179,7 +180,7 @@ export default function AdminCategoriesPage() {
                         <button className="btn btn-sm btn-outline-secondary" title={cat.isActive ? 'Deactivate' : 'Activate'} onClick={() => handleToggle(cat)}>
                           <i className={`fa-solid ${cat.isActive ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
-                        <button className="btn btn-sm btn-outline-danger" title="Delete" onClick={() => handleDelete(cat)}>
+                        <button className="btn btn-sm btn-outline-danger" title="Delete" onClick={() => setDeleteCategory(cat)}>
                           <i className="fa-solid fa-trash"></i>
                         </button>
                       </div>
@@ -188,6 +189,33 @@ export default function AdminCategoriesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteCategory && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setDeleteCategory(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Delete Category</h5>
+                <button className="btn-close" onClick={() => setDeleteCategory(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-0">
+                  Delete category "{deleteCategory.name}"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-outline-secondary rounded-5" onClick={() => setDeleteCategory(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger rounded-5" onClick={() => void handleDelete(deleteCategory)}>
+                  Delete Category
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

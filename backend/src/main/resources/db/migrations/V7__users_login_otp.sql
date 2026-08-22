@@ -1,0 +1,4 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS login_otp VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS login_otp_expires_at TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS login_otp_attempts INTEGER DEFAULT 0;

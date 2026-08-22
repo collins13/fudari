@@ -232,7 +232,7 @@ export default function EstateBookingPage() {
         {!selectedWorker && (
           <>
             <h4 className="fw-bold mb-3">
-              {selectedCategory ? '2. Choose an Artisan' : '1. What do you need help with?'}
+              {selectedCategory ? '2. Choose a Pro' : '1. What do you need help with?'}
             </h4>
 
             {!selectedCategory && (

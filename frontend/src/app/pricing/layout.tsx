@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Artisan Subscription Plans & Pricing",
+  title: "Pro Subscription Plans & Pricing",
   description:
     "Affordable TUFIXIT subscription plans for Kenyan artisans — Free (KES 0), Basic (KES 500/mo or KES 150/wk), Pro (KES 3,000/mo or KES 800/wk). Get more listings, analytics, featured badge, and priority search ranking.",
   keywords: [
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
-    title: "Artisan Subscription Plans & Pricing | TUFIXIT",
+    title: "Pro Subscription Plans & Pricing | TUFIXIT",
     description:
       "Free, Basic (KES 500/mo), and Pro (KES 3,000/mo) plans for verified Kenyan artisans. More visibility, more bookings.",
     url: "https://tufixit.com/pricing",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Artisan Plans & Pricing | TUFIXIT",
+    title: "Pro Plans & Pricing | TUFIXIT",
     description: "Free, Basic KES 500/mo, Pro KES 3,000/mo. Get more listings and bookings in Kenya.",
     images: ["/liston/images/header/lg-01.jpg"],
   },

@@ -51,6 +51,7 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'danger' } | null>(null);
   const [previewListing, setPreviewListing] = useState<Listing | null>(null);
+  const [revokeListingId, setRevokeListingId] = useState<number | null>(null);
   const [pendingReports, setPendingReports] = useState<Report[]>([]);
 
   const loadListings = async () => {
@@ -114,7 +115,7 @@ export default function AdminPage() {
   };
 
   const handleRevoke = async (id: number) => {
-    if (!confirm('Revoke this listing? It will be hidden from customers immediately.')) return;
+    setRevokeListingId(null);
     setActionLoading(id);
     try {
       await adminUsersAPI.revokeListing(id);
@@ -286,7 +287,7 @@ export default function AdminPage() {
                           {l.status === 'APPROVED' && (
                             <button className="btn btn-sm btn-outline-warning rounded-3"
                               disabled={actionLoading === l.id}
-                              onClick={() => handleRevoke(l.id)}>
+                              onClick={() => setRevokeListingId(l.id)}>
                               <i className="fa-solid fa-rotate-left me-1"></i>Revoke
                             </button>
                           )}
@@ -392,6 +393,50 @@ export default function AdminPage() {
                 )}
                 <button className="btn btn-secondary rounded-5" onClick={() => setPreviewListing(null)}>
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {revokeListingId !== null && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Revoke Listing</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setRevokeListingId(null)}
+                  disabled={actionLoading === revokeListingId}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="mb-0 text-muted">
+                  Revoke listing #{revokeListingId}? It will be hidden from customers immediately.
+                </p>
+              </div>
+              <div className="modal-footer border-0">
+                <button
+                  className="btn btn-outline-secondary rounded-3"
+                  onClick={() => setRevokeListingId(null)}
+                  disabled={actionLoading === revokeListingId}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-warning rounded-3"
+                  disabled={actionLoading === revokeListingId}
+                  onClick={() => void handleRevoke(revokeListingId)}
+                >
+                  {actionLoading === revokeListingId ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    <><i className="fa-solid fa-rotate-left me-1"></i>Revoke Now</>
+                  )}
                 </button>
               </div>
             </div>

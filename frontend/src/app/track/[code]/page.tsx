@@ -84,6 +84,8 @@ export default function TrackBookingPage() {
   const [rateComment, setRateComment] = useState('');
   const [rateLoading, setRateLoading] = useState(false);
   const [rateSuccess, setRateSuccess] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [uiMessage, setUiMessage] = useState<{ type: 'success' | 'danger' | 'info'; text: string } | null>(null);
 
   const fetchTracking = useCallback(async () => {
     try {
@@ -105,13 +107,17 @@ export default function TrackBookingPage() {
   }, [fetchTracking]);
 
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    setShowCancelConfirm(false);
     setCancelLoading(true);
     try {
       await bookingsAPI.cancel(code, cancelReason || undefined);
+      setUiMessage({ type: 'success', text: 'Booking cancelled successfully.' });
       fetchTracking();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to cancel booking');
+      setUiMessage({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to cancel booking. Please try again.',
+      });
     } finally {
       setCancelLoading(false);
     }
@@ -123,10 +129,32 @@ export default function TrackBookingPage() {
     try {
       await bookingsAPI.rate(code, { rating, comment: rateComment });
       setRateSuccess(true);
+      setUiMessage({ type: 'success', text: 'Thanks for your rating. Your feedback was submitted.' });
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to submit rating');
+      setUiMessage({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to submit rating. Please try again.',
+      });
     } finally {
       setRateLoading(false);
+    }
+  };
+
+  const handleCopyTrackingLink = async () => {
+    try {
+      await navigator.clipboard?.writeText(window.location.href);
+      setUiMessage({ type: 'success', text: 'Tracking link copied to clipboard.' });
+    } catch {
+      setUiMessage({ type: 'danger', text: 'Could not copy the link. Please copy it manually.' });
+    }
+  };
+
+  const handleCopyHomeLink = async () => {
+    try {
+      await navigator.clipboard?.writeText('https://tufixit.co.ke');
+      setUiMessage({ type: 'success', text: 'TuFixIt link copied to clipboard.' });
+    } catch {
+      setUiMessage({ type: 'danger', text: 'Could not copy the link. Please try again.' });
     }
   };
 
@@ -173,7 +201,7 @@ export default function TrackBookingPage() {
             <i className="fa-solid fa-circle-xmark text-danger mb-3" style={{ fontSize: 48 }}></i>
             <h4 className="fw-bold mb-2">Booking Not Found</h4>
             <p className="text-muted mb-4">{error}</p>
-            <Link href="/artisans" className="btn btn-primary rounded-5">Browse Artisans</Link>
+            <Link href="/artisans" className="btn btn-primary rounded-5">Browse Services</Link>
           </div>
         </div>
         <Footer />
@@ -189,6 +217,14 @@ export default function TrackBookingPage() {
       <Navbar />
       <div className="bg-light py-5 min-vh-100">
         <div className="container" style={{ maxWidth: 700 }}>
+
+          {uiMessage && (
+            <div className={`alert alert-${uiMessage.type} alert-dismissible fade show rounded-3 mb-4`} role="alert">
+              <i className={`fa-solid ${uiMessage.type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-check'} me-2`}></i>
+              {uiMessage.text}
+              <button type="button" className="btn-close" aria-label="Close" onClick={() => setUiMessage(null)}></button>
+            </div>
+          )}
 
           {/* Header card */}
           <div className={`card border-0 shadow-sm rounded-4 p-4 mb-4 border-start border-4 border-${statusColor(data.status)}`}>
@@ -213,7 +249,7 @@ export default function TrackBookingPage() {
           {data.status === 'COUNTER_OFFERED' && data.agreedPrice && (
             <div className="card border-warning border-2 rounded-4 shadow-sm p-4 mb-4">
               <h6 className="fw-bold text-warning mb-2">
-                <i className="fa-solid fa-comment-dollar me-2"></i>Artisan Counter-Offer
+                <i className="fa-solid fa-comment-dollar me-2"></i>Counter-Offer
               </h6>
               <p className="mb-3">
                 {data.artisanName} has proposed a new price of{' '}
@@ -267,6 +303,32 @@ export default function TrackBookingPage() {
             </div>
           )}
 
+          {!isTerminal && data.status !== 'COUNTER_OFFERED' && (
+            <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: '#f8fbff' }}>
+              <h6 className="fw-semibold mb-2">
+                <i className="fa-solid fa-route me-2 text-primary"></i>What happens next
+              </h6>
+              <div className="small text-muted mb-2">
+                {data.status === 'PENDING' && 'Your request is waiting for confirmation. Most confirmations happen within a few minutes.'}
+                {data.status === 'ACCEPTED' && 'Your pro has accepted and should coordinate arrival shortly. Keep your phone available for call/SMS.'}
+                {data.status === 'ARRIVED' && 'Your pro has marked arrival. Share your START PIN when work begins.'}
+                {data.status === 'IN_PROGRESS' && 'Work is in progress. Share the COMPLETION PIN only after you confirm the job is done.'}
+              </div>
+              <div className="d-flex flex-wrap gap-2 align-items-center">
+                <span className="badge text-bg-light border">Typical response: 5-30 mins</span>
+                <span className="badge text-bg-light border">Arrival target: within agreed window</span>
+                <a
+                  href={whatsappBotLink(`Hi TUFIXIT support, booking ${data.bookingCode} needs reassignment due to delay/no-show.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-outline-primary rounded-5 ms-sm-auto"
+                >
+                  <i className="fa-brands fa-whatsapp me-1"></i>Request fast reassignment
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Job details */}
           <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
             <h6 className="fw-semibold mb-3"><i className="fa-solid fa-clipboard me-2 text-primary"></i>Job Details</h6>
@@ -301,7 +363,7 @@ export default function TrackBookingPage() {
           {/* Artisan info (visible after acceptance) */}
           {data.artisanName && (
             <div className="card border-0 shadow-sm rounded-4 p-4 mb-4">
-              <h6 className="fw-semibold mb-3"><i className="fa-solid fa-user-tie me-2 text-primary"></i>Your Artisan</h6>
+              <h6 className="fw-semibold mb-3"><i className="fa-solid fa-user-tie me-2 text-primary"></i>Your Pro</h6>
               <div className="d-flex align-items-center gap-3 flex-wrap">
                 <div>
                   <h5 className="fw-bold mb-0">{data.artisanName}</h5>
@@ -342,14 +404,14 @@ export default function TrackBookingPage() {
           {data.startPin && (
             <div className="card border-primary border-2 rounded-4 shadow-sm p-4 mb-4 text-center">
               <h6 className="fw-bold text-primary mb-2"><i className="fa-solid fa-key me-2"></i>START PIN</h6>
-              <p className="text-muted small mb-2">Give this PIN to your artisan when they arrive.</p>
+              <p className="text-muted small mb-2">Give this PIN to your pro when they arrive.</p>
               <div className="display-4 fw-bold font-monospace letter-spacing-wide text-primary">{data.startPin}</div>
             </div>
           )}
           {data.completionPin && (
             <div className="card border-success border-2 rounded-4 shadow-sm p-4 mb-4 text-center">
               <h6 className="fw-bold text-success mb-2"><i className="fa-solid fa-flag-checkered me-2"></i>COMPLETION PIN</h6>
-              <p className="text-muted small mb-2">Give this PIN to your artisan when the job is done.</p>
+              <p className="text-muted small mb-2">Give this PIN to your pro when the job is done.</p>
               <div className="display-4 fw-bold font-monospace text-success">{data.completionPin}</div>
             </div>
           )}
@@ -361,7 +423,7 @@ export default function TrackBookingPage() {
               <strong>Declined:</strong> {data.declineReason}
               <div className="mt-2">
                 <Link href="/artisans" className="btn btn-sm btn-outline-danger rounded-5">
-                  Find Another Artisan
+                  Find Someone Else
                 </Link>
               </div>
             </div>
@@ -410,7 +472,7 @@ export default function TrackBookingPage() {
                   value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
               </div>
               <button className="btn btn-outline-danger rounded-5 btn-sm px-4"
-                onClick={handleCancel} disabled={cancelLoading}>
+                onClick={() => setShowCancelConfirm(true)} disabled={cancelLoading}>
                 {cancelLoading ? <span className="spinner-border spinner-border-sm me-1" /> : null}
                 <i className="fa-solid fa-xmark me-1"></i>Cancel Booking
               </button>
@@ -424,14 +486,75 @@ export default function TrackBookingPage() {
               <input type="text" readOnly className="form-control font-monospace bg-white"
                 value={typeof window !== 'undefined' ? window.location.href : ''} />
               <button className="btn btn-outline-secondary" type="button"
-                onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+                onClick={handleCopyTrackingLink}>
                 <i className="fa-solid fa-copy"></i>
               </button>
             </div>
           </div>
 
+          {/* Referral prompt — highest-intent acquisition moment */}
+          <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'linear-gradient(135deg, #fff8f6 0%, #fff 100%)' }}>
+            <div className="d-flex align-items-start gap-3 flex-wrap">
+              <div className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                style={{ width: 44, height: 44, background: 'rgba(248,69,37,0.1)' }}>
+                <i className="fa-solid fa-people-group text-primary fs-5"></i>
+              </div>
+              <div className="flex-grow-1">
+                <h6 className="fw-bold mb-1">Know someone who needs a hand?</h6>
+                <p className="text-muted small mb-3">
+                  Share TuFixIt — book any service in 60 seconds, no account needed. M-Pesa payments, verified pros.
+                </p>
+                <div className="d-flex gap-2 flex-wrap">
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent('🔧 Found a great way to hire verified pros in Kenya! TuFixIt — Plumbers, Electricians, Carpenters, Movers & more near you. No sign-up, M-Pesa payments 👇 https://tufixit.co.ke')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-success rounded-5 btn-sm px-3"
+                  >
+                    <i className="fa-brands fa-whatsapp me-1"></i>Share on WhatsApp
+                  </a>
+                  <button
+                    className="btn btn-outline-secondary rounded-5 btn-sm px-3"
+                    onClick={handleCopyHomeLink}
+                  >
+                    <i className="fa-solid fa-copy me-1"></i>Copy Link
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
+
+      {showCancelConfirm && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow rounded-4">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold text-danger">
+                  <i className="fa-solid fa-triangle-exclamation me-2"></i>Cancel this booking?
+                </h5>
+                <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowCancelConfirm(false)}></button>
+              </div>
+              <div className="modal-body pt-0">
+                <p className="mb-2">You are about to cancel booking <strong>{data.bookingCode}</strong>.</p>
+                <p className="text-muted small mb-0">This action can affect availability and may include cancellation fees based on status.</p>
+              </div>
+              <div className="modal-footer border-0">
+                <button type="button" className="btn btn-light rounded-3" onClick={() => setShowCancelConfirm(false)}>
+                  Keep Booking
+                </button>
+                <button type="button" className="btn btn-danger rounded-3" onClick={handleCancel} disabled={cancelLoading}>
+                  {cancelLoading ? <span className="spinner-border spinner-border-sm me-1" /> : null}
+                  Yes, Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </>
   );

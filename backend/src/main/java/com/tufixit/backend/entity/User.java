@@ -82,6 +82,14 @@ public class User {
     @Column
     private String locationName;
 
+    /** Worker-controlled "I can take a job right now" flag, surfaced in search. */
+    @Column(name = "available_now")
+    private Boolean availableNow = false;
+
+    /** Last time the worker confirmed availability — used to expire stale ACCEPTING states. */
+    @Column(name = "availability_updated_at")
+    private LocalDateTime availabilityUpdatedAt;
+
     @Column
     private Boolean isVerified = false;
 
@@ -137,6 +145,18 @@ public class User {
     /** When the OTP expires (10 minutes from issue) */
     @Column(name = "reset_otp_expires_at")
     private LocalDateTime resetOtpExpiresAt;
+
+    /** OTP for passwordless sign-in / sign-up — stored hashed, cleared after use */
+    @JsonIgnore
+    @Column(name = "login_otp")
+    private String loginOtp;
+
+    @Column(name = "login_otp_expires_at")
+    private LocalDateTime loginOtpExpiresAt;
+
+    /** Failed verification attempts against the current OTP — guards against brute force. */
+    @Column(name = "login_otp_attempts")
+    private Integer loginOtpAttempts = 0;
 
     @JsonIgnore
     @OneToMany(mappedBy = "worker", fetch = FetchType.LAZY)

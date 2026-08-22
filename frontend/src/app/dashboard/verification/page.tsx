@@ -12,11 +12,12 @@ interface DocState {
 
 function DocCard({
   label, description, icon, value, status,
-  onChange, accept,
+  onChange, onError, accept,
 }: {
   label: string; description: string; icon: string;
   value: string; status: 'missing' | 'uploaded' | 'verified';
   onChange: (base64: string) => void; accept: string;
+  onError?: (msg: string) => void;
 }) {
   const statusMap = {
     missing: { badge: 'text-bg-warning', text: 'Not Uploaded' },
@@ -28,7 +29,10 @@ function DocCard({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File too large (max 5 MB)'); return; }
+    if (file.size > 5 * 1024 * 1024) {
+      onError?.('File too large (max 5 MB)');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => { onChange(ev.target?.result as string); };
     reader.readAsDataURL(file);
@@ -174,6 +178,7 @@ export default function VettingPage() {
             value={docs.nationalId}
             status={docStatus(docs.nationalId)}
             onChange={(v) => updateDoc('nationalId', v)}
+            onError={(msg) => setToast({ msg, type: 'danger' })}
             accept="image/*,.pdf"
           />
         </div>
@@ -185,6 +190,7 @@ export default function VettingPage() {
             value={docs.certificateOfGoodConduct}
             status={docStatus(docs.certificateOfGoodConduct)}
             onChange={(v) => updateDoc('certificateOfGoodConduct', v)}
+            onError={(msg) => setToast({ msg, type: 'danger' })}
             accept="image/*,.pdf"
           />
         </div>
@@ -196,6 +202,7 @@ export default function VettingPage() {
             value={docs.tvetCertification}
             status={docStatus(docs.tvetCertification)}
             onChange={(v) => updateDoc('tvetCertification', v)}
+            onError={(msg) => setToast({ msg, type: 'danger' })}
             accept="image/*,.pdf"
           />
         </div>

@@ -76,6 +76,20 @@ export const authAPI = {
   checkPhone: (phone: string) =>
     api.get<{ available: boolean }>('/auth/check-phone', { params: { phone } }),
 
+  /** Sends a 6-digit SMS code. Handles both sign-in and sign-up. */
+  requestOtp: (phoneNumber: string) =>
+    api.post<{ message: string; isNewAccount: boolean }>('/auth/otp/request', { phoneNumber }),
+
+  /** Verifies the code and returns a session. Name/role are only needed for new accounts. */
+  verifyOtp: (data: {
+    phoneNumber: string;
+    otp: string;
+    firstName?: string;
+    lastName?: string;
+    role?: 'CLIENT' | 'WORKER';
+    referralCode?: string;
+  }) => api.post('/auth/otp/verify', data),
+
   deleteAccount: () => api.delete('/auth/account'),
 
   getReferralInfo: () =>
@@ -174,6 +188,10 @@ export const workersAPI = {
   }) => api.put(`/workers/skills/${skillId}`, data),
 
   deleteSkill: (skillId: number) => api.delete(`/workers/skills/${skillId}`),
+
+  /** Toggles the calling worker's "available now" flag. Expires server-side after 8h. */
+  setAvailability: (availableNow: boolean) =>
+    api.put('/workers/me/availability', { availableNow }),
 };
 
 // Subscriptions API
@@ -195,6 +213,20 @@ export const subscriptionsAPI = {
   getAvailablePlans: () => api.get('/subscriptions/plans'),
 
   cancelSubscription: () => api.post('/subscriptions/cancel'),
+
+  /** Sends the M-Pesa STK prompt to the artisan's phone. */
+  initiatePayment: (data: {
+    planType: 'BASIC' | 'PRO';
+    billingCycle?: 'MONTHLY' | 'WEEKLY' | 'DAILY';
+    phoneNumber?: string;
+  }) => api.post('/subscriptions/initiate-payment', data),
+
+  /** Polls Daraja for the STK result and activates the plan when paid. */
+  verifyPayment: (data: {
+    checkoutRequestId: string;
+    planType: 'BASIC' | 'PRO';
+    billingCycle?: 'MONTHLY' | 'WEEKLY' | 'DAILY';
+  }) => api.post('/subscriptions/verify-payment', data),
 };
 
 // Lead Tracking API

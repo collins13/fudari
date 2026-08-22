@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { estatesAPI, workersAPI } from '@/lib/api';
+import { estatesAPI } from '@/lib/api';
 
 interface Estate {
   id: number;
@@ -49,6 +49,8 @@ export default function EstateAdminPage() {
   const [artisanSearchId, setArtisanSearchId] = useState('');
   const [artisanNote, setArtisanNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteEstateId, setDeleteEstateId] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'danger' } | null>(null);
 
   // Form fields
   const [form, setForm] = useState({
@@ -69,6 +71,11 @@ export default function EstateAdminPage() {
   };
 
   useEffect(() => { fetchEstates(); }, []);
+
+  const showToast = (msg: string, type: 'success' | 'danger') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const resetForm = () => {
     setForm({ name: '', area: '', latitude: '', longitude: '', unitCount: '',
@@ -110,26 +117,29 @@ export default function EstateAdminPage() {
       };
       if (editingEstate) {
         await estatesAPI.update(editingEstate.id, payload);
+        showToast('Estate updated successfully', 'success');
       } else {
         await estatesAPI.create(payload);
+        showToast('Estate created successfully', 'success');
       }
       resetForm();
       fetchEstates();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to save estate');
+      showToast(err?.response?.data?.message || 'Failed to save estate', 'danger');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this estate?')) return;
+    setDeleteEstateId(null);
     try {
       await estatesAPI.delete(id);
+      showToast('Estate deleted', 'success');
       fetchEstates();
       if (selectedEstate?.id === id) setSelectedEstate(null);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to delete');
+      showToast(err?.response?.data?.message || 'Failed to delete', 'danger');
     }
   };
 
@@ -158,8 +168,9 @@ export default function EstateAdminPage() {
       setArtisanNote('');
       const res = await estatesAPI.getApprovedArtisans(selectedEstate.id);
       setApprovedArtisans(res.data);
+      showToast('Artisan approved for this estate', 'success');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to approve artisan');
+      showToast(err?.response?.data?.message || 'Failed to approve artisan', 'danger');
     }
   };
 
@@ -169,14 +180,19 @@ export default function EstateAdminPage() {
       await estatesAPI.removeArtisan(selectedEstate.id, artisanId);
       const res = await estatesAPI.getApprovedArtisans(selectedEstate.id);
       setApprovedArtisans(res.data);
+      showToast('Artisan removed from estate', 'success');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to remove artisan');
+      showToast(err?.response?.data?.message || 'Failed to remove artisan', 'danger');
     }
   };
 
-  const copyBookingUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
-    alert('Booking URL copied to clipboard!');
+  const copyBookingUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Booking URL copied to clipboard', 'success');
+    } catch {
+      showToast('Failed to copy booking URL', 'danger');
+    }
   };
 
   if (loading) {
@@ -200,6 +216,13 @@ export default function EstateAdminPage() {
           <i className="fa-solid fa-plus me-1"></i> Add Estate
         </button>
       </div>
+
+      {toast && (
+        <div className={`alert alert-${toast.type} alert-dismissible fade show`} role="alert">
+          {toast.msg}
+          <button type="button" className="btn-close" onClick={() => setToast(null)}></button>
+        </div>
+      )}
 
       {/* Create/Edit Form */}
       {showForm && (
@@ -322,7 +345,7 @@ export default function EstateAdminPage() {
                       <button className="btn btn-sm btn-outline-secondary rounded-3" onClick={(e) => { e.stopPropagation(); copyBookingUrl(estate.bookingUrl); }}>
                         <i className="fa-solid fa-link me-1"></i>Copy URL
                       </button>
-                      <button className="btn btn-sm btn-outline-danger rounded-3" onClick={(e) => { e.stopPropagation(); handleDelete(estate.id); }}>
+                      <button className="btn btn-sm btn-outline-danger rounded-3" onClick={(e) => { e.stopPropagation(); setDeleteEstateId(estate.id); }}>
                         <i className="fa-solid fa-trash me-1"></i>
                       </button>
                     </div>
@@ -448,6 +471,30 @@ export default function EstateAdminPage() {
           </div>
         )}
       </div>
+
+      {deleteEstateId !== null && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setDeleteEstateId(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Delete Estate</h5>
+                <button className="btn-close" onClick={() => setDeleteEstateId(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-0">Delete this estate partnership? This action cannot be undone.</p>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-outline-secondary rounded-3" onClick={() => setDeleteEstateId(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger rounded-3" onClick={() => void handleDelete(deleteEstateId)}>
+                  Delete Estate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

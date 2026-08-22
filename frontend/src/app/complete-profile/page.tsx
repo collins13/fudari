@@ -15,6 +15,9 @@ const CATEGORIES = [
   { label: 'Mason', value: 'MASON', icon: 'fa-building' },
   { label: 'Cleaner', value: 'CLEANER', icon: 'fa-broom' },
   { label: 'Gardener', value: 'GARDENER', icon: 'fa-leaf' },
+  { label: 'Mover', value: 'MOVER', icon: 'fa-truck-moving' },
+  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER', icon: 'fa-truck' },
+  { label: 'Event Lighting', value: 'EVENT_LIGHTING', icon: 'fa-lightbulb' },
   { label: 'Other', value: 'OTHER', icon: 'fa-wrench' },
 ];
 
@@ -399,7 +402,7 @@ export default function CompleteProfilePage() {
           {step === 4 && isWorker && (
             <>
               <h4 className="fw-bold mb-1">Add a profile photo</h4>
-              <p className="text-muted mb-4">Customers trust artisans with a real photo</p>
+              <p className="text-muted mb-4">Customers trust profiles with a real photo</p>
               <div className="text-center">
                 {form.profileImage ? (
                   <div className="mb-3">

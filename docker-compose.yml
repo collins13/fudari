@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432" 
     networks:
       - backend_net
     logging:
@@ -130,6 +128,9 @@ services:
       - "${FRONTEND_PORT_BIND:-3000}:3000"
     environment:
       NODE_ENV: production
+      # Next's standalone server binds to $HOSTNAME, which Docker sets to the
+      # container ID — that leaves loopback unbound and the healthcheck failing.
+      HOSTNAME: 0.0.0.0
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL must be set in .env}
     security_opt:
       - no-new-privileges:true

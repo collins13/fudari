@@ -7,6 +7,8 @@ const PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '254703954539').replac
 const QUICK_PROMPTS = [
   { icon: '⚡', label: 'Electrician needed' },
   { icon: '🚰', label: 'Plumbing emergency' },
+  { icon: '🚚', label: 'Mover / relocation' },
+  { icon: '📦', label: 'Pickup or transport' },
   { icon: '🔧', label: 'Appliance repair' },
   { icon: '🎨', label: 'Painting / renovation' },
   { icon: '💬', label: 'Something else' },
@@ -87,7 +89,7 @@ export default function WhatsAppWidget() {
           </div>
 
           <a
-            href={buildLink('Hi TUFIXIT, I need to book an artisan')}
+            href={buildLink('Hi TUFIXIT, I need help with a job')}
             target="_blank"
             rel="noopener noreferrer"
             className="tx-wa-cta"

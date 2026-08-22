@@ -16,7 +16,7 @@ export default function Footer() {
               </Link>
               <p className="mb-4">
                 Kenya&apos;s #1 Jua Kali Marketplace — connecting customers with
-                trusted, verified artisans for all home and business services.
+                trusted, verified pros for all home and business services.
               </p>
               {/* Social icons */}
               <ul className="d-flex flex-wrap gap-2 list-unstyled mb-0 social-icon">
@@ -47,17 +47,19 @@ export default function Footer() {
             <div className="col-lg-2 col-md-3 col-sm-6">
               <h5 className="fw-bold mb-4">Browse</h5>
               <ul className="list-unstyled">
-                <li className="mb-2"><Link href="/artisans" className="d-block">Browse Service Providers</Link></li>
+                <li className="mb-2"><Link href="/artisans" className="d-block">Browse All Services</Link></li>
                 <li className="mb-2"><Link href="/pricing" className="d-block">Pricing</Link></li>
                 <li className="mb-2"><Link href="/#how-it-works" className="d-block">How It Works</Link></li>
                 <li className="mb-2"><Link href="/artisans?category=electrical" className="d-block">Electricians</Link></li>
                 <li className="mb-2"><Link href="/artisans?category=plumbing" className="d-block">Plumbers</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=MOVER" className="d-block">Movers</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=TRANSPORT_PROVIDER" className="d-block">Transport Providers</Link></li>
               </ul>
             </div>
 
-            {/* For Artisans */}
+            {/* For Pros */}
             <div className="col-lg-2 col-md-3 col-sm-6">
-              <h5 className="fw-bold mb-4">For Artisans</h5>
+              <h5 className="fw-bold mb-4">For Pros</h5>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link href="/register" className="d-block">Register</Link></li>
                 <li className="mb-2"><Link href="/login" className="d-block">Login</Link></li>

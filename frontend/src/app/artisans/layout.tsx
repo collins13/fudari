@@ -4,40 +4,46 @@ const SKILL_LABELS = [
   "electricians", "plumbers", "mechanics", "painters", "carpenters",
   "welders", "HVAC technicians", "solar technicians", "tilers", "roofers",
   "masons", "gardeners", "cleaners", "CCTV installers", "locksmiths",
+  "movers", "transport providers", "event lighting providers",
 ];
 
 export const metadata: Metadata = {
-  title: "Find Verified Artisans Near You in Kenya",
+  title: "Plumbers, Electricians, Movers & More Near You in Kenya",
   description:
-    "Browse Kenya's largest directory of verified Jua Kali artisans — " +
+    "Browse Kenya's largest directory of verified service pros — " +
     SKILL_LABELS.join(", ") +
     " and more. Compare trust scores, read real reviews, and book directly via phone or WhatsApp.",
+  // "fundi" carries real search volume for the trade categories, so it stays a
+  // keyword target even though it is not the umbrella label for every provider.
   keywords: [
+    "find fundi kenya", "fundi near me", "fundi nairobi", "tafuta fundi",
+    "fundi mabomba nairobi", "fundi stima nairobi", "fundi seremala kenya",
     "find artisan kenya", "browse artisans nairobi", "jua kali directory",
     "verified electrician nairobi", "plumber near me kenya", "mechanic near me nairobi",
     "hire carpenter kenya", "trusted painter nairobi", "book artisan online",
+    "movers nairobi", "transport providers kenya", "event lighting nairobi",
     "artisan marketplace kenya", "home repair kenya", "handyman directory kenya",
     "service provider directory nairobi",
   ],
   openGraph: {
     type: "website",
-    title: "Find Verified Artisans Near You in Kenya | TUFIXIT",
+    title: "Plumbers, Electricians, Movers & More Near You in Kenya | TUFIXIT",
     description:
-      "Kenya's largest Jua Kali artisan directory. Compare trust scores, read reviews and book directly.",
+      "Kenya's largest directory of verified service pros. Compare trust scores, read reviews and book directly.",
     url: "https://tufixit.com/artisans",
     images: [
       {
         url: "/liston/images/header/lg-01.jpg",
         width: 1200,
         height: 630,
-        alt: "Browse verified artisans on TUFIXIT Kenya",
+        alt: "Browse verified service pros on TUFIXIT Kenya",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Find Verified Artisans Near You in Kenya | TUFIXIT",
-    description: "Kenya's largest Jua Kali artisan directory. Book directly.",
+    title: "Plumbers, Electricians, Movers & More Near You in Kenya | TUFIXIT",
+    description: "Kenya's largest directory of verified service pros. Book directly.",
     images: ["/liston/images/header/lg-01.jpg"],
   },
   alternates: {

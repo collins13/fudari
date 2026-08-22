@@ -14,7 +14,7 @@ interface NavbarProps {
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/artisans', label: 'Find Artisans' },
+  { href: '/artisans', label: 'Find Help' },
   { href: '/pricing', label: 'Pricing' },
 ];
 
@@ -35,7 +35,9 @@ export default function Navbar({ transparent = false }: NavbarProps) {
   // Track scroll only when transparent (so the header darkens after hero)
   useEffect(() => {
     if (!transparent) return;
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const getScrollTop = () =>
+      window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const onScroll = () => setScrolled(getScrollTop() > 24);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -184,11 +186,11 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  For Artisans
+                  For Pros
                 </a>
                 <ul className="dropdown-menu shadow border-0 rounded-3 mt-2">
-                  <li><Link className="dropdown-item" href="/register">Become a Service Provider</Link></li>
-                  <li><Link className="dropdown-item" href="/login">Provider Login</Link></li>
+                  <li><Link className="dropdown-item" href="/register">Join as a Pro</Link></li>
+                  <li><Link className="dropdown-item" href="/login">Pro Login</Link></li>
                   <li><hr className="dropdown-divider my-1" /></li>
                   <li><Link className="dropdown-item" href="/pricing">View Packages</Link></li>
                 </ul>
@@ -203,7 +205,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                   placeholder="Search electrician, plumber…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  aria-label="Search artisans"
+                  aria-label="Search services"
                 />
               </form>
             )}
@@ -211,7 +213,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
             {!user && (
               <div className="d-sm-none d-flex flex-column gap-2 mt-3">
                 <Link href="/login" className="btn btn-outline-primary rounded-pill">Sign in</Link>
-                <Link href="/register" className="btn btn-primary rounded-pill">Join free as artisan</Link>
+                <Link href="/register" className="btn btn-primary rounded-pill">Join free as a Pro</Link>
               </div>
             )}
 
@@ -250,11 +252,20 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         .tx-navbar--solid .tx-icon-btn,
         .tx-navbar--solid .tx-btn-ghost,
         .tx-navbar--solid .tx-toggler {
-          color: #0d1426;
+          color: #0d1426 !important;
         }
         .tx-navbar--solid .tx-nav-link:hover,
         .tx-navbar--solid .tx-nav-link.is-active {
-          color: var(--bs-primary);
+          color: var(--bs-primary) !important;
+        }
+        .tx-navbar--solid .tx-user-chip {
+          background: #fff;
+          color: #0d1426;
+          border-color: rgba(13, 20, 38, 0.12);
+        }
+        .tx-navbar--solid .dropdown-toggle,
+        .tx-navbar--solid .nav-link {
+          color: #0d1426;
         }
         [data-bs-theme="dark"] .tx-navbar--solid {
           background: rgba(20, 22, 30, 0.85);
@@ -266,7 +277,12 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         [data-bs-theme="dark"] .tx-navbar--solid .tx-icon-btn,
         [data-bs-theme="dark"] .tx-navbar--solid .tx-btn-ghost,
         [data-bs-theme="dark"] .tx-navbar--solid .tx-toggler {
+          color: #e7e9ed !important;
+        }
+        [data-bs-theme="dark"] .tx-navbar--solid .tx-user-chip {
+          background: rgba(255, 255, 255, 0.06);
           color: #e7e9ed;
+          border-color: rgba(255, 255, 255, 0.2);
         }
         .tx-navbar--transparent {
           background: transparent;

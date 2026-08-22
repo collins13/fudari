@@ -45,6 +45,12 @@ function formatDate(dateStr: string): string {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [availableNow, setAvailableNow] = useState(false);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+
+  useEffect(() => {
+    if (user?.availableNow !== undefined) setAvailableNow(user.availableNow);
+  }, [user?.availableNow]);
   const [recentListings, setRecentListings] = useState<ListingItem[]>([]);
   const [stats, setStats] = useState({ totalListings: 0, approvedListings: 0, averageRating: 0, reviewCount: 0 });
   const [leadStats, setLeadStats] = useState<LeadStats>({ profileViews: 0, callClicks: 0, whatsappClicks: 0, totalLeads: 0 });
@@ -53,6 +59,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const isWorker = user?.role === 'WORKER';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,13 +133,68 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* Availability — worker-only control */}
+      {isWorker && (
+        <div className="card border-0 shadow-sm rounded-4 mb-4">
+          <div className="card-body d-flex flex-wrap align-items-center gap-3 p-4">
+            <span
+              className="d-inline-block rounded-circle flex-shrink-0"
+              style={{ width: 12, height: 12, background: availableNow ? '#22c55e' : '#94a3b8' }}
+            />
+            <div className="me-auto">
+              <div className="fw-bold">{availableNow ? 'You are available now' : 'You are not taking jobs'}</div>
+              <div className="text-muted small">
+                {availableNow
+                  ? 'Customers searching nearby will see you first. Turns off automatically after 8 hours.'
+                  : 'Switch on when you are free — urgent jobs go to available pros first.'}
+              </div>
+            </div>
+            <div className="form-check form-switch m-0" style={{ minHeight: 'auto' }}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="availabilitySwitch"
+                style={{ width: '3rem', height: '1.5rem', cursor: 'pointer' }}
+                checked={availableNow}
+                disabled={savingAvailability}
+                onChange={async (e) => {
+                  const next = e.target.checked;
+                  setAvailableNow(next);
+                  setSavingAvailability(true);
+                  try {
+                    await workersAPI.setAvailability(next);
+                  } catch {
+                    setAvailableNow(!next);
+                  } finally {
+                    setSavingAvailability(false);
+                  }
+                }}
+              />
+              <label className="visually-hidden" htmlFor="availabilitySwitch">Available now</label>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Banner */}
       <div className="header-banner align-items-center d-flex justify-content-between mb-4 p-4 rounded-4 w-100"
         style={{ background: 'linear-gradient(135deg, #F84525, #ff6b4a)' }}>
         <div className="header-banner-context">
           <h4 className="text-white mb-2">Welcome back, {user?.firstName || 'Service Provider'}!</h4>
-          <p className="text-white opacity-75 mb-3">Here&apos;s what&apos;s happening with your listings today.</p>
-          <Link href="/dashboard/add-listing" className="btn btn-light btn-sm fw-medium">+ Add New Listing</Link>
+          <p className="text-white opacity-75 mb-3">
+            {isWorker
+              ? "Here&apos;s what&apos;s happening with your listings today."
+              : isAdmin
+                ? "Monitor platform operations and keep quality high."
+                : "Track your bookings and post new jobs quickly."}
+          </p>
+          <Link
+            href={isWorker ? '/dashboard/add-listing' : isAdmin ? '/dashboard/admin' : '/dashboard/post-job'}
+            className="btn btn-light btn-sm fw-medium"
+          >
+            {isWorker ? '+ Add New Listing' : isAdmin ? 'Open Admin Operations' : '+ Post a Job'}
+          </Link>
         </div>
         <i className="fa-solid fa-wrench text-white opacity-25" style={{ fontSize: 80 }}></i>
       </div>
@@ -276,10 +339,10 @@ export default function DashboardPage() {
             <div className="card border-0 shadow-sm mb-3">
               <div className="card-body">
                 <h6 className="fw-semibold mb-2">
-                  <i className="fa-solid fa-gift me-2 text-primary"></i>Invite a Fundi
+                  <i className="fa-solid fa-gift me-2 text-primary"></i>Invite a Pro
                 </h6>
                 <p className="text-muted small mb-3">
-                  Share your code — when a fundi signs up, you get <strong>1 month free BASIC plan</strong>.
+                  Share your code — when they sign up, you get <strong>1 month free BASIC plan</strong>.
                 </p>
                 <div className="input-group mb-2">
                   <input
@@ -298,7 +361,7 @@ export default function DashboardPage() {
                 {referral.referralCount > 0 && (
                   <div className="text-muted small text-center">
                     <i className="fa-solid fa-users me-1"></i>
-                    {referral.referralCount} fundi{referral.referralCount !== 1 ? 's' : ''} referred
+                    {referral.referralCount} pro{referral.referralCount !== 1 ? 's' : ''} referred
                   </div>
                 )}
               </div>

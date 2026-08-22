@@ -8,6 +8,7 @@ const SKILL_TYPES = [
   'gardener', 'cleaner', 'security', 'solar_technician', 'borehole_drilling',
   'fumigation', 'water_tank_cleaning', 'glass_fitter', 'ceiling_board',
   'locksmith', 'cctv_installer', 'interior_designer',
+  'mover', 'transport_provider', 'event_lighting',
 ];
 
 const MAJOR_LOCATIONS = [
@@ -31,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Category landing pages — use clean query-param URLs (standard for filter-based SPAs)
   const categoryPages: MetadataRoute.Sitemap = SKILL_TYPES.map((skill) => ({
-    url: `${baseUrl}/artisans?category=${skill}`,
+    url: `${baseUrl}/artisans?skill=${skill.toUpperCase()}`,
     lastModified: now,
     changeFrequency: 'weekly' as const,
     priority: 0.85,
@@ -42,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const topCities = MAJOR_LOCATIONS.slice(0, 8);
   const comboPages: MetadataRoute.Sitemap = topSkills.flatMap((skill) =>
     topCities.map((city) => ({
-      url: `${baseUrl}/artisans?category=${skill}&location=${city}`,
+      url: `${baseUrl}/artisans?skill=${skill.toUpperCase()}&location=${city}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.75,

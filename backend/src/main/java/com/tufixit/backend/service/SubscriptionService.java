@@ -77,10 +77,16 @@ public class SubscriptionService {
 
         // Calculate price
         int price = switch (request.getPlanType()) {
-            case BASIC -> cycle == Subscription.BillingCycle.WEEKLY
-                    ? Subscription.BASIC_WEEKLY_PRICE : Subscription.BASIC_MONTHLY_PRICE;
-            case PRO -> cycle == Subscription.BillingCycle.WEEKLY
-                    ? Subscription.PRO_WEEKLY_PRICE : Subscription.PRO_MONTHLY_PRICE;
+            case BASIC -> switch (cycle) {
+                case DAILY   -> Subscription.BASIC_DAILY_PRICE;
+                case WEEKLY  -> Subscription.BASIC_WEEKLY_PRICE;
+                case MONTHLY -> Subscription.BASIC_MONTHLY_PRICE;
+            };
+            case PRO -> switch (cycle) {
+                case DAILY   -> Subscription.PRO_DAILY_PRICE;
+                case WEEKLY  -> Subscription.PRO_WEEKLY_PRICE;
+                case MONTHLY -> Subscription.PRO_MONTHLY_PRICE;
+            };
             case FREE -> 0;
         };
 
@@ -158,10 +164,12 @@ public class SubscriptionService {
         LocalDateTime endDate;
         if (planType == Subscription.PlanType.FREE) {
             endDate = now.plusYears(10);
-        } else if (billingCycle == Subscription.BillingCycle.WEEKLY) {
-            endDate = now.plusWeeks(1);
         } else {
-            endDate = now.plusMonths(1);
+            endDate = switch (billingCycle) {
+                case DAILY   -> now.plusDays(1);
+                case WEEKLY  -> now.plusWeeks(1);
+                case MONTHLY -> now.plusMonths(1);
+            };
         }
 
         Subscription subscription = Subscription.builder()
@@ -232,6 +240,7 @@ public class SubscriptionService {
                         .name("FREE")
                         .monthlyPrice(0)
                         .weeklyPrice(0)
+                        .dailyPrice(0)
                         .maxListings(1)
                         .featured(false)
                         .rankingPriority(1)
@@ -241,6 +250,7 @@ public class SubscriptionService {
                         .name("BASIC")
                         .monthlyPrice(Subscription.BASIC_MONTHLY_PRICE)
                         .weeklyPrice(Subscription.BASIC_WEEKLY_PRICE)
+                        .dailyPrice(Subscription.BASIC_DAILY_PRICE)
                         .maxListings(3)
                         .featured(false)
                         .rankingPriority(2)
@@ -250,6 +260,7 @@ public class SubscriptionService {
                         .name("PRO")
                         .monthlyPrice(Subscription.PRO_MONTHLY_PRICE)
                         .weeklyPrice(Subscription.PRO_WEEKLY_PRICE)
+                        .dailyPrice(Subscription.PRO_DAILY_PRICE)
                         .maxListings(999)
                         .featured(true)
                         .rankingPriority(3)

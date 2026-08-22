@@ -1,30 +1,34 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Wix_Madefor_Display, Caveat } from "next/font/google";
+import localFont from "next/font/local";
 import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
-const wixMadefor = Wix_Madefor_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+// Self-hosted so the production build cannot fail on a Google Fonts fetch,
+// and so first paint costs users no third-party round trip.
+const wixMadefor = localFont({
+  src: '../fonts/wix-madefor-display.woff2',
+  weight: '400 800',
+  style: 'normal',
   variable: '--font-wix-madefor',
   display: 'swap',
 });
 
-const caveat = Caveat({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+const caveat = localFont({
+  src: '../fonts/caveat.woff2',
+  weight: '400 700',
+  style: 'normal',
   variable: '--font-caveat',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "TUFIXIT Kenya: Hire Verified Artisans Fast",
+    default: "TUFIXIT Kenya: Get It Fixed Today",
     template: "%s | TUFIXIT Kenya",
   },
   description:
-    "Hire verified service providers in Nairobi and across Kenya. Book trusted electricians, plumbers, mechanics and more on TUFIXIT.",
+    "Hire verified service providers in Nairobi and across Kenya. Book trusted electricians, plumbers, mechanics, movers, transport providers and more on TUFIXIT.",
   keywords: [
     // Brand
     "tufixit", "tufixit kenya", "tufixit nairobi",
@@ -42,6 +46,9 @@ export const metadata: Metadata = {
     "roofing contractor kenya", "tiler kenya", "mason nairobi",
     "gardener nairobi", "cleaner nairobi", "fumigation kenya",
     "solar technician kenya", "cctv installer nairobi", "locksmith nairobi",
+    "movers nairobi", "house movers kenya", "office movers nairobi",
+    "transport provider kenya", "pickup transport nairobi", "truck for hire kenya",
+    "event lighting kenya", "stage lighting nairobi", "party lighting services kenya",
     // Location + service combos
     "verified artisans kenya", "trusted handyman kenya", "artisan marketplace kenya",
   ],
@@ -69,7 +76,7 @@ export const metadata: Metadata = {
     siteName: "TUFIXIT",
     title: "TUFIXIT – Find Verified Artisans & Service Providers in Kenya",
     description:
-      "Kenya's #1 Jua Kali marketplace. Book verified electricians, plumbers, mechanics, painters and more in Nairobi, Mombasa & beyond.",
+      "Kenya's #1 Jua Kali marketplace. Book verified electricians, plumbers, mechanics, movers, transport providers, event lighting pros and more in Nairobi, Mombasa & beyond.",
     images: [
       {
         url: "https://tufixit.com/liston/images/header/lg-01.jpg",
@@ -84,7 +91,7 @@ export const metadata: Metadata = {
     site: "@tufixit_ke",
     creator: "@tufixit_ke",
     title: "TUFIXIT – Verified Artisans Near You in Kenya",
-    description: "Book verified Jua Kali workers in seconds. Electricians, plumbers, mechanics & more across Kenya.",
+    description: "Book verified Jua Kali workers in seconds. Electricians, plumbers, mechanics, movers, transport providers & more across Kenya.",
     images: ["https://tufixit.com/liston/images/header/lg-01.jpg"],
   },
   robots: {
@@ -123,8 +130,7 @@ export default function RootLayout({
         <meta name="geo.placename" content="Nairobi, Kenya" />
         <meta name="geo.position" content="-1.286389;36.817223" />
         <meta name="ICBM" content="-1.286389, 36.817223" />
-        {/* Critical CSS */}
-        <link rel="stylesheet" href="/liston/plugins/aos/aos.min.css" />
+        {/* Critical CSS — route-specific plugin CSS is loaded by the route that needs it */}
         <link rel="stylesheet" href="/liston/plugins/bootstrap/css/bootstrap.min.css" />
         <link rel="stylesheet" href="/liston/plugins/fontawesome/css/all.min.css" />
         <link rel="stylesheet" href="/liston/css/style.css" />
@@ -243,6 +249,9 @@ export default function RootLayout({
                   { "@type": "Offer", itemOffered: { "@type": "Service", name: "Welder" } },
                   { "@type": "Offer", itemOffered: { "@type": "Service", name: "HVAC Technician" } },
                   { "@type": "Offer", itemOffered: { "@type": "Service", name: "Solar Technician" } },
+                  { "@type": "Offer", itemOffered: { "@type": "Service", name: "Mover" } },
+                  { "@type": "Offer", itemOffered: { "@type": "Service", name: "Transport Provider" } },
+                  { "@type": "Offer", itemOffered: { "@type": "Service", name: "Event Lighting" } },
                 ],
               },
             }),
@@ -251,26 +260,6 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
-        <Script
-          id="load-noncritical-css"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              ['/liston/plugins/OwlCarousel2/css/owl.carousel.min.css',
-               '/liston/plugins/OwlCarousel2/css/owl.theme.default.min.css',
-               '/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.css',
-               '/liston/plugins/magnific-popup/magnific-popup.css',
-               '/liston/plugins/select2/select2.min.css',
-               '/liston/plugins/select2-bootstrap-5/select2-bootstrap-5-theme.min.css']
-              .forEach(function(href){
-                var link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = href;
-                document.head.appendChild(link);
-              });
-            `,
-          }}
-        />
 
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
           <>
@@ -293,23 +282,9 @@ export default function RootLayout({
           </>
         ) : null}
 
-        {/* Scripts - load in order */}
-        <Script
-          src="/liston/plugins/jQuery/jquery.min.js"
-          strategy="afterInteractive"
-        />
+        {/* Only Bootstrap's bundle is global — it drives navbar collapse, offcanvas, modals and dropdowns.
+            jQuery and its plugins were removed: nothing in src/ used them. */}
         <Script src="/liston/plugins/bootstrap/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/aos/aos.min.js" strategy="afterInteractive" />
-        <Script src="/liston/plugins/OwlCarousel2/owl.carousel.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/ion.rangeSlider/ion.rangeSlider.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/magnific-popup/jquery.magnific-popup.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/select2/select2.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/theia-sticky-sidebar/ResizeSensor.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/theia-sticky-sidebar/theia-sticky-sidebar.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/waypoints/jquery.waypoints.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/counter-up/jquery.counterup.min.js" strategy="lazyOnload" />
-        <Script src="/liston/plugins/macy/macy.js" strategy="lazyOnload" />
-        <Script src="/liston/js/script.js" strategy="lazyOnload" />
       </body>
     </html>
   );

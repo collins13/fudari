@@ -93,6 +93,7 @@ public class AuthDTO {
         private Double latitude;
         private Double longitude;
         private String locationName;
+        private Boolean availableNow;
         private Boolean isVerified;
         private Boolean isActive;
         private String accountStatus;

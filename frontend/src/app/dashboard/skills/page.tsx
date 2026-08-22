@@ -28,6 +28,9 @@ const SKILL_TYPES = [
   { label: 'Locksmith', value: 'LOCKSMITH' },
   { label: 'CCTV Installer', value: 'CCTV_INSTALLER' },
   { label: 'Interior Designer', value: 'INTERIOR_DESIGNER' },
+  { label: 'Mover', value: 'MOVER' },
+  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
+  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
   { label: 'Other', value: 'OTHER' },
 ];
 
@@ -54,6 +57,7 @@ export default function SkillsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [deleteSkillId, setDeleteSkillId] = useState<number | null>(null);
 
   const fetchSkills = useCallback(async () => {
     if (!user?.userId) return;
@@ -121,7 +125,7 @@ export default function SkillsPage() {
   };
 
   const handleDelete = async (skillId: number) => {
-    if (!confirm('Remove this skill?')) return;
+    setDeleteSkillId(null);
     try {
       await workersAPI.deleteSkill(skillId);
       setToast({ msg: 'Skill removed', type: 'success' });
@@ -183,7 +187,7 @@ export default function SkillsPage() {
                       </button>
                       <ul className="dropdown-menu dropdown-menu-end">
                         <li><button className="dropdown-item" onClick={() => openEdit(skill)}><i className="fa-solid fa-pen me-2"></i>Edit</button></li>
-                        <li><button className="dropdown-item text-danger" onClick={() => handleDelete(skill.id)}><i className="fa-solid fa-trash me-2"></i>Remove</button></li>
+                        <li><button className="dropdown-item text-danger" onClick={() => setDeleteSkillId(skill.id)}><i className="fa-solid fa-trash me-2"></i>Remove</button></li>
                       </ul>
                     </div>
                   </div>
@@ -200,6 +204,26 @@ export default function SkillsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {deleteSkillId !== null && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setDeleteSkillId(null)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Remove Skill</h5>
+                <button className="btn-close" onClick={() => setDeleteSkillId(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-0">Are you sure you want to remove this skill?</p>
+              </div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-outline-secondary rounded-5" onClick={() => setDeleteSkillId(null)}>Cancel</button>
+                <button className="btn btn-danger rounded-5" onClick={() => void handleDelete(deleteSkillId)}>Remove Skill</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

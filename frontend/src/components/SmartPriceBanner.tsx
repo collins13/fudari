@@ -110,6 +110,23 @@ export default function SmartPriceBanner({ skillType, location, urgency, artisan
         </div>
       )}
 
+      <div className="px-3 py-2 border-top" style={{ background: '#f8fafc' }}>
+        <div className="small text-muted">
+          <i className="fa-solid fa-circle-info me-1 text-primary"></i>
+          This estimate uses recent completed jobs in similar areas and urgency levels. Final price can change after onsite assessment.
+        </div>
+      </div>
+
+      <div className="px-3 py-2 border-top" style={{ background: '#fffef7' }}>
+        <div className="small fw-semibold mb-1 text-dark">Possible extra costs to confirm early:</div>
+        <div className="d-flex flex-wrap gap-2">
+          <span className="badge text-bg-light border">Transport</span>
+          <span className="badge text-bg-light border">Materials & fittings</span>
+          <span className="badge text-bg-light border">After-hours urgency fee</span>
+          <span className="badge text-bg-light border">Special tools/equipment</span>
+        </div>
+      </div>
+
       {/* Detailed breakdown */}
       {showBreakdown && data.breakdown.length > 0 && (
         <div className="p-3 border-top" style={{ background: '#fafafa' }}>

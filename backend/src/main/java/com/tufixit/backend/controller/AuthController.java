@@ -26,6 +26,46 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    /**
+     * POST /api/auth/otp/request
+     * Body: { "phoneNumber": "0712345678" }
+     * Sends a 6-digit code. Works for both sign-in and sign-up.
+     */
+    @PostMapping("/otp/request")
+    public ResponseEntity<Map<String, Object>> requestOtp(@RequestBody Map<String, String> request) {
+        boolean isNewAccount = authService.requestLoginOtp(request.get("phoneNumber"));
+        return ResponseEntity.ok(Map.of(
+                "message", "Code sent. Check your SMS.",
+                "isNewAccount", isNewAccount
+        ));
+    }
+
+    /**
+     * POST /api/auth/otp/verify
+     * Body: { "phoneNumber", "otp", "firstName"?, "lastName"?, "role"? }
+     * firstName is required only when the account is being created.
+     */
+    @PostMapping("/otp/verify")
+    public ResponseEntity<AuthDTO.AuthResponse> verifyOtp(@RequestBody Map<String, String> request) {
+        String roleRaw = request.get("role");
+        com.tufixit.backend.entity.User.UserRole role = null;
+        if (roleRaw != null && !roleRaw.isBlank()) {
+            // Only self-service roles may be chosen at sign-up.
+            role = switch (roleRaw.toUpperCase()) {
+                case "WORKER" -> com.tufixit.backend.entity.User.UserRole.WORKER;
+                default -> com.tufixit.backend.entity.User.UserRole.CLIENT;
+            };
+        }
+        return ResponseEntity.ok(authService.verifyLoginOtp(
+                request.get("phoneNumber"),
+                request.get("otp"),
+                request.get("firstName"),
+                request.get("lastName"),
+                role,
+                request.get("referralCode")
+        ));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<AuthDTO.UserDTO> getCurrentUser() {
         return ResponseEntity.ok(authService.getCurrentUser());

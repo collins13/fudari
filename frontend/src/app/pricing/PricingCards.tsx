@@ -9,6 +9,7 @@ const plans = [
     name: 'Free',
     monthlyPrice: 0,
     weeklyPrice: 0,
+    dailyPrice: 0,
     borderClass: '',
     popular: false,
     features: [
@@ -26,6 +27,7 @@ const plans = [
     name: 'Basic',
     monthlyPrice: 500,
     weeklyPrice: 150,
+    dailyPrice: 30,
     borderClass: 'border-primary',
     popular: true,
     features: [
@@ -44,6 +46,7 @@ const plans = [
     name: 'Pro',
     monthlyPrice: 3000,
     weeklyPrice: 800,
+    dailyPrice: 150,
     borderClass: 'border-warning',
     popular: false,
     features: [
@@ -60,7 +63,7 @@ const plans = [
 ];
 
 export default function PricingCards() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'weekly'>('monthly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'weekly' | 'daily'>('daily');
 
   return (
     <div className="py-5">
@@ -69,25 +72,37 @@ export default function PricingCards() {
         <div className="d-flex justify-content-center mb-4">
           <div className="btn-group bg-light rounded-5 p-1" role="group" aria-label="Billing cycle">
             <button
-              className={`btn rounded-5 px-4 ${billingCycle === 'monthly' ? 'btn-primary shadow-sm' : 'btn-light'}`}
-              onClick={() => setBillingCycle('monthly')}
+              className={`btn rounded-5 px-4 ${billingCycle === 'daily' ? 'btn-primary shadow-sm' : 'btn-light'}`}
+              onClick={() => setBillingCycle('daily')}
             >
-              Monthly
+              Daily
+              <span className="badge bg-success ms-2 rounded-5">Pay as you earn</span>
             </button>
             <button
               className={`btn rounded-5 px-4 ${billingCycle === 'weekly' ? 'btn-primary shadow-sm' : 'btn-light'}`}
               onClick={() => setBillingCycle('weekly')}
             >
               Weekly
-              <span className="badge bg-success ms-2 rounded-5">Flexible</span>
+            </button>
+            <button
+              className={`btn rounded-5 px-4 ${billingCycle === 'monthly' ? 'btn-primary shadow-sm' : 'btn-light'}`}
+              onClick={() => setBillingCycle('monthly')}
+            >
+              Monthly
+              <span className="badge bg-warning text-dark ms-2 rounded-5">Best value</span>
             </button>
           </div>
         </div>
 
         <div className="row g-4 justify-content-center">
           {plans.map((plan) => {
-            const price = billingCycle === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice;
-            const periodLabel = plan.id === 'free' ? '' : billingCycle === 'weekly' ? '/wk' : '/mo';
+            const price = billingCycle === 'daily' ? plan.dailyPrice
+              : billingCycle === 'weekly' ? plan.weeklyPrice
+              : plan.monthlyPrice;
+            const periodLabel = plan.id === 'free' ? ''
+              : billingCycle === 'daily' ? '/day'
+              : billingCycle === 'weekly' ? '/wk'
+              : '/mo';
             return (
               <div key={plan.id} className="col-md-6 col-lg-4">
                 <div

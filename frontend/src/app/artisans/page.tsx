@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, type ReactElement } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, listingsAPI } from '@/lib/api';
-import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass } from '@/lib/skills';
+import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
+import { skillLabelBilingual } from '@/lib/kenya';
+import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,11 @@ interface Artisan {
   bio: string;
   rankingScore: number;
   isFeatured: boolean;
+  totalJobsCompleted: number;
+  latitude: number | null;
+  longitude: number | null;
+  availableNow: boolean;
+  distanceKm: number | null;
 }
 
 interface Listing {
@@ -62,6 +69,7 @@ function getCategoryIcon(s: string) {
     ELECTRICIAN: 'fa-bolt', PLUMBER: 'fa-faucet', MECHANIC: 'fa-car',
     PAINTER: 'fa-paint-roller', CARPENTER: 'fa-hammer', HVAC_TECHNICIAN: 'fa-wind',
     WELDER: 'fa-fire', MASON: 'fa-building',
+    MOVER: 'fa-truck-moving', TRANSPORT_PROVIDER: 'fa-truck', EVENT_LIGHTING: 'fa-lightbulb',
   };
   return map[s] || 'fa-wrench';
 }
@@ -81,7 +89,30 @@ function mapWorkerToArtisan(w: any): Artisan {
     bio: primarySkill?.description || '',
     rankingScore: w.rankingScore || 0,
     isFeatured: w.isFeatured || false,
+    totalJobsCompleted: w.totalJobsCompleted || 0,
+    latitude: typeof w.latitude === 'number' ? w.latitude : null,
+    longitude: typeof w.longitude === 'number' ? w.longitude : null,
+    availableNow: w.availableNow === true,
+    distanceKm: null,
   };
+}
+
+/** Great-circle distance in km. */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km: number | null) {
+  if (km === null) return null;
+  if (km < 1) return `${Math.round(km * 1000)} m away`;
+  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km away`;
 }
 
 function renderStars(rating: number) {
@@ -94,12 +125,37 @@ function renderStars(rating: number) {
   return stars;
 }
 
+function getAvailability(availableNow: boolean) {
+  return availableNow
+    ? { label: 'Available now', color: '#22c55e' }
+    : { label: 'Check availability', color: '#94a3b8' };
+}
+
+function TrustFacts({ pkg, jobs, rating, reviews }: { pkg: string; jobs: number; rating: number; reviews: number }) {
+  const facts: ReactElement[] = [];
+  if (pkg === 'Gold' || pkg === 'Silver')
+    facts.push(<span key="v"><i className="fa-solid fa-shield-halved text-success me-1"></i>Verified ID</span>);
+  if (jobs > 0)
+    facts.push(<span key="j">{jobs} jobs done</span>);
+  if (reviews > 0)
+    facts.push(<span key="r"><i className="fa-solid fa-star text-warning me-1"></i>{rating.toFixed(1)} ({reviews})</span>);
+  if (facts.length === 0)
+    facts.push(<span key="n" className="text-muted">New here</span>);
+  return (
+    <div className="d-flex flex-wrap align-items-center gap-1 mb-2" style={{ fontSize: '0.72rem', color: '#6c757d' }}>
+      {facts.reduce<ReactElement[]>((acc, el, i) =>
+        i === 0 ? [el] : [...acc, <span key={`d${i}`} className="text-muted mx-1">•</span>, el], [])}
+    </div>
+  );
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = ['All', 'Electrical', 'Plumbing', 'Mechanics', 'Painting', 'Carpentry', 'HVAC', 'Welding', 'Masonry'];
+const CATEGORIES = ['All', 'Electrical', 'Plumbing', 'Mechanics', 'Painting', 'Carpentry', 'HVAC', 'Welding', 'Masonry', 'Moving', 'Transport', 'Event Lighting'];
 const PACKAGES = ['All', 'Gold', 'Silver', 'Bronze'];
 const SORT_OPTIONS = [
   { value: 'ranking', label: 'Top Ranked' },
+  { value: 'distance', label: 'Nearest first' },
   { value: 'newest', label: 'Newest' },
   { value: 'rating', label: 'Highest Rated' },
   { value: 'price_asc', label: 'Price: Low to High' },
@@ -109,7 +165,20 @@ const CATEGORY_TO_SKILL_TYPE: Record<string, string> = {
   electrical: 'ELECTRICIAN', plumbing: 'PLUMBER', mechanics: 'MECHANIC',
   painting: 'PAINTER', carpentry: 'CARPENTER', hvac: 'HVAC_TECHNICIAN',
   welding: 'WELDER', masonry: 'MASON',
+  moving: 'MOVER', transport: 'TRANSPORT_PROVIDER', 'event lighting': 'EVENT_LIGHTING',
 };
+
+const QUICK_ISSUE_CHIPS: Array<{ label: string; query: string; skillType: string }> = [
+  { label: 'No power / socket issue', query: 'No power and sockets not working', skillType: 'ELECTRICIAN' },
+  { label: 'Leaking tap / blocked drain', query: 'Leaking tap and blocked sink drain', skillType: 'PLUMBER' },
+  { label: 'Car won\'t start', query: 'Car wont start, need help', skillType: 'MECHANIC' },
+  { label: 'AC not cooling', query: 'AC not cooling and making noise', skillType: 'HVAC_TECHNICIAN' },
+  { label: 'Broken door / cabinet', query: 'Door hinge broken and cabinet repair', skillType: 'CARPENTER' },
+  { label: 'Need house painting', query: 'Need repainting for a 2 bedroom house', skillType: 'PAINTER' },
+  { label: 'House / office moving', query: 'Need mover for house or office relocation', skillType: 'MOVER' },
+  { label: 'Pickup / delivery transport', query: 'Need transport provider with pickup or truck', skillType: 'TRANSPORT_PROVIDER' },
+  { label: 'Event lighting setup', query: 'Need event lighting and stage lights setup', skillType: 'EVENT_LIGHTING' },
+];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -120,6 +189,7 @@ function ArtisansContent() {
     searchParams.get('tab') === 'listings' ? 'listings' : 'providers'
   );
   const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [skillParam, setSkillParam] = useState(searchParams.get('skill') || '');
   const [packageFilter, setPackageFilter] = useState('All');
   const [sortBy, setSortBy] = useState('ranking');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -127,6 +197,8 @@ function ArtisansContent() {
   const [rangeValue, setRangeValue] = useState(50000);
   const [searchInput, setSearchInput] = useState('');
   const [locationInput, setLocationInput] = useState(searchParams.get('location') || '');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [availableOnly, setAvailableOnly] = useState(false);
 
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -144,15 +216,29 @@ function ArtisansContent() {
       const matched = CATEGORIES.find((c) => c.toLowerCase() === cat.toLowerCase());
       setCategory(matched || 'All');
     }
+    setSkillParam(searchParams.get('skill') || '');
+    const q = searchParams.get('q');
+    if (q) setSearchInput(q);
   }, [searchParams]);
+
+  // Distance is computed client-side from the coordinates already returned per artisan.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setCoords(null),
+      { timeout: 5000, maximumAge: 300000 }
+    );
+  }, []);
 
   // Fetch workers
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
     try {
-      const skillTypeParam = category !== 'All'
-        ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] || undefined
-        : undefined;
+      // An explicit skill from symptom search is more precise than the broad category filter.
+      const skillTypeParam = skillParam
+        || (category !== 'All' ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] : undefined)
+        || undefined;
       const response = await workersAPI.searchWorkers({ skillType: skillTypeParam });
       setArtisans((response.data || []).map(mapWorkerToArtisan));
     } catch (err: any) {
@@ -161,7 +247,7 @@ function ArtisansContent() {
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, [category, skillParam]);
 
   // Fetch listings (public - no auth required) — page param wired to backend
   const fetchListings = useCallback(async (page = 1) => {
@@ -199,23 +285,21 @@ function ArtisansContent() {
     }
   };
 
-  // Price range slider
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const $ = (window as any).$;
-    if (!$ || !$.fn || !$.fn.ionRangeSlider) return;
-    setTimeout(() => {
-      $('#priceRange').ionRangeSlider({
-        type: 'single', min: 0, max: 5000, from: 5000, prefix: 'KES ', prettify_enabled: true, grid: false,
-        onChange: (data: any) => { setMaxPrice(data.from); setRangeValue(data.from); },
-      });
-    }, 600);
-  }, []);
-
   // Filter + sort artisans
-  const filteredArtisans = artisans
+  const withDistance = coords
+    ? artisans.map((a) => ({
+        ...a,
+        distanceKm:
+          a.latitude !== null && a.longitude !== null
+            ? haversineKm(coords.lat, coords.lng, a.latitude, a.longitude)
+            : null,
+      }))
+    : artisans;
+
+  const filteredArtisans = withDistance
     .filter((a) => {
       if (packageFilter !== 'All' && a.package !== packageFilter) return false;
+      if (availableOnly && !a.availableNow) return false;
       if (maxPrice > 0 && a.price > 0 && a.price > maxPrice) return false;
       if (searchInput && !a.name.toLowerCase().includes(searchInput.toLowerCase()) &&
           !a.skill.toLowerCase().includes(searchInput.toLowerCase())) return false;
@@ -224,6 +308,12 @@ function ArtisansContent() {
     })
     .sort((a, b) => {
       if (sortBy === 'ranking') return b.rankingScore - a.rankingScore;
+      if (sortBy === 'distance') {
+        // Artisans without coordinates sink to the bottom rather than sorting as "nearest".
+        if (a.distanceKm === null) return b.distanceKm === null ? 0 : 1;
+        if (b.distanceKm === null) return -1;
+        return a.distanceKm - b.distanceKm;
+      }
       if (sortBy === 'rating') return b.rating - a.rating;
       if (sortBy === 'price_asc') return a.price - b.price;
       if (sortBy === 'price_desc') return b.price - a.price;
@@ -231,9 +321,8 @@ function ArtisansContent() {
     });
 
   // Filter listings
-  const skillTypeForCategory = category !== 'All'
-    ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()]
-    : undefined;
+  const skillTypeForCategory = skillParam
+    || (category !== 'All' ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] : undefined);
   const filteredListings = listings.filter((l) => {
     if (skillTypeForCategory && l.skillType !== skillTypeForCategory) return false;
     if (searchInput && !l.title.toLowerCase().includes(searchInput.toLowerCase()) &&
@@ -245,6 +334,21 @@ function ArtisansContent() {
   const clearFilters = () => {
     setCategory('All'); setPackageFilter('All'); setSortBy('newest');
     setMaxPrice(5000); setRangeValue(5000); setSearchInput(''); setLocationInput('');
+    setAvailableOnly(false); setSkillParam('');
+    setCurrentPage(1);
+  };
+
+  const applyQuickIssue = (chip: { query: string; skillType: string }) => {
+    setTab('providers');
+    setSearchInput(chip.query);
+    setSkillParam(chip.skillType);
+    const mappedCategory = Object.entries(CATEGORY_TO_SKILL_TYPE)
+      .find(([, value]) => value === chip.skillType)?.[0];
+    if (mappedCategory) {
+      const titleCase = mappedCategory.charAt(0).toUpperCase() + mappedCategory.slice(1);
+      const matched = CATEGORIES.find((c) => c.toLowerCase() === titleCase.toLowerCase());
+      setCategory(matched || 'All');
+    }
     setCurrentPage(1);
   };
 
@@ -259,7 +363,7 @@ function ArtisansContent() {
       <div className="offcanvas offcanvas-start" tabIndex={-1} id="filterDrawer" aria-labelledby="filterDrawerLabel">
         <div className="offcanvas-header border-bottom">
           <h5 className="offcanvas-title fw-bold" id="filterDrawerLabel">
-            <i className="fa-solid fa-sliders me-2 text-primary"></i>Filter Providers
+            <i className="fa-solid fa-sliders me-2 text-primary"></i>Filter Results
           </h5>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close filters"></button>
         </div>
@@ -292,8 +396,8 @@ function ArtisansContent() {
                   <input className="form-check-input" type="radio" name="mobPackageFilter"
                     id={`mob-pkg-${pkg}`} checked={packageFilter === pkg} onChange={() => setPackageFilter(pkg)} />
                   <label className="form-check-label" htmlFor={`mob-pkg-${pkg}`}>
-                    {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}</span>}
-                    {pkg === 'All' ? 'All Tiers' : pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
+                    {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{packageLabel(pkg)}</span>}
+                    {pkg === 'All' ? 'All Tiers' : packageLabel(pkg)}
                   </label>
                 </div>
               ))}
@@ -346,6 +450,24 @@ function ArtisansContent() {
               <span>Search</span>
             </button>
           </form>
+          {tab === 'providers' && (
+            <div className="mt-3">
+              <div className="small text-muted mb-2">Quick issue search:</div>
+              <div className="d-flex flex-wrap gap-2">
+                {QUICK_ISSUE_CHIPS.map((chip) => (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    className="btn btn-sm btn-outline-primary rounded-5"
+                    onClick={() => applyQuickIssue(chip)}
+                    title={skillLabelBilingual(chip.skillType)}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -361,7 +483,7 @@ function ArtisansContent() {
                   onClick={() => setTab('providers')}
                   style={tab !== 'providers' ? { color: '#6c757d' } : {}}
                 >
-                  <i className="fa-solid fa-users me-2"></i>Browse Providers
+                  <i className="fa-solid fa-users me-2"></i>Browse Pros
                 </button>
               </li>
               <li className="nav-item">
@@ -413,8 +535,8 @@ function ArtisansContent() {
                           <input className="form-check-input" type="radio" name="packageFilter"
                             id={`pkg-${pkg}`} checked={packageFilter === pkg} onChange={() => setPackageFilter(pkg)} />
                           <label className="form-check-label" htmlFor={`pkg-${pkg}`}>
-                            {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}</span>}
-                            {pkg === 'All' ? 'All Tiers' : pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
+                            {pkg !== 'All' && <span className={`badge ${getPackageBadgeClass(pkg)} me-2`}>{packageLabel(pkg)}</span>}
+                            {pkg === 'All' ? 'All Tiers' : packageLabel(pkg)}
                           </label>
                         </div>
                       ))}
@@ -445,14 +567,26 @@ function ArtisansContent() {
                   {loading ? 'Loading...' : (
                     <>All <span className="fw-bold text-dark">
                       {tab === 'providers' ? filteredArtisans.length : filteredListings.length}
-                    </span> {tab === 'providers' ? 'Providers' : 'Listings'} found</>
+                    </span> {tab === 'providers' ? 'Pros' : 'Listings'} found</>
                   )}
                 </div>
                 {tab === 'providers' && (
                   <div className="ms-auto d-flex gap-2 align-items-center">
+                    <button
+                      type="button"
+                      className={`btn btn-sm rounded-5 px-3 ${availableOnly ? 'btn-success' : 'btn-outline-secondary'}`}
+                      onClick={() => { setAvailableOnly((v) => !v); setCurrentPage(1); }}
+                      aria-pressed={availableOnly}
+                    >
+                      <i className="fa-solid fa-bolt me-1" aria-hidden="true"></i>Available now
+                    </button>
                     <select className="form-select form-select-sm" style={{ width: 'auto' }}
                       value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                      {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {SORT_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} disabled={o.value === 'distance' && !coords}>
+                          {o.value === 'distance' && !coords ? 'Nearest first (enable location)' : o.label}
+                        </option>
+                      ))}
                     </select>
                     <div className="border-0 card d-inline-flex flex-row gap-1 p-1 rounded-3 shadow-sm">
                       <button className={`btn btn-sm px-2 py-1 ${viewMode === 'list' ? 'btn-primary' : 'btn-light'}`}
@@ -471,7 +605,18 @@ function ArtisansContent() {
               {loading && (
                 <div className="text-center py-5">
                   <div className="spinner-border text-primary" role="status"></div>
-                  <p className="text-muted mt-3">Loading {tab === 'providers' ? 'providers' : 'listings'}...</p>
+                  <p className="text-muted mt-3">Loading {tab === 'providers' ? 'pros' : 'listings'}...</p>
+                </div>
+              )}
+
+              {/* Recommendations belong here — while the customer is still choosing. */}
+              {!loading && tab === 'providers' && skillTypeForCategory && (
+                <div className="mb-4">
+                  <PredictiveMatchPanel
+                    skillType={skillTypeForCategory}
+                    latitude={coords?.lat}
+                    longitude={coords?.lng}
+                  />
                 </div>
               )}
 
@@ -480,7 +625,7 @@ function ArtisansContent() {
                 <div className="mb-4">
                   <div className="d-flex align-items-center gap-2 mb-3">
                     <i className="fa-solid fa-crown text-warning fs-5"></i>
-                    <h5 className="fw-bold mb-0">Featured Artisans</h5>
+                    <h5 className="fw-bold mb-0">Featured Pros</h5>
                   </div>
                   <div className="row g-3">
                     {filteredArtisans.filter(a => a.isFeatured).slice(0, 3).map((artisan) => (
@@ -506,11 +651,19 @@ function ArtisansContent() {
                           <div className="card-body">
                             <h6 className="card-title fw-semibold mb-1">{artisan.name}</h6>
                             <p className="text-primary small mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
-                            <div className="d-flex align-items-center gap-1 mb-1">
-                              {renderStars(artisan.rating)}
-                              <span className="text-muted small ms-1">({artisan.reviews})</span>
-                            </div>
-                            <p className="text-muted small mb-0"><i className="fa-solid fa-location-dot me-1"></i>{artisan.location}</p>
+                            {(() => { const av = getAvailability(artisan.availableNow); return (
+                              <div className="d-flex align-items-center gap-1 mb-1">
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
+                                <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
+                              </div>
+                            ); })()}
+                            <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
+                            <p className="text-muted small mb-0">
+                              <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
+                              {formatDistance(artisan.distanceKm) && (
+                                <span className="ms-1 fw-medium text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
+                              )}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -524,10 +677,10 @@ function ArtisansContent() {
               {!loading && tab === 'providers' && filteredArtisans.length === 0 && (
                 <div className="text-center py-5">
                   <i className="fa-solid fa-search fs-1 text-muted mb-3 d-block"></i>
-                  <h5 className="text-muted">No providers found.</h5>
+                  <h5 className="text-muted">No one available for that yet.</h5>
                   <p className="text-muted mb-4">
                     {category !== 'All'
-                      ? `No ${category} providers found${locationInput ? ` in "${locationInput}"` : ''}. Try removing a filter.`
+                      ? `No ${category} pros found${locationInput ? ` in "${locationInput}"` : ''}. Try removing a filter.`
                       : 'Try adjusting your search or filters.'}
                   </p>
                   <div className="d-flex flex-wrap gap-2 justify-content-center">
@@ -565,7 +718,7 @@ function ArtisansContent() {
                               )}
                               <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
                                 {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                                {artisan.package === 'Gold' ? 'Pro' : artisan.package === 'Silver' ? 'Verified' : 'Standard'}
+                                {packageLabel(artisan.package)}
                               </span>
                               {artisan.package !== 'Bronze' && (
                                 <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
@@ -576,25 +729,26 @@ function ArtisansContent() {
                           </div>
                           <div className="col-lg-7 col-md-7 col-xl-8 p-3 p-lg-4">
                             <div className="d-flex flex-column h-100">
-                              <div className="align-items-center d-flex flex-wrap gap-1 text-primary card-start mb-2">
-                                {renderStars(artisan.rating)}
-                                <span className="fw-medium text-primary ms-1">({artisan.rating.toFixed(1)}) {artisan.reviews} reviews</span>
-                              </div>
+                              {(() => { const av = getAvailability(artisan.availableNow); return (
+                                <div className="d-flex align-items-center gap-1 mb-2">
+                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
+                                  <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
+                                </div>
+                              ); })()}
                               <h4 className="fs-18 fw-semibold mb-0">
-                                {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-2" title="Featured Pro Artisan"></i>}
+                                {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-2" title="Featured Gold pro"></i>}
                                 {artisan.name}
                               </h4>
                               <p className="text-primary mt-1 mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
                               <p className="mt-1 fs-15 text-muted">{artisan.bio}</p>
+                              <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
                               <div className="d-flex flex-wrap gap-2 mt-auto z-1 align-items-center">
                                 <span className="d-flex gap-2 align-items-center fs-13 fw-semibold text-muted">
                                   <i className="fa-solid fa-location-dot"></i>{artisan.location}
+                                  {formatDistance(artisan.distanceKm) && (
+                                    <span className="text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
+                                  )}
                                 </span>
-                                {artisan.package !== 'Bronze' && (
-                                  <span className="badge bg-success bg-opacity-10 text-success" style={{fontSize:'0.7rem'}}>
-                                    <i className="fa-solid fa-shield-halved me-1"></i>Verified
-                                  </span>
-                                )}
                                 {artisan.price > 0 && (
                                   <strong className="text-primary ms-auto">From KES {artisan.price.toLocaleString()}</strong>
                                 )}
@@ -626,7 +780,7 @@ function ArtisansContent() {
                           )}
                           <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
                             {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                            {artisan.package === 'Gold' ? 'Pro' : artisan.package === 'Silver' ? 'Verified' : 'Standard'}
+                            {packageLabel(artisan.package)}
                           </span>
                           {artisan.package !== 'Bronze' && (
                             <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
@@ -643,11 +797,19 @@ function ArtisansContent() {
                             )}
                           </h6>
                           <p className="text-primary small mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
-                          <p className="text-muted small mb-1"><i className="fa-solid fa-location-dot me-1"></i>{artisan.location}</p>
-                          <div className="align-items-center d-flex flex-wrap gap-1 card-start mb-2">
-                            {renderStars(artisan.rating)}
-                            <span className="fw-medium text-primary ms-1">({artisan.rating.toFixed(1)}) {artisan.reviews} reviews</span>
-                          </div>
+                          <p className="text-muted small mb-1">
+                            <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
+                            {formatDistance(artisan.distanceKm) && (
+                              <span className="ms-1 fw-medium text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
+                            )}
+                          </p>
+                          {(() => { const av = getAvailability(artisan.availableNow); return (
+                            <div className="d-flex align-items-center gap-1 mb-1">
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
+                              <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
+                            </div>
+                          ); })()}
+                          <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
                           <div className="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
                             {artisan.price > 0 ? (
                               <strong className="text-primary">From KES {artisan.price.toLocaleString()}</strong>
@@ -775,7 +937,7 @@ function ArtisansContent() {
                 </nav>
               )}
               {!loading && tab === 'providers' && filteredArtisans.length > PAGE_SIZE && (
-                <nav className="mt-5" aria-label="Providers pagination">
+                <nav className="mt-5" aria-label="Results pagination">
                   <ul className="pagination justify-content-center">
                     <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                       <button className="page-link" onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>

@@ -8,7 +8,10 @@ import Footer from '@/components/Footer';
 import { workersAPI, bookingsAPI, aiAPI } from '@/lib/api';
 import JobScopingChatbot from '@/components/JobScopingChatbot';
 import SmartPriceBanner from '@/components/SmartPriceBanner';
-import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
+import {
+  saveDraft, loadDraft, clearDraft,
+  enqueueBooking, readOutbox, removeFromOutbox, markAttempt, isRetryableError,
+} from '@/lib/offlineBookings';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,7 +58,9 @@ function skillLabel(st: string) {
     ELECTRICIAN: 'Electrician', PLUMBER: 'Plumber', MECHANIC: 'Mechanic',
     CARPENTER: 'Carpenter', PAINTER: 'Painter', WELDER: 'Welder',
     HVAC_TECHNICIAN: 'HVAC Technician', APPLIANCE_REPAIR: 'Appliance Repair',
-    MASON: 'Mason', GARDENER: 'Gardener', CLEANER: 'Cleaner', SECURITY: 'Security', OTHER: 'Other',
+    MASON: 'Mason', GARDENER: 'Gardener', CLEANER: 'Cleaner', SECURITY: 'Security',
+    MOVER: 'Mover', TRANSPORT_PROVIDER: 'Transport Provider', EVENT_LIGHTING: 'Event Lighting',
+    OTHER: 'Other',
   };
   return m[st] || st;
 }
@@ -80,6 +85,8 @@ export default function BookArtisanPage() {
   const [budget, setBudget] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [queued, setQueued] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // ── AI State ──
   const [aiEnhancing, setAiEnhancing] = useState(false);
@@ -96,6 +103,52 @@ export default function BookArtisanPage() {
       .catch(() => setArtisan(null))
       .finally(() => setLoadingArtisan(false));
   }, [artisanId]);
+
+  // ── Offline resilience: restore draft, autosave, flush queued bookings ────
+  useEffect(() => {
+    const draft = loadDraft(artisanId);
+    if (!draft) return;
+    setCustomerName(draft.customerName);
+    setCustomerPhone(draft.customerPhone);
+    setCustomerLocation(draft.customerLocation);
+    setJobDescription(draft.jobDescription);
+    setBudget(draft.budget);
+    setUrgency(draft.urgency as typeof urgency);
+    setScheduledTime(draft.scheduledTime);
+    setDraftRestored(true);
+  }, [artisanId]);
+
+  useEffect(() => {
+    if (!customerName && !customerPhone && !customerLocation && !jobDescription) return;
+    const t = setTimeout(() => {
+      saveDraft(artisanId, {
+        customerName, customerPhone, customerLocation,
+        jobDescription, budget, urgency, scheduledTime,
+      });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [artisanId, customerName, customerPhone, customerLocation, jobDescription, budget, urgency, scheduledTime]);
+
+  useEffect(() => {
+    const flush = async () => {
+      for (const item of readOutbox()) {
+        markAttempt(item.id);
+        try {
+          const res = await bookingsAPI.create(item.payload as Parameters<typeof bookingsAPI.create>[0]);
+          removeFromOutbox(item.id);
+          clearDraft(item.artisanId);
+          if (item.artisanId === artisanId) router.push(`/track/${res.data?.bookingCode}`);
+        } catch (err) {
+          // A rejected booking will never succeed, so stop retrying it.
+          if (!isRetryableError(err)) removeFromOutbox(item.id);
+          break;
+        }
+      }
+    };
+    flush();
+    window.addEventListener('online', flush);
+    return () => window.removeEventListener('online', flush);
+  }, [artisanId, router]);
 
   // ── AI: auto-trigger description enhancement after 1.5s of inactivity ────
   useEffect(() => {
@@ -143,27 +196,35 @@ export default function BookArtisanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setQueued(false);
     if (urgency === 'SCHEDULED' && !scheduledTime) {
       setError('Please pick a date and time for your scheduled booking.');
       return;
     }
     setSubmitting(true);
-    try {
-      const payload: Record<string, unknown> = {
-        artisanId,
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        customerLocation: customerLocation.trim(),
-        jobDescription: jobDescription.trim(),
-        urgency,
-      };
-      if (urgency === 'SCHEDULED') payload.scheduledTime = new Date(scheduledTime).toISOString();
-      if (budget) payload.budget = parseInt(budget, 10);
+    const payload: Record<string, unknown> = {
+      artisanId,
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerLocation: customerLocation.trim(),
+      jobDescription: jobDescription.trim(),
+      urgency,
+    };
+    if (urgency === 'SCHEDULED') payload.scheduledTime = new Date(scheduledTime).toISOString();
+    if (budget) payload.budget = parseInt(budget, 10);
 
+    try {
       const res = await bookingsAPI.create(payload as Parameters<typeof bookingsAPI.create>[0]);
+      clearDraft(artisanId);
       router.push(`/track/${res.data?.bookingCode}`);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Failed to submit booking. Please try again.');
+    } catch (err: unknown) {
+      if (isRetryableError(err)) {
+        enqueueBooking(artisanId, payload);
+        setQueued(true);
+      } else {
+        const e = err as { response?: { data?: { message?: string } } };
+        setError(e?.response?.data?.message || 'Failed to submit booking. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -225,12 +286,39 @@ export default function BookArtisanPage() {
 
           {/* Booking form */}
           <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5">
-            <h4 className="fw-bold mb-1">Book This Artisan</h4>
+            <h4 className="fw-bold mb-1">Book This Pro</h4>
             <p className="text-muted mb-4">No account needed. You&apos;ll get a booking code to track your job.</p>
 
             {error && (
               <div className="alert alert-danger small rounded-3 mb-4">
                 <i className="fa-solid fa-circle-exclamation me-2" />{error}
+              </div>
+            )}
+
+            {queued && (
+              <div className="alert alert-warning small rounded-3 mb-4">
+                <i className="fa-solid fa-cloud-arrow-up me-2" />
+                <strong>Saved &mdash; waiting for network.</strong> Your booking will be sent automatically
+                as soon as you&apos;re back online. You can keep this page open or come back later.
+              </div>
+            )}
+
+            {draftRestored && !queued && (
+              <div className="alert alert-info small rounded-3 mb-4 d-flex align-items-center">
+                <i className="fa-solid fa-rotate-left me-2" />
+                <span className="me-auto">We restored what you typed earlier.</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-link p-0 text-decoration-none"
+                  onClick={() => {
+                    clearDraft(artisanId);
+                    setCustomerName(''); setCustomerPhone(''); setCustomerLocation('');
+                    setJobDescription(''); setBudget(''); setScheduledTime('');
+                    setDraftRestored(false);
+                  }}
+                >
+                  Start fresh
+                </button>
               </div>
             )}
 
@@ -319,7 +407,7 @@ export default function BookArtisanPage() {
                   value={jobDescription}
                   onChange={(e) => { setJobDescription(e.target.value); setAiApplied(false); }}
                 />
-                <small className="text-muted">The more detail you give, the better the artisan can prepare.</small>
+                <small className="text-muted">The more detail you give, the better they can prepare.</small>
               </div>
 
               {/* AI suggestion card — Feature 1 */}
@@ -363,7 +451,7 @@ export default function BookArtisanPage() {
                       {/* Clarifying questions */}
                       {aiResult.clarifyingQuestions?.length > 0 && (
                         <div className="mb-2">
-                          <span className="small text-muted fw-semibold">The artisan may ask: </span>
+                          <span className="small text-muted fw-semibold">They may ask: </span>
                           <ul className="mb-0 ps-3">
                             {aiResult.clarifyingQuestions.slice(0, 2).map((q, i) => (
                               <li key={i} className="small text-muted">{q}</li>
@@ -443,13 +531,6 @@ export default function BookArtisanPage() {
               </p>
             </form>
           </div>
-
-          {/* Feature 7: Predictive Match — Best Match / Fastest / Best Value */}
-          {primarySkill && (
-            <div className="mt-4">
-              <PredictiveMatchPanel skillType={primarySkill.skillType} />
-            </div>
-          )}
         </div>
       </div>
 

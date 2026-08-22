@@ -8,7 +8,7 @@ import Footer from '@/components/Footer';
 import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
 import { profileImageFor } from '@/lib/avatar';
-import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass } from '@/lib/skills';
+import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
 import TrustScoreCard from '@/components/TrustScoreCard';
 
 interface WorkerSkillInfo {
@@ -34,6 +34,9 @@ interface WorkerProfile {
   totalReviews: number;
   locationName?: string;
   isVerified: boolean;
+  approvalStatus?: string;
+  approvedAt?: string;
+  createdAt?: string;
   skills: WorkerSkillInfo[];
 }
 
@@ -98,9 +101,17 @@ export default function ArtisanProfilePage() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportForm, setReportForm] = useState({ reason: '', description: '' });
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Portfolio images from listings
   const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
+
+  const formatLongDate = (value?: string) => {
+    if (!value) return null;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   useEffect(() => {
     if (!workerId) return;
@@ -153,21 +164,6 @@ export default function ArtisanProfilePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [workerId]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const $ = (window as any).$;
-    if (!$ || !$.fn) return;
-    setTimeout(() => {
-      if ($.fn.magnificPopup) {
-        $('.portfolio-gallery').magnificPopup({
-          delegate: 'a',
-          type: 'image',
-          gallery: { enabled: true },
-        });
-      }
-    }, 600);
-  }, [worker]);
-
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setBookingSubmitted(true);
@@ -193,13 +189,17 @@ export default function ArtisanProfilePage() {
         reviewerName: reviewForm.reviewerName || undefined,
       });
       setReviewSubmitted(true);
+      setActionFeedback({ type: 'success', text: 'Thanks, your review was submitted successfully.' });
       setReviewForm({ rating: 5, comment: '', reviewerName: '' });
 
       // Refresh reviews
       const res = await publicReviewsAPI.getReviewsForArtisan(workerId);
       setReviews(res.data);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to submit review');
+      setActionFeedback({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to submit review. Please try again.',
+      });
     }
   };
 
@@ -212,9 +212,13 @@ export default function ArtisanProfilePage() {
         description: reportForm.description || undefined,
       });
       setReportSubmitted(true);
+      setActionFeedback({ type: 'success', text: 'Report submitted. Our team will review this shortly.' });
       setReportForm({ reason: '', description: '' });
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to submit report');
+      setActionFeedback({
+        type: 'danger',
+        text: err?.response?.data?.message || 'Failed to submit report. Please try again.',
+      });
     }
   };
 
@@ -238,8 +242,8 @@ export default function ArtisanProfilePage() {
         <Navbar />
         <div className="container py-5 text-center">
           <i className="fa-solid fa-user-slash fs-1 text-muted mb-3 d-block"></i>
-          <h4 className="text-muted">Service Provider not found</h4>
-          <Link href="/artisans" className="btn btn-primary rounded-5 mt-3">Browse All Providers</Link>
+          <h4 className="text-muted">Not found</h4>
+          <Link href="/artisans" className="btn btn-primary rounded-5 mt-3">Browse All Services</Link>
         </div>
         <Footer />
       </>
@@ -281,7 +285,7 @@ export default function ArtisanProfilePage() {
               <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <span className={`badge ${getPackageBadgeClass(pkg)}`}>
                   {pkg === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                  {pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'}
+                  {packageLabel(pkg)}
                 </span>
                 {worker.isVerified && <span className="badge bg-success"><i className="fa-solid fa-shield-halved me-1"></i>TUFIXIT Verified</span>}
               </div>
@@ -318,12 +322,48 @@ export default function ArtisanProfilePage() {
               </a>
             </div>
           </div>
+
+          <div className="row mt-3">
+            <div className="col-12">
+              <div className="d-flex flex-wrap gap-2">
+                <span className="badge bg-light text-dark border">
+                  <i className="fa-solid fa-id-card text-success me-1"></i>
+                  {worker.isVerified ? 'ID verified by TUFIXIT' : 'ID verification in progress'}
+                </span>
+                {worker.approvedAt && (
+                  <span className="badge bg-light text-dark border">
+                    <i className="fa-solid fa-shield-halved text-success me-1"></i>
+                    Verified on {formatLongDate(worker.approvedAt)}
+                  </span>
+                )}
+                {worker.totalReviews > 0 && (
+                  <span className="badge bg-light text-dark border">
+                    <i className="fa-solid fa-star text-warning me-1"></i>
+                    {worker.totalReviews} customer review{worker.totalReviews === 1 ? '' : 's'}
+                  </span>
+                )}
+                {worker.createdAt && (
+                  <span className="badge bg-light text-dark border">
+                    <i className="fa-solid fa-calendar-check text-primary me-1"></i>
+                    On TUFIXIT since {formatLongDate(worker.createdAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="py-5 bg-light mx-3 rounded-4 mt-3">
         <div className="container py-4">
+          {actionFeedback && (
+            <div className={`alert alert-${actionFeedback.type} alert-dismissible fade show rounded-3`} role="alert">
+              <i className={`fa-solid ${actionFeedback.type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-check'} me-2`}></i>
+              {actionFeedback.text}
+              <button type="button" className="btn-close" aria-label="Close" onClick={() => setActionFeedback(null)}></button>
+            </div>
+          )}
           <div className="row g-4">
             {/* Left Main Column */}
             <div className="col-lg-8">
@@ -550,7 +590,7 @@ export default function ArtisanProfilePage() {
                 <div className="d-flex align-items-center gap-2 mb-3">
                   <span className={`badge ${getPackageBadgeClass(pkg)} fs-6 px-3 py-2`}>
                     {pkg === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                    {pkg === 'Gold' ? 'Pro' : pkg === 'Silver' ? 'Verified' : 'Standard'} Provider
+                    {packageLabel(pkg)} Pro
                   </span>
                 </div>
                 {pkg === 'Gold' && (

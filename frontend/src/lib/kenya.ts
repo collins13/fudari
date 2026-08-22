@@ -56,6 +56,9 @@ export const SKILL_LABELS_KE: Record<string, { en: string; sw: string }> = {
   LOCKSMITH:          { en: 'Locksmith',           sw: 'Fundi Kufuli' },
   CCTV_INSTALLER:     { en: 'CCTV Installer',      sw: 'Fundi Camera' },
   INTERIOR_DESIGNER:  { en: 'Interior Designer',   sw: 'Fundi Mapambo' },
+  MOVER:              { en: 'Mover',               sw: 'Wahamishaji' },
+  TRANSPORT_PROVIDER: { en: 'Transport Provider',  sw: 'Usafiri wa Mizigo' },
+  EVENT_LIGHTING:     { en: 'Event Lighting',      sw: 'Taa za Hafla' },
   OTHER:              { en: 'Other',               sw: 'Nyingine' },
 };
 
@@ -74,4 +77,90 @@ export function skillLabelBilingual(skillType: string): string {
   const entry = SKILL_LABELS_KE[skillType];
   if (!entry) return skillType;
   return `${entry.en} (${entry.sw})`;
+}
+
+/**
+ * Customers search by symptom ("tap is leaking"), not by trade taxonomy ("Plumber").
+ * Keywords are matched against English, Swahili and Sheng phrasing.
+ */
+const SYMPTOM_KEYWORDS: Record<string, string[]> = {
+  PLUMBER: [
+    'tap', 'taps', 'leak', 'leaking', 'burst', 'pipe', 'pipes', 'sink', 'drain', 'blocked',
+    'toilet', 'cistern', 'flush', 'no water', 'water pressure', 'sewer', 'bomba', 'maji',
+    'choo', 'mabomba', 'imeziba', 'inavuja',
+  ],
+  ELECTRICIAN: [
+    'power', 'no power', 'electricity', 'socket', 'sockets', 'switch', 'wiring', 'wire',
+    'short circuit', 'shock', 'bulb', 'light', 'lights', 'fuse', 'trip', 'tripping',
+    'meter', 'token', 'stima', 'umeme', 'taa', 'hakuna stima',
+  ],
+  APPLIANCE_REPAIR: [
+    'fridge', 'refrigerator', 'freezer', 'washing machine', 'microwave', 'oven', 'cooker',
+    'tv', 'television', 'iron', 'kettle', 'blender', 'friji', 'jiko',
+  ],
+  HVAC_TECHNICIAN: ['ac', 'air con', 'air conditioner', 'aircon', 'cooling', 'fan', 'ventilation', 'hewa'],
+  CARPENTER: [
+    'door', 'doors', 'window frame', 'cabinet', 'wardrobe', 'shelf', 'shelves', 'furniture',
+    'table', 'chair', 'hinge', 'mlango', 'kabati', 'samani', 'seremala',
+  ],
+  MASON: ['wall', 'crack', 'cracks', 'plaster', 'cement', 'concrete', 'foundation', 'block', 'ukuta', 'ujenzi'],
+  PAINTER: ['paint', 'painting', 'repaint', 'peeling', 'wall colour', 'wall color', 'rangi'],
+  ROOFING: ['roof', 'roofing', 'ceiling leak', 'gutter', 'iron sheet', 'mabati', 'paa', 'inavuja juu'],
+  TILING: ['tile', 'tiles', 'tiling', 'floor tile', 'grout'],
+  MECHANIC: [
+    'car', 'vehicle', 'engine', 'brake', 'brakes', 'tyre', 'tire', 'puncture', 'battery',
+    'wont start', "won't start", 'service car', 'gari', 'injini', 'breki',
+  ],
+  WELDER: ['gate', 'grill', 'grille', 'metal', 'welding', 'weld', 'steel', 'chuma', 'lango'],
+  GLASS_FITTER: ['glass', 'window pane', 'broken window', 'mirror', 'kioo'],
+  LOCKSMITH: ['lock', 'locked out', 'key', 'keys', 'padlock', 'kufuli', 'ufunguo'],
+  CCTV_INSTALLER: ['cctv', 'camera', 'cameras', 'surveillance', 'security camera'],
+  MOVER: [
+    'move', 'moving', 'move house', 'house move', 'office move', 'relocate', 'relocation',
+    'shifting', 'shift house', 'packing', 'movers', 'hama', 'kuhama', 'nahama', 'kubeba samani',
+  ],
+  TRANSPORT_PROVIDER: [
+    'transport', 'pickup', 'pick up', 'canter', 'lorry', 'truck', 'van', 'cargo', 'courier',
+    'delivery', 'deliver', 'ferry', 'haulage', 'luggage', 'boda', 'tuk tuk', 'mkokoteni',
+    'usafiri', 'mizigo',
+  ],
+  EVENT_LIGHTING: [
+    'event lighting', 'event lights', 'lighting setup', 'party lights', 'stage lights',
+    'stage lighting', 'wedding lights', 'dj lights', 'disco lights', 'floodlight', 'taa za hafla',
+  ],
+  SOLAR_TECHNICIAN: ['solar', 'panel', 'panels', 'inverter', 'solar water heater'],
+  FUMIGATION: [
+    'pest', 'pests', 'cockroach', 'cockroaches', 'bedbug', 'bed bugs', 'rats', 'rat',
+    'termite', 'termites', 'fumigate', 'mende', 'kunguni', 'panya', 'dawa',
+  ],
+  CLEANER: ['clean', 'cleaning', 'deep clean', 'sofa cleaning', 'carpet', 'usafi', 'kufua'],
+  WATER_TANK_CLEANING: ['tank', 'water tank', 'tanki'],
+  BOREHOLE_DRILLING: ['borehole', 'well', 'drilling', 'kisima'],
+  GARDENER: ['garden', 'lawn', 'grass', 'hedge', 'shamba', 'bustani'],
+  CEILING_BOARD: ['ceiling', 'gypsum', 'ceiling board', 'dari'],
+  SECURITY: ['alarm', 'electric fence', 'gate motor', 'intercom'],
+};
+
+/**
+ * Maps a free-text symptom to the most likely skill types, best match first.
+ * Returns an empty array when nothing matches confidently.
+ */
+export function matchSymptomToSkills(query: string, limit = 3): string[] {
+  const q = query.toLowerCase().trim();
+  if (q.length < 3) return [];
+
+  const scored = Object.entries(SYMPTOM_KEYWORDS)
+    .map(([skillType, keywords]) => {
+      let score = 0;
+      for (const kw of keywords) {
+        if (!q.includes(kw)) continue;
+        // Longer keyword matches are more specific, so weight them higher.
+        score += kw.includes(' ') ? kw.length * 2 : kw.length;
+      }
+      return { skillType, score };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, limit).map((s) => s.skillType);
 }

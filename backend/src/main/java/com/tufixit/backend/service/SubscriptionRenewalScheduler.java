@@ -74,17 +74,18 @@ public class SubscriptionRenewalScheduler {
             User artisan = sub.getArtisan();
             if (artisan == null || artisan.getPhoneNumber() == null) continue;
 
-            boolean isWeekly = sub.getBillingCycle() == Subscription.BillingCycle.WEEKLY;
             String planLabel = sub.getPlanType().name();
             int price = sub.getPriceKes();
-            String cycleLabel = isWeekly ? "weekly" : "monthly";
-            String paybillAccount = "TUFIXIT-" + planLabel;
+            String cycleLabel = switch (sub.getBillingCycle()) {
+                case DAILY   -> "daily";
+                case WEEKLY  -> "weekly";
+                case MONTHLY -> "monthly";
+            };
 
             smsService.send(artisan.getPhoneNumber(), String.format(
-                "TUFIXIT: Your %s %s subscription expires in ~24 hours.\n" +
-                "Renew: M-Pesa → Paybill 522522, Account: %s, Amount: KES %d\n" +
-                "Reply HELP to +254XXXXXXX for support.",
-                planLabel, cycleLabel, paybillAccount, price
+                "TUFIXIT: Your %s %s plan expires in ~24 hours.\n" +
+                "Renew in the app - open Subscription and tap Renew. We'll send an M-Pesa prompt for KES %d.",
+                planLabel, cycleLabel, price
             ));
 
             log.info("[RENEWAL] Reminder sent to artisan {} (plan={}, cycle={}, expires={})",
@@ -107,15 +108,13 @@ public class SubscriptionRenewalScheduler {
 
             User artisan = sub.getArtisan();
             if (artisan != null && artisan.getPhoneNumber() != null) {
-                boolean isWeekly = sub.getBillingCycle() == Subscription.BillingCycle.WEEKLY;
                 int price = sub.getPriceKes();
-                String paybillAccount = "TUFIXIT-" + sub.getPlanType().name();
 
                 smsService.send(artisan.getPhoneNumber(), String.format(
                     "TUFIXIT: Your %s plan has expired. You have 48 hours to renew before your " +
                     "search ranking is reduced.\n" +
-                    "Renew now: M-Pesa → Paybill 522522, Account: %s, Amount: KES %d",
-                    sub.getPlanType().name(), paybillAccount, price
+                    "Renew in the app - open Subscription and tap Renew (KES %d).",
+                    sub.getPlanType().name(), price
                 ));
 
                 log.info("[RENEWAL] Grace period started for artisan {} (plan={}, was-end={})",

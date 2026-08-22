@@ -23,6 +23,9 @@ const CATEGORIES = [
   { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
   { label: 'Welder', value: 'WELDER' },
   { label: 'Mason', value: 'MASON' },
+  { label: 'Mover', value: 'MOVER' },
+  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
+  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
   { label: 'Other', value: 'OTHER' },
 ];
 

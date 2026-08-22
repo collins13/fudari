@@ -42,6 +42,7 @@ const SKILL_LABELS: Record<string, string> = {
   FUMIGATION: 'Fumigation', WATER_TANK_CLEANING: 'Water Tank',
   GLASS_FITTER: 'Glass Fitter', CEILING_BOARD: 'Ceiling Board',
   LOCKSMITH: 'Locksmith', CCTV_INSTALLER: 'CCTV', INTERIOR_DESIGNER: 'Interior Design',
+  MOVER: 'Mover', TRANSPORT_PROVIDER: 'Transport', EVENT_LIGHTING: 'Event Lighting',
   OTHER: 'Other',
 };
 

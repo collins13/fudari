@@ -14,7 +14,7 @@ const faqs = [
   },
   {
     q: 'Do customers pay anything?',
-    a: 'No. Customers browse and contact service providers completely free. Only artisans pay for plans.',
+    a: 'No. Customers browse and contact pros completely free. Only pros pay for plans.',
   },
   {
     q: 'What happens if I cancel?',
@@ -41,7 +41,7 @@ export default function PricingPage() {
                 Pricing
               </div>
               <h2 className="display-4 fw-semibold mb-3">
-                Simple Plans for <span className="font-caveat">Every Provider</span>
+                Simple Plans for <span className="font-caveat">Every Pro</span>
               </h2>
               <p className="sub-title fs-16">
                 Start free. Upgrade when you&apos;re ready. Cancel anytime.

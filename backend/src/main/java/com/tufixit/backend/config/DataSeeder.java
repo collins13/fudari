@@ -55,7 +55,10 @@ public class DataSeeder implements CommandLineRunner {
             Category.builder().name("Cleaning").icon("fa-broom").description("Professional cleaning services").isActive(true).sortOrder(11).build(),
             Category.builder().name("Gardening").icon("fa-leaf").description("Landscaping and garden maintenance").isActive(true).sortOrder(12).build(),
             Category.builder().name("Security").icon("fa-shield-halved").description("CCTV, alarms, and access control").isActive(true).sortOrder(13).build(),
-            Category.builder().name("Appliance Repair").icon("fa-blender").description("Fridge, washer, microwave repair").isActive(true).sortOrder(14).build()
+                        Category.builder().name("Appliance Repair").icon("fa-blender").description("Fridge, washer, microwave repair").isActive(true).sortOrder(14).build(),
+                        Category.builder().name("Moving").icon("fa-truck-moving").description("Home and office moving services").isActive(true).sortOrder(15).build(),
+                        Category.builder().name("Transport").icon("fa-truck").description("Light transport, deliveries and van/truck hire").isActive(true).sortOrder(16).build(),
+                        Category.builder().name("Event Lighting").icon("fa-lightbulb").description("Event and stage lighting setup services").isActive(true).sortOrder(17).build()
         );
         Set<String> existingNames = new HashSet<>();
         categoryRepository.findAll().forEach(c -> existingNames.add(c.getName()));
@@ -201,6 +204,9 @@ public class DataSeeder implements CommandLineRunner {
             {workers.get(12), WorkerSkill.SkillType.APPLIANCE_REPAIR,"Fridge, washing machine, and microwave repair",                     6,  "1500"},
             {workers.get(13), WorkerSkill.SkillType.CLEANER,         "Deep cleaning, move-in/move-out cleaning, office cleaning",         2,  "700"},
             {workers.get(14), WorkerSkill.SkillType.CCTV_INSTALLER,  "CCTV camera setup, DVR configuration, remote access",              3,  "2000"},
+                        {workers.get(10), WorkerSkill.SkillType.MOVER,           "Home and office moving, loading/offloading, packing support",      4,  "2200"},
+                        {workers.get(11), WorkerSkill.SkillType.TRANSPORT_PROVIDER,"Pickup/van transport for deliveries and relocation",              5,  "2500"},
+                        {workers.get(12), WorkerSkill.SkillType.EVENT_LIGHTING,  "Event lighting design, setup, and on-site technical support",      3,  "3000"},
         };
 
         List<WorkerSkill> skills = new ArrayList<>();
@@ -283,6 +289,9 @@ public class DataSeeder implements CommandLineRunner {
             {workers.get(12), "Fridge & Washing Machine Repair",          catMap.get("Appliance Repair"),  WorkerSkill.SkillType.APPLIANCE_REPAIR,"Fridge gas refill, compressor replacement, washing machine motor repair.",                                                 "1500", "Mombasa CBD",           -4.0435, 39.6682, 9},
             {workers.get(13), "Professional Deep Cleaning Services",      catMap.get("Cleaning"),          WorkerSkill.SkillType.CLEANER,         "Move-in/move-out cleaning, office cleaning, post-construction cleanup.",                                                   "700",  "Ruaka, Kiambu",         -1.2070, 36.7810, 4},
             {workers.get(14), "CCTV Camera Installation & Setup",         catMap.get("Security"),          WorkerSkill.SkillType.CCTV_INSTALLER,  "4-8 camera CCTV setup, DVR config, remote phone viewing. Hikvision & Dahua.",                                             "12000","Rongai, Kajiado",       -1.3962, 36.7588, 7},
+                        {workers.get(10), "Affordable House Moving Services",         catMap.get("Moving"),            WorkerSkill.SkillType.MOVER,           "1-3 bedroom house moving with optional packing and careful loading support.",                                               "12000","Thika Town",            -1.0396, 37.0900, 21},
+                        {workers.get(11), "Pickup & Van Transport on Demand",         catMap.get("Transport"),         WorkerSkill.SkillType.TRANSPORT_PROVIDER,"Same-day transport for furniture, appliances, and business deliveries.",                                                  "3500", "Nakuru Town",           -0.3031, 36.0800, 19},
+                        {workers.get(12), "Event Lighting Setup for Weddings",        catMap.get("Event Lighting"),    WorkerSkill.SkillType.EVENT_LIGHTING,  "Ambient, stage, and dance-floor lighting setup for weddings and private events.",                                          "25000","Mombasa CBD",           -4.0435, 39.6682, 16},
         };
 
         List<Listing> listings = new ArrayList<>();
@@ -420,6 +429,37 @@ public class DataSeeder implements CommandLineRunner {
                 .bookingCode("TUF-000205")
                 .paymentRecorded(false).build()));
 
+        jobs.add(jobRepository.save(Job.builder()
+                .client(clients.get(2)).title("Move 2-bedroom apartment to Syokimau")
+                .description("Need movers with wrapping materials and loading/offloading for fragile items")
+                .skillType(WorkerSkill.SkillType.MOVER).status(Job.JobStatus.PENDING)
+                .locationName("Karen, Nairobi").latitude(-1.3187).longitude(36.7118)
+                .address("Karen, Nairobi").allowBidding(true).isUrgent(true)
+                .urgency(Job.UrgencyLevel.TODAY)
+                .budgetMin("18000").budgetMax("35000")
+                .bookingCode("TUF-000208")
+                .paymentRecorded(false).build()));
+
+        jobs.add(jobRepository.save(Job.builder()
+                .client(clients.get(5)).title("Pickup truck for same-day furniture delivery")
+                .description("Need a transport provider with 3-ton truck and helper for delivery within Nairobi")
+                .skillType(WorkerSkill.SkillType.TRANSPORT_PROVIDER).status(Job.JobStatus.BIDDING)
+                .locationName("Lavington, Nairobi").latitude(-1.2838).longitude(36.7628)
+                .address("Lavington, Nairobi").allowBidding(true).isUrgent(false)
+                .budgetMin("6000").budgetMax("12000")
+                .bookingCode("TUF-000209")
+                .paymentRecorded(false).build()));
+
+        jobs.add(jobRepository.save(Job.builder()
+                .client(clients.get(4)).title("Wedding event lighting setup")
+                .description("Need warm ambient lighting, stage wash lights, and dance floor effects for 300 guests")
+                .skillType(WorkerSkill.SkillType.EVENT_LIGHTING).status(Job.JobStatus.PENDING)
+                .locationName("Nyali, Mombasa").latitude(-4.0231).longitude(39.7148)
+                .address("Nyali, Mombasa").allowBidding(true).isUrgent(false)
+                .budgetMin("45000").budgetMax("120000")
+                .bookingCode("TUF-000210")
+                .paymentRecorded(false).build()));
+
         // Cancelled/disputed (2)
         jobs.add(jobRepository.save(Job.builder()
                 .client(clients.get(4)).assignedWorker(workers.get(3))
@@ -439,7 +479,7 @@ public class DataSeeder implements CommandLineRunner {
                 .bookingCode("TUF-000207").startTime(now.minusDays(10)).acceptedAt(now.minusDays(12))
                 .paymentRecorded(false).build()));
 
-        log.info("  → {} jobs seeded (12 completed, 3 in-progress, 3 pending, 2 cancelled/disputed)", jobs.size());
+        log.info("  → {} jobs seeded (12 completed, 3 in-progress, 6 pending/bidding, 2 cancelled/disputed)", jobs.size());
 
         // ═══════════════════════════════════════════════════════════════════
         //  9. REVIEWS — for completed jobs (client → worker)

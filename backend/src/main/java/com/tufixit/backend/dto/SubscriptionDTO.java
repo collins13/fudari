@@ -61,6 +61,7 @@ public class SubscriptionDTO {
         private String name;
         private int monthlyPrice;
         private int weeklyPrice;
+        private int dailyPrice;
         private int maxListings;
         private boolean featured;
         private int rankingPriority;
