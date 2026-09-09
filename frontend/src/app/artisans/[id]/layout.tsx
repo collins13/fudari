@@ -31,8 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description =
       `Hire ${name}, a verified ${primarySkill.toLowerCase()} in ${location}.${ratingStr}${jobsStr} Book on FUDARI Kenya.`;
     const canonical = `https://fudari.co/artisans/${id}`;
-    const ogImage = worker.profileImage
-      ? [{ url: worker.profileImage, width: 400, height: 400, alt: name }]
+    const photo = worker.profileImage
+      ? new URL(worker.profileImage, API_URL).toString()
+      : null;
+    const ogImage = photo
+      ? [{ url: photo, width: 400, height: 400, alt: name }]
       : [{ url: "/liston/images/header/lg-01.jpg", width: 1200, height: 630, alt: name }];
 
     return {
@@ -87,6 +90,9 @@ async function getArtisanJsonLd(id: string): Promise<string | null> {
       worker.skills || [];
     const primarySkill =
       skills[0]?.skillType?.replace(/_/g, " ") || "Artisan";
+    const photo = worker.profileImage
+      ? new URL(worker.profileImage, API_URL).toString()
+      : null;
 
     const schema: Record<string, unknown> = {
       "@context": "https://schema.org",
@@ -97,7 +103,7 @@ async function getArtisanJsonLd(id: string): Promise<string | null> {
           name,
           jobTitle: primarySkill,
           url: `https://fudari.co/artisans/${id}`,
-          image: worker.profileImage || undefined,
+          image: photo || undefined,
           worksFor: { "@id": "https://fudari.co/#organization" },
           address: {
             "@type": "PostalAddress",

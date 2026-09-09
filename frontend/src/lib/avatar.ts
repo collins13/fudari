@@ -50,8 +50,29 @@ export function profileImageFor(
   seed: string | number | null | undefined,
   size = 256
 ): string {
-  if (profileImage && profileImage.trim()) return profileImage;
+  const resolved = resolveProfileImage(profileImage);
+  if (resolved) return resolved;
   return avatarFor(name, seed, size);
+}
+
+/**
+ * The API returns worker photos as the path `/api/workers/{id}/photo`, which has to be
+ * resolved against the API origin rather than the site origin.
+ */
+export function resolveProfileImage(src: string | null | undefined): string {
+  const value = (src || '').trim();
+  if (!value) return '';
+  if (!value.startsWith('/')) return value;
+  return `${apiOrigin()}${value}`;
+}
+
+function apiOrigin(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+  try {
+    return new URL(apiUrl).origin;
+  } catch {
+    return '';
+  }
 }
 
 /** Generated avatars are already tiny SVGs, so they must skip the image optimizer. */

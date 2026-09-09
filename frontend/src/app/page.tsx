@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
-import { workersAPI, categoriesAPI } from '@/lib/api';
+import { workersAPI, categoriesAPI, apiErrorMessage } from '@/lib/api';
 import { KENYA_MAJOR_TOWNS, formatKES, matchSymptomToSkills, skillLabelBilingual, skillLabelSwahili, SKILL_LABELS_KE } from '@/lib/kenya';
 import { profileImageFor, isGeneratedAvatar } from '@/lib/avatar';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
@@ -97,6 +97,8 @@ export default function HomePage() {
   const [featuredArtisans, setFeaturedArtisans] = useState<FeaturedArtisan[]>([]);
   const [loadingArtisans, setLoadingArtisans] = useState(true);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
 
   // Aggregate rating across loaded pros; null until at least one real review exists.
@@ -121,8 +123,8 @@ export default function HomePage() {
     }
   }, []);
 
-  useEffect(() => {
-    // Use /categories/stats — returns live artisan counts per category in one request
+  // /categories/stats returns live artisan counts per category in one request.
+  const loadCategories = useCallback(() => {
     categoriesAPI.getActiveCategoriesWithStats()
       .then((res) => {
         const cats = res.data || [];
@@ -133,12 +135,29 @@ export default function HomePage() {
             icon: c.icon || 'fa-wrench',
             description: c.description || '',
             count: c.artisanCount ?? 0,
-            slug: c.name.toLowerCase(),
+            slug: c.slug || c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
           }))
         );
+        setCategoriesError(null);
       })
-      .catch(() => setCategories([]));
+      .catch((err) => {
+        setCategories([]);
+        setCategoriesError(apiErrorMessage(err, "We couldn't load categories."));
+      })
+      .finally(() => setCategoriesLoading(false));
+  }, []);
 
+  const retryCategories = useCallback(() => {
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
     // Fetch platform stats for the stats banner
     categoriesAPI.getPlatformStats()
       .then((res) => setPlatformStats(res.data))
@@ -256,10 +275,7 @@ export default function HomePage() {
       <Navbar />
 
       {/* ===== HERO SECTION ===== */}
-      <div
-        className="align-items-center d-flex hero-header dark-overlay mt-3 mx-3 overflow-hidden position-relative rounded-4"
-        style={{ minHeight: '85dvh' }}
-      >
+      <div className="align-items-center d-flex hero-header tx-hero-home dark-overlay mt-3 mx-3 overflow-hidden position-relative rounded-4">
         <Image
           className="bg-image"
           src="/liston/images/header/lg-01.jpg"
@@ -276,11 +292,11 @@ export default function HomePage() {
           <h1 className="display-1 fw-bold hero-header_title text-capitalize text-white text-center mb-4">
             Get It <span className="font-caveat text-span">Fixed Today</span> — Nairobi and Countrywide
           </h1>
-          <p className="lead mb-3 text-center text-white">
+          <p className="lead mb-2 mb-md-3 text-center text-white">
             Verified pros. Real reviews. No login required.
           </p>
           {/* Trust indicators — only factual platform guarantees, plus live rating when we have one */}
-          <div className="d-flex justify-content-center gap-3 gap-md-4 flex-wrap mb-5">
+          <div className="tx-hero-trust d-flex justify-content-center gap-3 gap-md-4 flex-wrap mb-3 mb-md-5">
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
               <i className="fa-solid fa-shield-halved text-success"></i>ID-Verified Pros
             </span>
@@ -426,15 +442,32 @@ export default function HomePage() {
             </div>
           </div>
           <div className="row g-4">
-            {categories.length === 0 ? (
+            {categoriesLoading ? (
               <div className="col-12 text-center py-4">
-                <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <div className="spinner-border spinner-border-sm text-primary" role="status">
+                  <span className="visually-hidden">Loading categories</span>
+                </div>
+              </div>
+            ) : categoriesError ? (
+              <div className="col-12 text-center py-4">
+                <p className="text-muted mb-3">{categoriesError}</p>
+                <div className="d-flex justify-content-center gap-2 flex-wrap">
+                  <button type="button" className="btn btn-primary" onClick={retryCategories}>
+                    <i className="fa-solid fa-rotate-right me-2" />Try again
+                  </button>
+                  <Link href="/artisans" className="btn btn-outline-primary">Browse All Services</Link>
+                </div>
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="col-12 text-center py-4">
+                <p className="text-muted mb-3">No categories published yet.</p>
+                <Link href="/artisans" className="btn btn-primary">Browse All Services</Link>
               </div>
             ) : (
               categories.map((cat, idx) => (
                 <div key={cat.id} className="col-6 col-sm-4 col-lg-3">
                   <Link
-                    href={`/artisans?category=${cat.slug}`}
+                    href={`/artisans?category=${encodeURIComponent(cat.slug)}`}
                     className="card border-0 shadow-sm text-center p-4 rounded-4 h-100 d-block text-decoration-none card-hover"
                     data-aos="fade-up"
                     data-aos-delay={String(idx * 50)}

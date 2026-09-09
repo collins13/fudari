@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, bookingsAPI, aiAPI } from '@/lib/api';
+import { resolveProfileImage } from '@/lib/avatar';
 import JobScopingChatbot from '@/components/JobScopingChatbot';
 import SmartPriceBanner from '@/components/SmartPriceBanner';
 import {
@@ -246,7 +247,7 @@ export default function BookArtisanPage() {
           {!loadingArtisan && artisan && (
             <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 d-flex flex-row align-items-center gap-3">
               {artisan.profileImage ? (
-                <Image src={artisan.profileImage} alt={artisan.firstName}
+                <Image src={resolveProfileImage(artisan.profileImage)} alt={artisan.firstName}
                   width={60} height={60}
                   className="rounded-circle" style={{ objectFit: 'cover' }} />
               ) : (

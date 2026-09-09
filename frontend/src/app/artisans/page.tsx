@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { workersAPI, listingsAPI } from '@/lib/api';
+import { workersAPI, listingsAPI, categoriesAPI, apiErrorMessage } from '@/lib/api';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
 import { skillLabelBilingual, skillLabelSwahili, skillIcon } from '@/lib/kenya';
+import { resolveProfileImage } from '@/lib/avatar';
 import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ function mapWorkerToArtisan(w: any): Artisan {
     reviews: w.totalReviews || 0,
     location: w.locationName || 'Kenya',
     price: primarySkill?.hourlyRate ? parseFloat(primarySkill.hourlyRate) : 0,
-    image: w.profileImage || '',
+    image: resolveProfileImage(w.profileImage),
     bio: primarySkill?.description || '',
     rankingScore: w.rankingScore || 0,
     isFeatured: w.isFeatured || false,
@@ -148,12 +149,6 @@ function TrustFacts({ pkg, jobs, rating, reviews }: { pkg: string; jobs: number;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
-  'All', 'Electrical', 'Plumbing', 'Mechanics', 'Painting', 'Carpentry', 'HVAC',
-  'Welding', 'Masonry', 'Cleaning', 'Mama Fua', 'Moving', 'Transport',
-  'Boda Boda', 'Tuk Tuk', 'Delivery', 'Barber', 'Salon', 'Beauty',
-  'Car Wash', 'Tyres', 'Photography', 'Design', 'IT Support', 'Event Lighting',
-];
 const PACKAGES = ['All', 'Gold', 'Silver', 'Bronze'];
 const MAX_PRICE = 50000;
 const SORT_OPTIONS = [
@@ -164,16 +159,20 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
-const CATEGORY_TO_SKILL_TYPE: Record<string, string> = {
-  electrical: 'ELECTRICIAN', plumbing: 'PLUMBER', mechanics: 'MECHANIC',
-  painting: 'PAINTER', carpentry: 'CARPENTER', hvac: 'HVAC_TECHNICIAN',
-  welding: 'WELDER', masonry: 'MASON', cleaning: 'CLEANER', 'mama fua': 'MAMA_FUA',
-  moving: 'MOVER', transport: 'TRANSPORT_PROVIDER', 'event lighting': 'EVENT_LIGHTING',
-  'boda boda': 'BODA_BODA', 'tuk tuk': 'TUK_TUK', delivery: 'COURIER',
-  barber: 'BARBER', salon: 'HAIR_SALON', beauty: 'MAKEUP_ARTIST',
-  'car wash': 'CAR_WASH', tyres: 'TYRE_SERVICES',
-  photography: 'PHOTOGRAPHER', design: 'GRAPHIC_DESIGNER', 'it support': 'IT_TECHNICIAN',
-};
+
+const ALL_CATEGORIES_SLUG = 'all';
+
+interface CategoryOption {
+  name: string;
+  slug: string;
+  skillType: string;
+  count: number;
+}
+
+/** Mirrors the backend slug so older `?category=mama fua` links still resolve. */
+function slugify(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 const QUICK_ISSUE_CHIPS: Array<{ label: string; query: string; skillType: string }> = [
   { label: 'No power / socket issue', query: 'No power and sockets not working', skillType: 'ELECTRICIAN' },
@@ -205,7 +204,12 @@ function ArtisansContent() {
   const [tab, setTab] = useState<'providers' | 'listings'>(
     searchParams.get('tab') === 'listings' ? 'listings' : 'providers'
   );
-  const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [categorySlug, setCategorySlug] = useState(
+    slugify(searchParams.get('category') || ALL_CATEGORIES_SLUG) || ALL_CATEGORIES_SLUG
+  );
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categoriesReady, setCategoriesReady] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [skillParam, setSkillParam] = useState(searchParams.get('skill') || '');
   const [packageFilter, setPackageFilter] = useState('All');
   const [sortBy, setSortBy] = useState('ranking');
@@ -242,14 +246,41 @@ function ArtisansContent() {
   // Normalize category from URL slug
   useEffect(() => {
     const cat = searchParams.get('category');
-    if (cat) {
-      const matched = CATEGORIES.find((c) => c.toLowerCase() === cat.toLowerCase());
-      setCategory(matched || 'All');
-    }
+    if (cat) setCategorySlug(slugify(cat) || ALL_CATEGORIES_SLUG);
     setSkillParam(searchParams.get('skill') || '');
     const q = searchParams.get('q');
     if (q) setSearchInput(q);
   }, [searchParams]);
+
+  // Categories drive both the filter list and the category → skill mapping, so the
+  // provider fetch waits for them rather than firing an unfiltered request first.
+  const loadCategories = useCallback(() => {
+    categoriesAPI.getActiveCategoriesWithStats()
+      .then((res) => {
+        const cats: CategoryOption[] = (res.data || [])
+          .filter((c: any) => !!c.skillType)
+          .map((c: any) => ({
+            name: c.name,
+            slug: c.slug || slugify(c.name),
+            skillType: c.skillType,
+            count: c.artisanCount ?? 0,
+          }));
+        setCategories(cats);
+        setCategoriesError(null);
+      })
+      .catch((err) => {
+        setCategories([]);
+        setCategoriesError(apiErrorMessage(err, "We couldn't load categories."));
+      })
+      .finally(() => setCategoriesReady(true));
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const activeCategory = categories.find((c) => c.slug === categorySlug) || null;
+  const categoryLabel = activeCategory?.name || 'All';
 
   // Distance is computed client-side from the coordinates already returned per artisan.
   useEffect(() => {
@@ -263,13 +294,12 @@ function ArtisansContent() {
 
   // Fetch workers
   const fetchWorkers = useCallback(async () => {
+    if (!categoriesReady) return;
     setLoading(true);
     setLoadError(null);
     try {
       // An explicit skill from symptom search is more precise than the broad category filter.
-      const skillTypeParam = skillParam
-        || (category !== 'All' ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] : undefined)
-        || undefined;
+      const skillTypeParam = skillParam || activeCategory?.skillType || undefined;
       const response = await workersAPI.searchWorkers({
         skillType: skillTypeParam,
         name: debouncedSearch || undefined,
@@ -291,7 +321,7 @@ function ArtisansContent() {
     } finally {
       setLoading(false);
     }
-  }, [category, skillParam, debouncedSearch, debouncedLocation, maxPrice, availableOnly, coords]);
+  }, [activeCategory, categoriesReady, skillParam, debouncedSearch, debouncedLocation, maxPrice, availableOnly, coords]);
 
   // Fetch listings (public - no auth required) — page param wired to backend
   const fetchListings = useCallback(async (page = 1) => {
@@ -364,8 +394,7 @@ function ArtisansContent() {
     });
 
   // Filter listings
-  const skillTypeForCategory = skillParam
-    || (category !== 'All' ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] : undefined);
+  const skillTypeForCategory = skillParam || activeCategory?.skillType;
   const filteredListings = listings.filter((l) => {
     if (skillTypeForCategory && l.skillType !== skillTypeForCategory) return false;
     if (searchInput && !l.title.toLowerCase().includes(searchInput.toLowerCase()) &&
@@ -375,7 +404,7 @@ function ArtisansContent() {
   });
 
   const clearFilters = () => {
-    setCategory('All'); setPackageFilter('All'); setSortBy('newest');
+    setCategorySlug(ALL_CATEGORIES_SLUG); setPackageFilter('All'); setSortBy('newest');
     setMaxPrice(MAX_PRICE); setRangeValue(MAX_PRICE); setSearchInput(''); setLocationInput('');
     setAvailableOnly(false); setSkillParam('');
     setCurrentPage(1);
@@ -385,13 +414,8 @@ function ArtisansContent() {
     setTab('providers');
     setSearchInput(chip.query);
     setSkillParam(chip.skillType);
-    const mappedCategory = Object.entries(CATEGORY_TO_SKILL_TYPE)
-      .find(([, value]) => value === chip.skillType)?.[0];
-    if (mappedCategory) {
-      const titleCase = mappedCategory.charAt(0).toUpperCase() + mappedCategory.slice(1);
-      const matched = CATEGORIES.find((c) => c.toLowerCase() === titleCase.toLowerCase());
-      setCategory(matched || 'All');
-    }
+    const matched = categories.find((c) => c.skillType === chip.skillType);
+    setCategorySlug(matched?.slug || ALL_CATEGORIES_SLUG);
     setCurrentPage(1);
   };
 
@@ -430,13 +454,32 @@ function ArtisansContent() {
           </div>
           <div className="mb-4 border-bottom pb-4">
             <h6 className="fw-semibold mb-2">Category</h6>
-            {CATEGORIES.map((cat) => (
-              <div className="form-check mb-2" key={`mob-cat-${cat}`}>
-                <input className="form-check-input" type="radio" name="mobCategoryFilter"
-                  id={`mob-cat-${cat}`} checked={category === cat} onChange={() => setCategory(cat)} />
-                <label className="form-check-label" htmlFor={`mob-cat-${cat}`}>{cat}</label>
+            {!categoriesReady ? (
+              <div className="spinner-border spinner-border-sm text-primary" role="status">
+                <span className="visually-hidden">Loading categories</span>
               </div>
-            ))}
+            ) : categoriesError ? (
+              <div className="small">
+                <p className="text-muted mb-2">{categoriesError}</p>
+                <button type="button" className="btn btn-sm btn-outline-primary" onClick={loadCategories}>
+                  <i className="fa-solid fa-rotate-right me-1" />Try again
+                </button>
+              </div>
+            ) : categories.length === 0 ? (
+              <p className="text-muted small mb-0">No categories available yet.</p>
+            ) : (
+              [{ name: 'All', slug: ALL_CATEGORIES_SLUG, count: 0 }, ...categories].map((cat) => (
+                <div className="form-check mb-2" key={`mob-cat-${cat.slug}`}>
+                  <input className="form-check-input" type="radio" name="mobCategoryFilter"
+                    id={`mob-cat-${cat.slug}`} checked={categorySlug === cat.slug}
+                    onChange={() => setCategorySlug(cat.slug)} />
+                  <label className="form-check-label" htmlFor={`mob-cat-${cat.slug}`}>
+                    {cat.name}
+                    {cat.count > 0 && <span className="text-muted ms-1">({cat.count})</span>}
+                  </label>
+                </div>
+              ))
+            )}
           </div>
           {tab === 'providers' && (
             <div className="mb-4 border-bottom pb-4">
@@ -568,13 +611,32 @@ function ArtisansContent() {
 
                   <div className="mb-4 border-bottom pb-4">
                     <h4 className="fs-5 fw-semibold mb-2">Category</h4>
-                    {CATEGORIES.map((cat) => (
-                      <div className="form-check mb-2" key={cat}>
-                        <input className="form-check-input" type="radio" name="categoryFilter"
-                          id={`cat-${cat}`} checked={category === cat} onChange={() => setCategory(cat)} />
-                        <label className="form-check-label" htmlFor={`cat-${cat}`}>{cat}</label>
+                    {!categoriesReady ? (
+                      <div className="spinner-border spinner-border-sm text-primary" role="status">
+                        <span className="visually-hidden">Loading categories</span>
                       </div>
-                    ))}
+                    ) : categoriesError ? (
+                      <div className="small">
+                        <p className="text-muted mb-2">{categoriesError}</p>
+                        <button type="button" className="btn btn-sm btn-outline-primary" onClick={loadCategories}>
+                          <i className="fa-solid fa-rotate-right me-1" />Try again
+                        </button>
+                      </div>
+                    ) : categories.length === 0 ? (
+                      <p className="text-muted small mb-0">No categories available yet.</p>
+                    ) : (
+                      [{ name: 'All', slug: ALL_CATEGORIES_SLUG, count: 0 }, ...categories].map((cat) => (
+                        <div className="form-check mb-2" key={cat.slug}>
+                          <input className="form-check-input" type="radio" name="categoryFilter"
+                            id={`cat-${cat.slug}`} checked={categorySlug === cat.slug}
+                            onChange={() => setCategorySlug(cat.slug)} />
+                          <label className="form-check-label" htmlFor={`cat-${cat.slug}`}>
+                            {cat.name}
+                            {cat.count > 0 && <span className="text-muted ms-1">({cat.count})</span>}
+                          </label>
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   {tab === 'providers' && (
@@ -750,8 +812,8 @@ function ArtisansContent() {
                   <i className="fa-solid fa-search fs-1 text-muted mb-3 d-block"></i>
                   <h5 className="text-muted">No one available for that yet.</h5>
                   <p className="text-muted mb-4">
-                    {category !== 'All'
-                      ? `No ${category} pros found${locationInput ? ` in "${locationInput}"` : ''}. Try removing a filter.`
+                    {activeCategory
+                      ? `No ${categoryLabel} pros found${locationInput ? ` in "${locationInput}"` : ''}. Try removing a filter.`
                       : 'Try adjusting your search or filters.'}
                   </p>
                   <div className="d-flex flex-wrap gap-2 justify-content-center">

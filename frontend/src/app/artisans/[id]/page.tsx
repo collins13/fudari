@@ -84,6 +84,8 @@ export default function ArtisanProfilePage() {
   const [worker, setWorker] = useState<WorkerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [bookingForm, setBookingForm] = useState({ service: '', date: '', message: '' });
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
@@ -120,6 +122,8 @@ export default function ArtisanProfilePage() {
   useEffect(() => {
     if (!workerId) return;
     const fetchWorker = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
         const res = await workersAPI.getWorkerProfile(workerId);
         const w = res.data;
@@ -129,8 +133,12 @@ export default function ArtisanProfilePage() {
         // Track profile view
         leadsAPI.trackProfileView(workerId).catch(() => {});
       } catch (err: any) {
-        if (err?.response?.status === 404 || err?.response?.status === 400) {
+        const status = err?.response?.status;
+        if (status === 404 || status === 400) {
           setNotFound(true);
+        } else {
+          // A 5xx or timeout must not read as "this artisan does not exist".
+          setLoadError(apiErrorMessage(err, "We couldn't load this profile."));
         }
       } finally {
         setLoading(false);
@@ -166,7 +174,7 @@ export default function ArtisanProfilePage() {
       .catch(() => {});
 
     return () => window.removeEventListener('scroll', onScroll);
-  }, [workerId]);
+  }, [workerId, reloadKey]);
 
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,7 +257,7 @@ export default function ArtisanProfilePage() {
     );
   }
 
-  if (notFound || !worker) {
+  if (notFound) {
     return (
       <>
         <Navbar />
@@ -257,6 +265,25 @@ export default function ArtisanProfilePage() {
           <i className="fa-solid fa-user-slash fs-1 text-muted mb-3 d-block"></i>
           <h4 className="text-muted">Not found</h4>
           <Link href="/artisans" className="btn btn-primary rounded-5 mt-3">Browse All Services</Link>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (loadError || !worker) {
+    return (
+      <>
+        <Navbar />
+        <div className="container py-5 text-center">
+          <i className="fa-solid fa-triangle-exclamation fs-1 text-muted mb-3 d-block"></i>
+          <h4 className="text-muted">{loadError || "We couldn't load this profile."}</h4>
+          <div className="d-flex justify-content-center gap-2 flex-wrap mt-3">
+            <button type="button" className="btn btn-primary rounded-5" onClick={() => setReloadKey((k) => k + 1)}>
+              <i className="fa-solid fa-rotate-right me-2" />Try again
+            </button>
+            <Link href="/artisans" className="btn btn-outline-primary rounded-5">Browse All Services</Link>
+          </div>
         </div>
         <Footer />
       </>

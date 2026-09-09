@@ -8,6 +8,7 @@ import SockJS from 'sockjs-client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { messagesAPI, workersAPI, aiAPI } from '@/lib/api';
+import { resolveProfileImage } from '@/lib/avatar';
 import api from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -389,7 +390,7 @@ export default function CustomerChatPage() {
                 className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
                 style={{
                   width: 46, height: 46, fontSize: '0.9rem',
-                  backgroundImage: artisan.profileImage ? `url(${artisan.profileImage})` : undefined,
+                  backgroundImage: artisan.profileImage ? `url(${resolveProfileImage(artisan.profileImage)})` : undefined,
                   backgroundSize: 'cover', backgroundPosition: 'center',
                   backgroundColor: artisan.profileImage ? 'transparent' : '#6366f1',
                 }}

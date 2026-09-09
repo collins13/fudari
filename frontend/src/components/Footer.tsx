@@ -2,6 +2,16 @@
 
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import { whatsappBotLink } from '@/lib/whatsapp';
+
+// Only rendered when a real destination is configured — a dead social icon reads
+// as an abandoned site.
+const SOCIAL_LINKS = [
+  { url: process.env.NEXT_PUBLIC_FACEBOOK_URL, icon: 'fab fa-facebook-f', cls: 'fb', label: 'Facebook' },
+  { url: process.env.NEXT_PUBLIC_TWITTER_URL, icon: 'fab fa-twitter', cls: 'twi', label: 'X' },
+  { url: process.env.NEXT_PUBLIC_INSTAGRAM_URL, icon: 'fab fa-instagram', cls: 'inst', label: 'Instagram' },
+  { url: whatsappBotLink(), icon: 'fa-brands fa-whatsapp', cls: 'whatsapp', label: 'WhatsApp' },
+].filter((s): s is { url: string; icon: string; cls: string; label: string } => !!s.url);
 
 export default function Footer() {
   return (
@@ -20,26 +30,19 @@ export default function Footer() {
               </p>
               {/* Social icons */}
               <ul className="d-flex flex-wrap gap-2 list-unstyled mb-0 social-icon">
-                <li>
-                  <a href="#" className="rounded-circle align-items-center d-flex fs-19 icon-wrap justify-content-center rounded-2 text-white fb">
-                    <i className="fab fa-facebook-f"></i>
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="rounded-circle align-items-center d-flex fs-19 icon-wrap justify-content-center rounded-2 text-white twi">
-                    <i className="fab fa-twitter"></i>
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="rounded-circle align-items-center d-flex fs-19 icon-wrap justify-content-center rounded-2 text-white inst">
-                    <i className="fab fa-instagram"></i>
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="rounded-circle align-items-center d-flex fs-19 icon-wrap justify-content-center rounded-2 text-white whatsapp">
-                    <i className="fa-brands fa-whatsapp"></i>
-                  </a>
-                </li>
+                {SOCIAL_LINKS.map((s) => (
+                  <li key={s.label}>
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`FUDARI on ${s.label}`}
+                      className={`rounded-circle align-items-center d-flex fs-19 icon-wrap justify-content-center rounded-2 text-white ${s.cls}`}
+                    >
+                      <i className={s.icon}></i>
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
 
