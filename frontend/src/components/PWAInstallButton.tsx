@@ -90,7 +90,7 @@ export default function PWAInstallButton({ variant = 'pill', className = '' }: P
 
   return (
     <>
-      <button type="button" onClick={onClick} className={`${baseBtn} ${className}`} aria-label="Install TUFIXIT app">
+      <button type="button" onClick={onClick} className={`${baseBtn} ${className}`} aria-label="Install FUDARI app">
         <i className="fa-solid fa-download"></i>
         <span>Install app</span>
       </button>
@@ -109,7 +109,7 @@ export default function PWAInstallButton({ variant = 'pill', className = '' }: P
             <div className="tx-pwa-sheet__icon">
               <i className="fa-solid fa-mobile-screen"></i>
             </div>
-            <h5 className="fw-bold mb-2">Install TUFIXIT on iPhone</h5>
+            <h5 className="fw-bold mb-2">Install FUDARI on iPhone</h5>
             <p className="text-muted small mb-3">Get the full-screen app experience in two taps.</p>
             <ol className="tx-pwa-sheet__steps">
               <li>
@@ -145,24 +145,24 @@ export default function PWAInstallButton({ variant = 'pill', className = '' }: P
         .tx-pwa-btn:active { transform: scale(0.97); }
 
         .tx-pwa-btn--pill {
-          background: linear-gradient(135deg, #f97316 0%, #f84525 100%);
+          background: linear-gradient(135deg, #157A83 0%, #0D5C63 100%);
           color: #fff;
           padding: 0.45rem 1rem;
           border-radius: 999px;
-          box-shadow: 0 4px 14px -4px rgba(248, 69, 37, 0.55);
+          box-shadow: 0 4px 14px -4px rgba(13, 92, 99, 0.55);
         }
         .tx-pwa-btn--pill:hover {
-          box-shadow: 0 8px 22px -4px rgba(248, 69, 37, 0.65);
+          box-shadow: 0 8px 22px -4px rgba(13, 92, 99, 0.65);
           transform: translateY(-1px);
         }
 
         .tx-pwa-btn--compact {
-          background: rgba(248, 69, 37, 0.1);
-          color: #f84525;
+          background: rgba(13, 92, 99, 0.1);
+          color: #0d5c63;
           padding: 0.4rem 0.85rem;
           border-radius: 0.5rem;
         }
-        .tx-pwa-btn--compact:hover { background: rgba(248, 69, 37, 0.18); }
+        .tx-pwa-btn--compact:hover { background: rgba(13, 92, 99, 0.18); }
 
         /* iOS instructions sheet */
         .tx-pwa-sheet {
@@ -214,14 +214,14 @@ export default function PWAInstallButton({ variant = 'pill', className = '' }: P
           width: 56px;
           height: 56px;
           border-radius: 14px;
-          background: linear-gradient(135deg, #f97316 0%, #f84525 100%);
+          background: linear-gradient(135deg, #157A83 0%, #0D5C63 100%);
           color: #fff;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           font-size: 26px;
           margin-bottom: 0.75rem;
-          box-shadow: 0 8px 20px -6px rgba(248, 69, 37, 0.55);
+          box-shadow: 0 8px 20px -6px rgba(13, 92, 99, 0.55);
         }
 
         .tx-pwa-sheet__steps {

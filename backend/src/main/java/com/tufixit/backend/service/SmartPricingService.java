@@ -58,6 +58,21 @@ public class SmartPricingService {
             Map.entry("LOCKSMITH",             new int[]{500,  3000}),
             Map.entry("CCTV_INSTALLER",        new int[]{2000, 15000}),
             Map.entry("INTERIOR_DESIGNER",     new int[]{3000, 25000}),
+            Map.entry("MOVER",                 new int[]{1500, 25000}),
+            Map.entry("TRANSPORT_PROVIDER",    new int[]{1200, 30000}),
+            Map.entry("EVENT_LIGHTING",        new int[]{2500, 40000}),
+            Map.entry("BODA_BODA",             new int[]{100,  1500}),
+            Map.entry("TUK_TUK",               new int[]{150,  2000}),
+            Map.entry("COURIER",               new int[]{200,  3000}),
+            Map.entry("MAMA_FUA",              new int[]{500,  2500}),
+            Map.entry("BARBER",                new int[]{200,  1500}),
+            Map.entry("HAIR_SALON",            new int[]{500,  6000}),
+            Map.entry("MAKEUP_ARTIST",         new int[]{1500, 15000}),
+            Map.entry("CAR_WASH",              new int[]{300,  2500}),
+            Map.entry("TYRE_SERVICES",         new int[]{200,  6000}),
+            Map.entry("PHOTOGRAPHER",          new int[]{3000, 40000}),
+            Map.entry("GRAPHIC_DESIGNER",      new int[]{1500, 25000}),
+            Map.entry("IT_TECHNICIAN",         new int[]{1000, 12000}),
             Map.entry("OTHER",                 new int[]{400,  4000})
     );
 

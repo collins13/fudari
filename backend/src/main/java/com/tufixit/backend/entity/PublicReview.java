@@ -38,6 +38,10 @@ public class PublicReview {
     @Column
     private String reviewerEmail;
 
+    /** Booking this review is tied to. Present only on verified reviews. */
+    @Column(name = "booking_code", length = 20)
+    private String bookingCode;
+
     @Column(nullable = false)
     private Boolean isVerified = false;
 

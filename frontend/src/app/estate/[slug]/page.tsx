@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { estatesAPI, categoriesAPI, bookingsAPI } from '@/lib/api';
+import { estatesAPI, categoriesAPI, bookingsAPI, apiErrorMessage } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
 import { TenantProvider, useTenant } from '@/context/TenantContext';
 
@@ -60,6 +61,7 @@ export default function EstateBookingPage() {
   });
   const [booking, setBooking] = useState(false);
   const [bookingCode, setBookingCode] = useState('');
+  const [bookingError, setBookingError] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -97,8 +99,9 @@ export default function EstateBookingPage() {
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedWorker) return;
+    setBookingError('');
     if (formData.urgency === 'SCHEDULED' && !formData.scheduledTime) {
-      alert('Please pick a date and time for your scheduled booking.');
+      setBookingError('Please pick a date and time for your scheduled booking.');
       return;
     }
     setBooking(true);
@@ -118,7 +121,7 @@ export default function EstateBookingPage() {
       const res = await bookingsAPI.create(payload as Parameters<typeof bookingsAPI.create>[0]);
       setBookingCode(res.data?.bookingCode || res.data?.code || '');
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Booking failed. Please try again.');
+      setBookingError(apiErrorMessage(err, 'Booking failed. Please try again.'));
     } finally {
       setBooking(false);
     }
@@ -194,15 +197,16 @@ export default function EstateBookingPage() {
       {/* Estate Header — dynamic brand theming */}
       <section
         className="text-white py-4 mx-3 rounded-4 mt-3"
-        style={{ backgroundColor: estate.brandPrimaryColor || '#0d6efd' }}
+        style={{ backgroundColor: estate.brandPrimaryColor || '#0D5C63' }}
       >
         <div className="container text-center">
           {estate.brandLogoUrl && (
-            <img src={estate.brandLogoUrl} alt={estate.name} className="mb-3"
-              style={{ maxHeight: 60, objectFit: 'contain' }} />
+            <Image src={estate.brandLogoUrl} alt={estate.name} className="mb-3"
+              width={180} height={60}
+              style={{ maxHeight: 60, width: 'auto', objectFit: 'contain' }} />
           )}
           <div className="badge bg-white mb-2 px-3 py-2 rounded-5"
-            style={{ color: estate.brandPrimaryColor || '#0d6efd' }}>
+            style={{ color: estate.brandPrimaryColor || '#0D5C63' }}>
             <i className="fa-solid fa-building me-1"></i> Estate Services
           </div>
           <h2 className="display-5 fw-bold mb-2">{estate.name}</h2>
@@ -371,11 +375,19 @@ export default function EstateBookingPage() {
                         </div>
                       )}
                     </div>
-                    <button type="submit" className="btn btn-primary w-100 mt-4 py-2 rounded-3 fw-medium"
+                    <button type="submit" className="btn btn-accent w-100 mt-4 py-2 rounded-3 fw-medium"
                       disabled={booking}>
                       {booking ? <span className="spinner-border spinner-border-sm me-1" /> : null}
                       <i className="fa-solid fa-calendar-check me-1"></i> Confirm Booking
                     </button>
+                    {bookingError && (
+                      <div className="alert alert-danger alert-dismissible d-flex align-items-start gap-2 mt-3 mb-0" role="alert">
+                        <i className="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+                        <span>{bookingError}</span>
+                        <button type="button" className="btn-close" aria-label="Dismiss"
+                          onClick={() => setBookingError('')}></button>
+                      </div>
+                    )}
                   </form>
                 </div>
               </div>

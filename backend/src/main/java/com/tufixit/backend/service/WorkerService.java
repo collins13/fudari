@@ -57,6 +57,11 @@ public class WorkerService {
     }
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm) {
+        return searchWorkers(skillType, latitude, longitude, radiusKm, null, null, null, null);
+    }
+
+    public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm,
+                                               String name, String location, Double maxHourlyRate, Boolean availableNow) {
         List<User> workers;
 
         if (latitude != null && longitude != null) {
@@ -105,9 +110,64 @@ public class WorkerService {
             }
         }
 
-        return workers.stream()
+        if (name != null && !name.isBlank()) {
+            String needle = name.trim().toLowerCase();
+            // Free-text search covers the artisan's name and their trade, so "plumber" works like "John".
+            Set<Long> idsMatchingSkill = workerSkillRepository.findAll().stream()
+                    .filter(s -> s.getSkillType() != null
+                            && s.getSkillType().name().toLowerCase().replace('_', ' ').contains(needle))
+                    .map(s -> s.getWorker().getId())
+                    .collect(Collectors.toSet());
+            workers = workers.stream()
+                    .filter(w -> containsIgnoreCase(w.getFirstName(), needle)
+                            || containsIgnoreCase(w.getLastName(), needle)
+                            || idsMatchingSkill.contains(w.getId()))
+                    .collect(Collectors.toList());
+        }
+
+        if (location != null && !location.isBlank()) {
+            String needle = location.trim().toLowerCase();
+            workers = workers.stream()
+                    .filter(w -> containsIgnoreCase(w.getLocationName(), needle))
+                    .collect(Collectors.toList());
+        }
+
+        if (Boolean.TRUE.equals(availableNow)) {
+            workers = workers.stream().filter(this::isAvailableNow).collect(Collectors.toList());
+        }
+
+        List<AuthDTO.UserDTO> results = workers.stream()
                 .map(this::mapToUserDTOWithSkills)
                 .collect(Collectors.toList());
+
+        if (maxHourlyRate != null && maxHourlyRate > 0) {
+            results = results.stream()
+                    .filter(dto -> cheapestRate(dto) <= maxHourlyRate)
+                    .collect(Collectors.toList());
+        }
+
+        return results;
+    }
+
+    private static boolean containsIgnoreCase(String haystack, String lowercaseNeedle) {
+        return haystack != null && haystack.toLowerCase().contains(lowercaseNeedle);
+    }
+
+    /** Artisans with no published rate are treated as free so a price cap never hides them. */
+    private static double cheapestRate(AuthDTO.UserDTO dto) {
+        if (dto.getSkills() == null) return 0;
+        return dto.getSkills().stream()
+                .map(AuthDTO.WorkerSkillInfo::getHourlyRate)
+                .filter(r -> r != null && !r.isBlank())
+                .mapToDouble(r -> {
+                    try {
+                        return Double.parseDouble(r.trim());
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
+                })
+                .min()
+                .orElse(0);
     }
 
     public AuthDTO.UserDTO getWorkerProfile(Long workerId) {

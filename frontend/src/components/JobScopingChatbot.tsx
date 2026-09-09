@@ -26,7 +26,7 @@ interface Props {
 
 export default function JobScopingChatbot({ onJobSpecReady, onClose }: Props) {
   const [messages, setMessages] = useState<ScopingMessage[]>([
-    { role: 'assistant', content: 'Hi! 👋 I\'m your TUFIXIT assistant. Tell me what needs fixing and I\'ll help you create the perfect job request.\n\nFor example: "My kitchen sink is leaking" or "I need my house painted"' }
+    { role: 'assistant', content: 'Hi! 👋 I\'m your FUDARI assistant. Tell me what needs fixing and I\'ll help you create the perfect job request.\n\nFor example: "My kitchen sink is leaking" or "I need my house painted"' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

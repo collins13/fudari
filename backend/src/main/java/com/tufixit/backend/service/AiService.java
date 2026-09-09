@@ -3,6 +3,7 @@ package com.tufixit.backend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tufixit.backend.dto.AiDTO;
+import com.tufixit.backend.entity.WorkerSkill;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,14 +35,8 @@ public class AiService {
 
     private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
-    private static final List<String> VALID_SKILL_TYPES = List.of(
-            "ELECTRICIAN", "PLUMBER", "MECHANIC", "CARPENTER", "PAINTER",
-            "WELDER", "HVAC_TECHNICIAN", "APPLIANCE_REPAIR", "ROOFING",
-            "TILING", "MASON", "GARDENER", "CLEANER", "SECURITY",
-            "SOLAR_TECHNICIAN", "BOREHOLE_DRILLING", "FUMIGATION",
-            "WATER_TANK_CLEANING", "GLASS_FITTER", "CEILING_BOARD",
-            "LOCKSMITH", "CCTV_INSTALLER", "INTERIOR_DESIGNER", "OTHER"
-    );
+    private static final List<String> VALID_SKILL_TYPES =
+            Arrays.stream(WorkerSkill.SkillType.values()).map(Enum::name).toList();
 
     @Value("${openai.api-key:}")
     private String apiKey;
@@ -79,7 +75,9 @@ public class AiService {
         }
 
         String systemPrompt = """
-            You are an expert assistant for TUFIXIT, a marketplace connecting customers with skilled artisans in Kenya.
+            You are an expert assistant for FUDARI, a marketplace connecting customers with local
+            service providers in Kenya — artisans, cleaners, transporters, beauty, automotive and
+            digital service pros.
             Your job is to take a customer's vague job description and expand it into a detailed, professional brief.
             
             Rules:
@@ -87,10 +85,7 @@ public class AiService {
             - Mention likely materials or tools that will be needed
             - Give a realistic time estimate for Nairobi/Kenya context
             - Suggest the single most appropriate skill category from this list ONLY:
-              ELECTRICIAN, PLUMBER, MECHANIC, CARPENTER, PAINTER, WELDER, HVAC_TECHNICIAN,
-              APPLIANCE_REPAIR, ROOFING, TILING, MASON, GARDENER, CLEANER, SECURITY,
-              SOLAR_TECHNICIAN, BOREHOLE_DRILLING, FUMIGATION, WATER_TANK_CLEANING,
-              GLASS_FITTER, CEILING_BOARD, LOCKSMITH, CCTV_INSTALLER, INTERIOR_DESIGNER, OTHER
+              {{SKILLS}}
             - Return ONLY valid JSON, no markdown, no explanation
             
             JSON format:
@@ -101,7 +96,7 @@ public class AiService {
               "likelyMaterials": ["pipe fitting", "teflon tape"],
               "clarifyingQuestions": ["How old is the pipe?", "Is it a leak or a full blockage?", "..."]
             }
-            """;
+            """.replace("{{SKILLS}}", String.join(", ", VALID_SKILL_TYPES));
 
         String userMessage = String.format(
                 "Customer location: %s\nCustomer description: %s",
@@ -157,7 +152,7 @@ public class AiService {
         }
 
         String systemPrompt = String.format("""
-            You are a polite AI assistant helping on behalf of %s, a %s on the TUFIXIT platform in Kenya.
+            You are a polite AI assistant helping on behalf of %s, a %s on the FUDARI platform in Kenya.
             The artisan is currently busy. Your job is to:
             1. Send the customer a friendly holding message (max 2 sentences)
             2. Try to understand what they need and ask one clarifying question

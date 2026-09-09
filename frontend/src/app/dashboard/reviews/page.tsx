@@ -85,7 +85,7 @@ export default function ReviewsPage() {
             <div className="card-body">
               <div className="row g-4 align-items-center">
                 <div className="col-md-3 text-center">
-                  <div className="display-3 fw-bold mb-1" style={{ color: '#F84525' }}>
+                  <div className="display-3 fw-bold mb-1" style={{ color: 'var(--bs-primary)' }}>
                     {avgRating.toFixed(1)}
                   </div>
                   <StarRating rating={Math.round(avgRating)} size="large" />

@@ -363,7 +363,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         }
         .tx-user-chip:hover {
           border-color: var(--bs-primary);
-          box-shadow: 0 0 0 4px rgba(248, 69, 37, 0.1);
+          box-shadow: 0 0 0 4px rgba(13, 92, 99, 0.12);
         }
         [data-bs-theme="dark"] .tx-user-chip {
           background: rgba(255, 255, 255, 0.06);
@@ -382,7 +382,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           align-items: center;
           justify-content: center;
           border-radius: 50%;
-          background: linear-gradient(135deg, #f97316, #ef4444);
+          background: linear-gradient(135deg, #157A83, #0D5C63);
           color: #fff;
           font-weight: 700;
           font-size: 0.8rem;
@@ -403,7 +403,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         .tx-quick-search:focus-within {
           background: #fff;
           border-color: var(--bs-primary);
-          box-shadow: 0 0 0 4px rgba(248, 69, 37, 0.12);
+          box-shadow: 0 0 0 4px rgba(13, 92, 99, 0.14);
         }
         .tx-quick-search i { color: rgba(13, 20, 38, 0.5); font-size: 0.875rem; }
         .tx-quick-search input {
@@ -471,7 +471,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           }
           .tx-navbar--transparent .tx-nav-link { color: var(--bs-body-color); }
           .tx-nav-link.is-active::after { display: none; }
-          .tx-nav-link.is-active { background: rgba(248, 69, 37, 0.08); }
+          .tx-nav-link.is-active { background: rgba(13, 92, 99, 0.09); }
         }
       `}</style>
     </>

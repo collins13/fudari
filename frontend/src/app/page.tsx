@@ -9,8 +9,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
 import { workersAPI, categoriesAPI } from '@/lib/api';
-import { KENYA_MAJOR_TOWNS, formatKES, matchSymptomToSkills, skillLabelBilingual, SKILL_LABELS_KE } from '@/lib/kenya';
-import { profileImageFor } from '@/lib/avatar';
+import { KENYA_MAJOR_TOWNS, formatKES, matchSymptomToSkills, skillLabelBilingual, skillLabelSwahili, SKILL_LABELS_KE } from '@/lib/kenya';
+import { profileImageFor, isGeneratedAvatar } from '@/lib/avatar';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
 import { whatsappBotLink } from '@/lib/whatsapp';
 
@@ -18,6 +18,7 @@ interface FeaturedArtisan {
   id: number;
   name: string;
   skill: string;
+  skillType: string;
   package: string;
   rating: number;
   reviews: number;
@@ -60,15 +61,6 @@ interface PlatformStats {
   totalListings: number;
 }
 
-const ARTISAN_SOCIAL_PROOF = [
-  { name: 'John K.', skill: 'Fundi Stima', location: 'Ruiru', earnings: 42000 },
-  { name: 'Mary W.', skill: 'Fundi Rangi', location: 'Westlands', earnings: 28500 },
-  { name: 'Peter M.', skill: 'Fundi Mabomba', location: 'Kilimani', earnings: 35000 },
-  { name: 'Grace A.', skill: 'Fundi Usafi', location: 'Karen', earnings: 22000 },
-  { name: 'James O.', skill: 'Fundi Magari', location: 'Eastleigh', earnings: 51000 },
-  { name: 'Faith N.', skill: 'Fundi AC', location: 'Lavington', earnings: 38000 },
-];
-
 function getAvailability(availableNow: boolean) {
   return availableNow
     ? { label: 'Available now', color: '#22c55e' }
@@ -107,6 +99,15 @@ export default function HomePage() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [platformStats, setPlatformStats] = useState<PlatformStats | null>(null);
 
+  // Aggregate rating across loaded pros; null until at least one real review exists.
+  const liveRating = (() => {
+    const rated = featuredArtisans.filter((a) => a.reviews > 0 && a.rating > 0);
+    if (rated.length === 0) return null;
+    const reviewCount = rated.reduce((sum, a) => sum + a.reviews, 0);
+    const weighted = rated.reduce((sum, a) => sum + a.rating * a.reviews, 0);
+    return { average: weighted / reviewCount, reviewCount };
+  })();
+
   const handleLocationChange = useCallback((value: string) => {
     setSearchLocation(value);
     if (value.length >= 2) {
@@ -141,7 +142,7 @@ export default function HomePage() {
     // Fetch platform stats for the stats banner
     categoriesAPI.getPlatformStats()
       .then((res) => setPlatformStats(res.data))
-      .catch(() => {}); // silently fail — fallback to hardcoded shown below
+      .catch(() => setPlatformStats(null));
 
     // Fetch featured artisans — with geolocation if available
     const fetchArtisans = (params: { latitude?: number; longitude?: number }) => {
@@ -156,6 +157,7 @@ export default function HomePage() {
                 id: w.id,
                 name: fullName,
                 skill: skill?.skillType ? skillTypeToLabel(skill.skillType) : 'General',
+                skillType: skill?.skillType || '',
                 package: vettingToPackage(w.vettingLevel || 'STANDARD'),
                 rating: w.trustScore || 0,
                 reviews: w.totalReviews || 0,
@@ -259,32 +261,35 @@ export default function HomePage() {
         <Image
           className="bg-image"
           src="/liston/images/header/lg-01.jpg"
-          alt="Verified plumbers, electricians, movers and other service pros in Nairobi and Kenya"
+          alt="Verified artisans, cleaners, riders, barbers and other service pros in Nairobi and Kenya"
           fill
           priority
           sizes="100vw"
         />
         <div className="container overlay-content py-5">
           <div className="hero-header-subtitle text-center text-white text-uppercase mb-3">
-            Kenya&apos;s #1 Jua Kali Marketplace
+            Verified Service Providers Across Kenya
           </div>
           <h1 className="display-1 fw-bold hero-header_title text-capitalize text-white text-center mb-4">
             Get It <span className="font-caveat text-span">Fixed Today</span> — Nairobi and Countrywide
           </h1>
           <p className="lead mb-3 text-center text-white">
-            Verified pros. Real reviews. Fast response. No login required.
+            Verified pros. Real reviews. No login required.
           </p>
-          {/* Trust indicators */}
+          {/* Trust indicators — only factual platform guarantees, plus live rating when we have one */}
           <div className="d-flex justify-content-center gap-3 gap-md-4 flex-wrap mb-5">
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
               <i className="fa-solid fa-shield-halved text-success"></i>ID-Verified Pros
             </span>
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
-              <i className="fa-solid fa-clock text-warning"></i>Avg. 8 min Response
+              <i className="fa-solid fa-wallet text-warning"></i>No booking fee
             </span>
-            <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
-              <i className="fa-solid fa-star text-warning"></i>4.6 Avg Rating
-            </span>
+            {liveRating && (
+              <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
+                <i className="fa-solid fa-star text-warning"></i>
+                {liveRating.average.toFixed(1)} from {liveRating.reviewCount} reviews
+              </span>
+            )}
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
               <i className="fa-brands fa-whatsapp text-success"></i>WhatsApp &amp; Call
             </span>
@@ -355,7 +360,7 @@ export default function HomePage() {
                   )}
                 </div>
                 {/* Button */}
-                <button type="submit" className="btn btn-primary rounded-3 px-4 py-3 fw-medium d-flex align-items-center justify-content-center gap-2">
+                <button type="submit" className="btn btn-accent rounded-3 px-4 py-3 fw-medium d-flex align-items-center justify-content-center gap-2">
                   <i className="fa-solid fa-magnifying-glass"></i>
                   <span>Search</span>
                 </button>
@@ -366,29 +371,27 @@ export default function HomePage() {
       </div>
       {/* ===== END HERO ===== */}
 
-      {/* ===== SOCIAL PROOF STRIP ===== */}
+      {/* ===== HOW BOOKING WORKS STRIP ===== */}
       <div className="bg-white border-bottom py-4">
         <div className="container">
-          <div className="d-flex align-items-center gap-2 mb-3">
-            <i className="fa-solid fa-fire text-danger"></i>
-            <span className="fw-semibold small text-uppercase" style={{ color: '#6c757d', letterSpacing: '0.06em' }}>
-              Real TuFixIt Pro Earnings — Last 30 Days
-            </span>
-          </div>
           <div className="row g-3">
-            {ARTISAN_SOCIAL_PROOF.map((p, i) => (
-              <div key={i} className="col-6 col-sm-4 col-lg-2">
-                <div className="d-flex align-items-center gap-2 p-2 rounded-3" style={{ background: '#f8f9fa' }}>
+            {[
+              { icon: 'fa-magnifying-glass', title: 'Search free', text: 'Browse verified pros near you. No account needed.' },
+              { icon: 'fa-comments', title: 'Agree the price first', text: 'Talk on WhatsApp or call before any work starts.' },
+              { icon: 'fa-shield-halved', title: 'PIN-verified job', text: 'Confirm arrival and completion with your own codes.' },
+              { icon: 'fa-money-bill-wave', title: 'Pay on completion', text: 'Pay by M-Pesa once the work is done, not before.' },
+            ].map((step) => (
+              <div key={step.title} className="col-6 col-lg-3">
+                <div className="d-flex align-items-start gap-2 p-2 rounded-3 h-100" style={{ background: '#f8f9fa' }}>
                   <div
-                    className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 fw-bold"
-                    style={{ width: 36, height: 36, background: 'rgba(248,69,37,0.12)', fontSize: 14, color: '#f84525' }}
+                    className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                    style={{ width: 36, height: 36, background: 'var(--tx-primary-soft)', color: 'var(--bs-primary)' }}
                   >
-                    {p.name[0]}
+                    <i className={`fa-solid ${step.icon}`} aria-hidden="true"></i>
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div className="fw-semibold text-truncate" style={{ fontSize: '0.78rem' }}>{p.name}</div>
-                    <div className="text-truncate" style={{ fontSize: '0.68rem', color: '#6c757d' }}>{p.skill}, {p.location}</div>
-                    <div className="fw-bold text-success" style={{ fontSize: '0.75rem' }}>KES {p.earnings.toLocaleString()}/mo</div>
+                    <div className="fw-semibold" style={{ fontSize: '0.82rem' }}>{step.title}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#6c757d' }}>{step.text}</div>
                   </div>
                 </div>
               </div>
@@ -396,7 +399,7 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      {/* ===== END SOCIAL PROOF STRIP ===== */}
+      {/* ===== END HOW BOOKING WORKS STRIP ===== */}
 
       {/* ===== CATEGORIES SECTION ===== */}
       <div className="py-5">
@@ -435,7 +438,7 @@ export default function HomePage() {
                   >
                     <div
                       className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                      style={{ width: 64, height: 64, background: 'rgba(248,69,37,0.1)' }}
+                      style={{ width: 64, height: 64, background: 'var(--tx-primary-soft)' }}
                     >
                       <i className={`fa-solid ${cat.icon} fs-4 text-primary`}></i>
                     </div>
@@ -460,7 +463,7 @@ export default function HomePage() {
                   Easy Steps
                 </div>
                 <h2 className="display-5 fw-semibold mb-3 section-header__title text-capitalize">
-                  How TUFIXIT Works
+                  How FUDARI Works
                 </h2>
                 <div className="sub-title fs-16">From search to job done — no account needed, no upfront payment.</div>
               </div>
@@ -540,7 +543,7 @@ export default function HomePage() {
               <p className="text-muted mb-2">No exact match nearby right now. Try searching your area or use WhatsApp for assisted matching.</p>
               <div className="d-flex justify-content-center gap-2 flex-wrap">
                 <Link href="/artisans" className="btn btn-outline-primary btn-sm rounded-5">Browse All Services</Link>
-                <a href="https://wa.me/254703954539?text=Hi%20TUFIXIT%2C%20please%20help%20me%20find%20someone%20near%20me" target="_blank" rel="noopener noreferrer" className="btn btn-success btn-sm rounded-5">
+                <a href="https://wa.me/254703954539?text=Hi%20FUDARI%2C%20please%20help%20me%20find%20someone%20near%20me" target="_blank" rel="noopener noreferrer" className="btn btn-success btn-sm rounded-5">
                   <i className="fa-brands fa-whatsapp me-1"></i>Get Help on WhatsApp
                 </a>
               </div>
@@ -559,6 +562,7 @@ export default function HomePage() {
                           className="w-100 h-100"
                           style={{ objectFit: 'cover' }}
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                          unoptimized={isGeneratedAvatar(artisan.image)}
                         />
                       ) : (
                         <div
@@ -585,6 +589,9 @@ export default function HomePage() {
                       <h4 className="fs-5 fw-semibold mb-1">{artisan.name}</h4>
                       <p className="text-primary small mb-1">
                         <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
+                        {skillLabelSwahili(artisan.skillType) && (
+                          <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
+                        )}
                       </p>
                       <p className="text-muted small mb-2">
                         <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
@@ -598,7 +605,7 @@ export default function HomePage() {
                         )}
                         <div className="d-flex gap-1">
                           <a
-                            href={whatsappBotLink(`Hi TUFIXIT, I'd like to book ${artisan.name} (${artisan.skill}) in ${artisan.location}.`)}
+                            href={whatsappBotLink(`Hi FUDARI, I'd like to book ${artisan.name} (${artisan.skill}) in ${artisan.location}.`)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-success btn-sm rounded-5 px-2"
@@ -631,7 +638,7 @@ export default function HomePage() {
       </div>
       {/* ===== END SEE ALL ===== */}
 
-      {/* ===== WHY TRUST TUFIXIT (Kenya-specific) ===== */}
+      {/* ===== WHY TRUST FUDARI (Kenya-specific) ===== */}
       <div className="py-5">
         <div className="container py-4">
           <div className="row justify-content-center">
@@ -641,10 +648,10 @@ export default function HomePage() {
                   Built for Kenya
                 </div>
                 <h2 className="display-5 fw-semibold mb-3 section-header__title text-capitalize">
-                  Why Kenyans Trust TUFIXIT
+                  Why Kenyans Trust FUDARI
                 </h2>
                 <div className="sub-title fs-16">
-                  Designed from the ground up for the Kenyan Jua Kali market.
+                  Designed from the ground up for how Kenyans actually hire local services.
                 </div>
               </div>
             </div>
@@ -661,7 +668,7 @@ export default function HomePage() {
             </div>
             <div className="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="100">
               <div className="card border-0 shadow-sm rounded-4 p-4 h-100 text-center">
-                <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(248,69,37,0.1)' }}>
+                <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'var(--tx-primary-soft)' }}>
                   <i className="fa-solid fa-comment-sms fs-4 text-primary"></i>
                 </div>
                 <h5 className="fw-semibold mb-2">SMS Notifications</h5>
@@ -710,36 +717,30 @@ export default function HomePage() {
       {/* ===== END WHY TRUST ===== */}
 
       {/* ===== STATS SECTION ===== */}
-      <div className="bg-primary mx-3 position-relative py-5 rounded-4 text-white">
-        <div className="container py-4">
-          <div className="row justify-content-center text-center g-4">
-            <div className="col-sm-6 col-lg-3" data-aos="fade-up">
-              <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalArtisans}+` : '100+'}
+      {platformStats && (
+        <div className="bg-primary mx-3 position-relative py-5 rounded-4 text-white">
+          <div className="container py-4">
+            <div className="row justify-content-center text-center g-4">
+              <div className="col-sm-6 col-lg-3" data-aos="fade-up">
+                <div className="display-4 fw-bold">{platformStats.totalArtisans}</div>
+                <div className="fs-5 mt-1 opacity-75">ID-Verified Pros</div>
               </div>
-              <div className="fs-5 mt-1 opacity-75">ID-Verified Pros</div>
-            </div>
-            <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-              <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalCompletedJobs}+` : '500+'}
+              <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div className="display-4 fw-bold">{platformStats.totalCompletedJobs}</div>
+                <div className="fs-5 mt-1 opacity-75">Jobs Completed</div>
               </div>
-              <div className="fs-5 mt-1 opacity-75">Jobs Completed</div>
-            </div>
-            <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
-              <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalCategories}` : '20+'}
+              <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div className="display-4 fw-bold">{platformStats.totalCategories}</div>
+                <div className="fs-5 mt-1 opacity-75">Service Categories</div>
               </div>
-              <div className="fs-5 mt-1 opacity-75">Service Categories</div>
-            </div>
-            <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
-              <div className="display-4 fw-bold">
-                {platformStats ? `${platformStats.totalListings}+` : '200+'}
+              <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div className="display-4 fw-bold">{platformStats.totalListings}</div>
+                <div className="fs-5 mt-1 opacity-75">Active Listings</div>
               </div>
-              <div className="fs-5 mt-1 opacity-75">Active Listings</div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       {/* ===== END STATS ===== */}
 
       {/* ===== CTA SECTION ===== */}
@@ -754,11 +755,13 @@ export default function HomePage() {
                 Get Found by Customers Near You
               </h2>
               <p className="lead text-muted mb-4 col-lg-8 mx-auto">
-                Register your services, get found by thousands of customers across all 47 counties,
+                Register your services, get found by customers across all 47 counties,
                 and boost your income with our affordable plans from KES 500/mo.
-                <span className="d-block mt-2 fw-medium text-dark">
-                  Over {platformStats ? platformStats.totalArtisans : '100'}+ pros already growing with TUFIXIT.
-                </span>
+                {platformStats && platformStats.totalArtisans > 0 && (
+                  <span className="d-block mt-2 fw-medium text-dark">
+                    {platformStats.totalArtisans} pros already growing with FUDARI.
+                  </span>
+                )}
               </p>
               <div className="d-flex gap-3 justify-content-center flex-wrap">
                 <Link href="/register" className="btn btn-primary btn-lg rounded-5 px-5">

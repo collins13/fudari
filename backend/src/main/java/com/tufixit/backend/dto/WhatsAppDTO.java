@@ -12,7 +12,7 @@ import java.util.List;
  *
  * Reference: https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
  *
- * Only the fields TuFixIt uses are declared; Jackson ignores unknown fields
+ * Only the fields Fudari uses are declared; Jackson ignores unknown fields
  * via @JsonIgnoreProperties(ignoreUnknown = true).
  */
 public class WhatsAppDTO {

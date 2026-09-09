@@ -18,8 +18,8 @@ import java.util.Map;
  * Receives Twilio WhatsApp webhooks.
  *
  * Configure these URLs in the Twilio Console under your WhatsApp Sender:
- *   - Incoming messages:  POST https://api.tufixit.com/api/whatsapp/twilio/inbound
- *   - Status callbacks:   POST https://api.tufixit.com/api/whatsapp/twilio/status
+ *   - Incoming messages:  POST https://api.fudari.co/api/whatsapp/twilio/inbound
+ *   - Status callbacks:   POST https://api.fudari.co/api/whatsapp/twilio/status
  *
  * Twilio sends webhooks as application/x-www-form-urlencoded.
  */

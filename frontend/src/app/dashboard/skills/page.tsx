@@ -3,36 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { workersAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-
-const SKILL_TYPES = [
-  { label: 'Electrician', value: 'ELECTRICIAN' },
-  { label: 'Plumber', value: 'PLUMBER' },
-  { label: 'Mechanic', value: 'MECHANIC' },
-  { label: 'Carpenter', value: 'CARPENTER' },
-  { label: 'Painter', value: 'PAINTER' },
-  { label: 'Welder', value: 'WELDER' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
-  { label: 'Appliance Repair', value: 'APPLIANCE_REPAIR' },
-  { label: 'Roofing', value: 'ROOFING' },
-  { label: 'Tiling', value: 'TILING' },
-  { label: 'Mason', value: 'MASON' },
-  { label: 'Gardener', value: 'GARDENER' },
-  { label: 'Cleaner', value: 'CLEANER' },
-  { label: 'Security', value: 'SECURITY' },
-  { label: 'Solar Technician', value: 'SOLAR_TECHNICIAN' },
-  { label: 'Borehole Drilling', value: 'BOREHOLE_DRILLING' },
-  { label: 'Fumigation', value: 'FUMIGATION' },
-  { label: 'Water Tank Cleaning', value: 'WATER_TANK_CLEANING' },
-  { label: 'Glass Fitter', value: 'GLASS_FITTER' },
-  { label: 'Ceiling Board', value: 'CEILING_BOARD' },
-  { label: 'Locksmith', value: 'LOCKSMITH' },
-  { label: 'CCTV Installer', value: 'CCTV_INSTALLER' },
-  { label: 'Interior Designer', value: 'INTERIOR_DESIGNER' },
-  { label: 'Mover', value: 'MOVER' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
-  { label: 'Other', value: 'OTHER' },
-];
+import { SKILL_OPTIONS as SKILL_TYPES } from '@/lib/kenya';
 
 interface Skill {
   id: number;

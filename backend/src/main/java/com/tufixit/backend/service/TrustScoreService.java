@@ -237,7 +237,7 @@ public class TrustScoreService {
         } else if (score >= 55) {
             sb.append("Building a solid reputation on the platform.");
         } else {
-            sb.append("Growing their presence on TUFIXIT.");
+            sb.append("Growing their presence on FUDARI.");
         }
 
         return sb.toString();

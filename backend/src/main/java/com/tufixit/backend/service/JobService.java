@@ -184,7 +184,7 @@ public class JobService {
 
         // SMS: notify artisan their bid was accepted
         smsService.send(bid.getWorker().getPhoneNumber(),
-                "TUFIXIT: Your bid on \"" + job.getTitle() + "\" was accepted! " +
+                "FUDARI: Your bid on \"" + job.getTitle() + "\" was accepted! " +
                 "Agreed price: KES " + request.getAgreedPrice() + ". " +
                 "Check your dashboard for details.");
 

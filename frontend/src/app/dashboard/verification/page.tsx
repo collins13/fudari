@@ -43,8 +43,8 @@ function DocCard({
       <div className="card-body">
         <div className="d-flex justify-content-between align-items-start mb-3">
           <div className="rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: 48, height: 48, background: '#F8452520' }}>
-            <i className={`fa-solid ${icon}`} style={{ color: '#F84525', fontSize: 20 }}></i>
+            style={{ width: 48, height: 48, background: 'var(--tx-primary-soft)' }}>
+            <i className={`fa-solid ${icon}`} style={{ color: 'var(--bs-primary)', fontSize: 20 }}></i>
           </div>
           <span className={`badge ${s.badge}`}>{s.text}</span>
         </div>

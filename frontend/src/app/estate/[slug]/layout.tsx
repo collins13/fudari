@@ -16,11 +16,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const estate = await res.json();
     const name: string = estate.name || slug;
     const area: string = estate.area || "Kenya";
-    const title = `${name} Maintenance Services — Book a Verified Artisan`;
+    const title = `${name} Services — Book a Verified Provider`;
     const description =
-      `${name} in ${area} uses TUFIXIT to connect residents with trusted Jua Kali artisans. ` +
-      `Book electricians, plumbers, carpenters and more directly via WhatsApp or online.`;
-    const canonical = `https://tufixit.com/estate/${slug}`;
+      `${name} in ${area} uses FUDARI to connect residents with trusted local service providers. ` +
+      `Book electricians, plumbers, carpenters, cleaners, mama fua, movers and more directly via WhatsApp or online.`;
+    const canonical = `https://fudari.co/estate/${slug}`;
 
     return {
       title,
@@ -30,13 +30,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `artisan ${area.toLowerCase()}`,
         `electrician ${area.toLowerCase()}`,
         `plumber ${area.toLowerCase()}`,
+        `mama fua ${area.toLowerCase()}`,
+        `cleaning services ${area.toLowerCase()}`,
         `estate maintenance kenya`,
         `residential services ${area.toLowerCase()}`,
         `book handyman ${name.toLowerCase()}`,
       ],
       openGraph: {
         type: "website",
-        title: `${title} | TUFIXIT`,
+        title: `${title} | FUDARI`,
         description,
         url: canonical,
         images: [
@@ -44,13 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: estate.brandLogoUrl || "/liston/images/header/lg-01.jpg",
             width: 1200,
             height: 630,
-            alt: `${name} — TUFIXIT Estate Portal`,
+            alt: `${name} — FUDARI Estate Portal`,
           },
         ],
       },
       twitter: {
         card: "summary_large_image",
-        title: `${title} | TUFIXIT`,
+        title: `${title} | FUDARI`,
         description,
         images: [estate.brandLogoUrl || "/liston/images/header/lg-01.jpg"],
       },
@@ -58,9 +60,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch {
     return {
-      title: "Estate Maintenance Services",
+      title: "Estate Services",
       description:
-        "Book verified Jua Kali artisans for your estate through TUFIXIT Kenya's trusted home services marketplace.",
+        "Book verified local service providers for your estate through FUDARI, Kenya's trusted services marketplace.",
     };
   }
 }
@@ -82,22 +84,22 @@ async function getEstateJsonLd(slug: string): Promise<string | null> {
       "@graph": [
         {
           "@type": "LocalBusiness",
-          "@id": `https://tufixit.com/estate/${slug}#estate`,
-          name: `${name} — TUFIXIT Estate Portal`,
-          url: `https://tufixit.com/estate/${slug}`,
-          description: `Maintenance & home services portal for ${name} residents, powered by TUFIXIT.`,
+          "@id": `https://fudari.co/estate/${slug}#estate`,
+          name: `${name} — FUDARI Estate Portal`,
+          url: `https://fudari.co/estate/${slug}`,
+          description: `Maintenance & home services portal for ${name} residents, powered by FUDARI.`,
           address: {
             "@type": "PostalAddress",
             addressLocality: area,
             addressCountry: "KE",
           },
-          parentOrganization: { "@id": "https://tufixit.com/#organization" },
+          parentOrganization: { "@id": "https://fudari.co/#organization" },
         },
         {
           "@type": "BreadcrumbList",
           itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Home", item: "https://tufixit.com" },
-            { "@type": "ListItem", position: 2, name: name, item: `https://tufixit.com/estate/${slug}` },
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://fudari.co" },
+            { "@type": "ListItem", position: 2, name: name, item: `https://fudari.co/estate/${slug}` },
           ],
         },
       ],

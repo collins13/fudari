@@ -1,8 +1,10 @@
 package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.PublicReviewDTO;
+import com.tufixit.backend.entity.Job;
 import com.tufixit.backend.entity.PublicReview;
 import com.tufixit.backend.entity.User;
+import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.PublicReviewRepository;
 import com.tufixit.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class PublicReviewService {
 
     private final PublicReviewRepository publicReviewRepository;
     private final UserRepository userRepository;
+    private final JobRepository jobRepository;
 
     @Transactional
     public PublicReviewDTO.PublicReviewResponse createReview(PublicReviewDTO.CreatePublicReviewRequest request) {
@@ -29,6 +32,25 @@ public class PublicReviewService {
 
         if (artisan.getRole() != User.UserRole.WORKER) {
             throw new RuntimeException("Can only review workers/artisans");
+        }
+
+        // A booking code is what separates a real customer from an anonymous rating attack.
+        String bookingCode = normalise(request.getBookingCode());
+        boolean verified = false;
+        if (bookingCode != null) {
+            Job job = jobRepository.findByBookingCode(bookingCode)
+                    .orElseThrow(() -> new IllegalArgumentException("Booking code not found"));
+
+            if (job.getAssignedWorker() == null || !job.getAssignedWorker().getId().equals(artisan.getId())) {
+                throw new IllegalArgumentException("That booking was not handled by this artisan");
+            }
+            if (job.getStatus() != Job.JobStatus.COMPLETED) {
+                throw new IllegalArgumentException("You can only review a booking once it is completed");
+            }
+            if (publicReviewRepository.existsByBookingCode(bookingCode)) {
+                throw new IllegalArgumentException("This booking has already been reviewed");
+            }
+            verified = true;
         }
 
         // Check for duplicate review by phone or email
@@ -48,15 +70,21 @@ public class PublicReviewService {
                 .reviewerName(request.getReviewerName() != null ? request.getReviewerName() : "Anonymous")
                 .reviewerPhone(request.getReviewerPhone())
                 .reviewerEmail(request.getReviewerEmail())
-                .isVerified(false) // Auto-verify for MVP, can add OTP later
+                .bookingCode(bookingCode)
+                .isVerified(verified)
                 .build();
 
         review = publicReviewRepository.save(review);
 
-        // Update artisan's trust score with public reviews
-        updateArtisanTrustScore(artisan.getId());
+        if (verified) {
+            updateArtisanTrustScore(artisan.getId());
+        }
 
         return mapToResponse(review);
+    }
+
+    private static String normalise(String value) {
+        return value == null || value.isBlank() ? null : value.trim().toUpperCase();
     }
 
     public List<PublicReviewDTO.PublicReviewResponse> getReviewsForArtisan(Long artisanId) {
@@ -76,8 +104,8 @@ public class PublicReviewService {
     }
 
     public Map<String, Object> getArtisanRatingSummary(Long artisanId) {
-        Double avgRating = publicReviewRepository.getAverageRatingByArtisanId(artisanId);
-        Integer count = publicReviewRepository.getReviewCountByArtisanId(artisanId);
+        Double avgRating = publicReviewRepository.getVerifiedAverageRatingByArtisanId(artisanId);
+        Integer count = publicReviewRepository.getVerifiedReviewCountByArtisanId(artisanId);
 
         return Map.of(
                 "averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0,
@@ -86,8 +114,8 @@ public class PublicReviewService {
     }
 
     private void updateArtisanTrustScore(Long artisanId) {
-        Double avgRating = publicReviewRepository.getAverageRatingByArtisanId(artisanId);
-        Integer reviewCount = publicReviewRepository.getReviewCountByArtisanId(artisanId);
+        Double avgRating = publicReviewRepository.getVerifiedAverageRatingByArtisanId(artisanId);
+        Integer reviewCount = publicReviewRepository.getVerifiedReviewCountByArtisanId(artisanId);
 
         if (avgRating != null && reviewCount != null && reviewCount > 0) {
             User artisan = userRepository.findById(artisanId).orElse(null);

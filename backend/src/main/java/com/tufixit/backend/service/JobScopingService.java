@@ -3,6 +3,7 @@ package com.tufixit.backend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tufixit.backend.dto.AiDTO;
+import com.tufixit.backend.entity.WorkerSkill;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -47,14 +48,10 @@ public class JobScopingService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final List<String> VALID_SKILLS = List.of(
-            "ELECTRICIAN", "PLUMBER", "MECHANIC", "CARPENTER", "PAINTER",
-            "WELDER", "HVAC_TECHNICIAN", "APPLIANCE_REPAIR", "ROOFING",
-            "TILING", "MASON", "GARDENER", "CLEANER", "SECURITY",
-            "SOLAR_TECHNICIAN", "BOREHOLE_DRILLING", "FUMIGATION",
-            "WATER_TANK_CLEANING", "GLASS_FITTER", "CEILING_BOARD",
-            "LOCKSMITH", "CCTV_INSTALLER", "INTERIOR_DESIGNER", "OTHER"
-    );
+    private static final List<String> VALID_SKILLS =
+            Arrays.stream(WorkerSkill.SkillType.values()).map(Enum::name).toList();
+
+    private static final String VALID_SKILLS_CSV = String.join(", ", VALID_SKILLS);
 
     public AiDTO.JobScopingResponse processMessage(AiDTO.JobScopingRequest request) {
         if (request.getMessage() == null || request.getMessage().isBlank()) {
@@ -78,14 +75,14 @@ public class JobScopingService {
 
     private AiDTO.JobScopingResponse aiScoping(String message, List<AiDTO.ScopingMessage> history, String sessionId) {
         String systemPrompt = """
-            You are an AI job scoping assistant for TUFIXIT, a service marketplace in Kenya.
+            You are an AI job scoping assistant for FUDARI, a service marketplace in Kenya.
             Your role is to help customers describe their problem clearly through a friendly conversation.
 
             Rules:
             - Keep language simple and warm (Kenyan English style, but professional)
             - Ask 1-2 follow-up questions at a time. Don't overwhelm with many questions
             - After you have enough information (usually 2-3 exchanges), set isComplete=true and provide a full job spec
-            - Skill types MUST be from: ELECTRICIAN, PLUMBER, MECHANIC, CARPENTER, PAINTER, WELDER, HVAC_TECHNICIAN, APPLIANCE_REPAIR, ROOFING, TILING, MASON, GARDENER, CLEANER, SECURITY, SOLAR_TECHNICIAN, BOREHOLE_DRILLING, FUMIGATION, WATER_TANK_CLEANING, GLASS_FITTER, CEILING_BOARD, LOCKSMITH, CCTV_INSTALLER, INTERIOR_DESIGNER, OTHER
+            - Skill types MUST be from: {{SKILLS}}
             - Prices in KES (Kenya Shillings), realistic for Nairobi market
             - Return ONLY valid JSON, no markdown
 
@@ -111,7 +108,7 @@ public class JobScopingService {
                 "summary": "one-line summary"
               }
             }
-            """;
+            """.replace("{{SKILLS}}", VALID_SKILLS_CSV);
 
         // Build messages array with conversation history
         List<Map<String, String>> messages = new ArrayList<>();

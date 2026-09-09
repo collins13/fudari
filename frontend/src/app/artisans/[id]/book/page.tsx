@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, bookingsAPI, aiAPI } from '@/lib/api';
@@ -245,8 +246,9 @@ export default function BookArtisanPage() {
           {!loadingArtisan && artisan && (
             <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 d-flex flex-row align-items-center gap-3">
               {artisan.profileImage ? (
-                <img src={artisan.profileImage} alt={artisan.firstName}
-                  className="rounded-circle" style={{ width: 60, height: 60, objectFit: 'cover' }} />
+                <Image src={artisan.profileImage} alt={artisan.firstName}
+                  width={60} height={60}
+                  className="rounded-circle" style={{ objectFit: 'cover' }} />
               ) : (
                 <div className="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
                   style={{ width: 60, height: 60, fontSize: 22 }}>
@@ -518,7 +520,7 @@ export default function BookArtisanPage() {
               )}
 
               <div className="d-grid mt-4">
-                <button type="submit" className="btn btn-primary btn-lg rounded-3 fw-semibold"
+                <button type="submit" className="btn btn-accent btn-lg rounded-3 fw-semibold"
                   disabled={submitting || loadingArtisan}>
                   {submitting
                     ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</>

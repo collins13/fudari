@@ -84,7 +84,7 @@ export default function AdminAnalyticsPage() {
     <>
       <div className="mb-4">
         <h4 className="fw-bold mb-1">Platform Analytics</h4>
-        <p className="text-muted mb-0">Overview of TUFIXIT platform activity</p>
+        <p className="text-muted mb-0">Overview of FUDARI platform activity</p>
       </div>
 
       {/* Top KPIs */}
@@ -93,7 +93,7 @@ export default function AdminAnalyticsPage() {
           <StatCard label="Total Users" value={stats.totalUsers} icon="fa-users" color="#0d6efd" bg="#e8f0fe" />
         </div>
         <div className="col-sm-6 col-xl-3">
-          <StatCard label="Artisans" value={stats.totalWorkers} icon="fa-hard-hat" color="#F84525" bg="#fde8e4" />
+          <StatCard label="Artisans" value={stats.totalWorkers} icon="fa-hard-hat" color="var(--bs-primary)" bg="var(--tx-primary-tint)" />
         </div>
         <div className="col-sm-6 col-xl-3">
           <StatCard label="Total Jobs" value={stats.totalJobs} icon="fa-briefcase" color="#198754" bg="#d1f2e0" />
@@ -111,7 +111,7 @@ export default function AdminAnalyticsPage() {
               <h6 className="fw-semibold mb-0"><i className="fa-solid fa-users me-2 text-primary"></i>Users Breakdown</h6>
             </div>
             <div className="card-body">
-              <MiniBar label="Workers / Artisans" value={stats.totalWorkers} max={stats.totalUsers} color="#F84525" />
+              <MiniBar label="Workers / Artisans" value={stats.totalWorkers} max={stats.totalUsers} color="var(--bs-primary)" />
               <MiniBar label="Clients / Customers" value={stats.totalClients} max={stats.totalUsers} color="#0d6efd" />
               <MiniBar label="Admins" value={stats.totalAdmins} max={stats.totalUsers} color="#6f42c1" />
             </div>

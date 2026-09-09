@@ -90,13 +90,13 @@ public class SubscriptionService {
             case FREE -> 0;
         };
 
-        String accountRef = "TUFIXIT-" + request.getPlanType().name();
+        String accountRef = "FUDARI-" + request.getPlanType().name();
         String phone = request.getPhoneNumber() != null ? request.getPhoneNumber() : artisan.getPhoneNumber();
 
         try {
             MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
                     phone, price, accountRef,
-                    "TuFixIt " + request.getPlanType() + " subscription (" + cycle + ")");
+                    "Fudari " + request.getPlanType() + " subscription (" + cycle + ")");
 
             return SubscriptionDTO.StkInitiateResponse.builder()
                     .checkoutRequestId(result.checkoutRequestId())

@@ -70,7 +70,9 @@ public class WhatsAppBotService {
 
     private static final List<String> CATEGORIES = Arrays.asList(
             "Electrician", "Plumber", "Mechanic", "Carpenter", "Painter",
-            "Cleaner", "Mason / Fundis", "Welder", "Other"
+            "Cleaner / Mama Fua", "Mason / Fundis", "Welder",
+            "Boda / Tuk Tuk", "Movers / Delivery", "Barber / Salon",
+            "Photo / Design / IT", "Other"
     );
 
     /** Maps display names / numeric shortcuts / Swahili to SkillType enum values. */
@@ -79,11 +81,26 @@ public class WhatsAppBotService {
         Map<String, String> m = new HashMap<>();
         m.put("1", "ELECTRICIAN");  m.put("2", "PLUMBER");      m.put("3", "MECHANIC");
         m.put("4", "CARPENTER");    m.put("5", "PAINTER");       m.put("6", "CLEANER");
-        m.put("7", "MASON");        m.put("8", "WELDER");        m.put("9", "OTHER");
+        m.put("7", "MASON");        m.put("8", "WELDER");        m.put("9", "BODA_BODA");
+        m.put("10", "MOVER");       m.put("11", "BARBER");       m.put("12", "PHOTOGRAPHER");
+        m.put("13", "OTHER");
         m.put("electrician", "ELECTRICIAN"); m.put("plumber", "PLUMBER");
         m.put("mechanic", "MECHANIC");       m.put("carpenter", "CARPENTER");
         m.put("painter", "PAINTER");         m.put("cleaner", "CLEANER");
         m.put("mason", "MASON");             m.put("welder", "WELDER");
+        m.put("mama fua", "MAMA_FUA");       m.put("laundry", "MAMA_FUA");
+        m.put("boda", "BODA_BODA");          m.put("boda boda", "BODA_BODA");
+        m.put("tuk tuk", "TUK_TUK");         m.put("tuktuk", "TUK_TUK");
+        m.put("mover", "MOVER");             m.put("movers", "MOVER");
+        m.put("delivery", "COURIER");        m.put("courier", "COURIER");
+        m.put("barber", "BARBER");           m.put("kinyozi", "BARBER");
+        m.put("salon", "HAIR_SALON");        m.put("saluni", "HAIR_SALON");
+        m.put("makeup", "MAKEUP_ARTIST");    m.put("urembo", "MAKEUP_ARTIST");
+        m.put("car wash", "CAR_WASH");       m.put("kuosha gari", "CAR_WASH");
+        m.put("tyre", "TYRE_SERVICES");      m.put("matairi", "TYRE_SERVICES");
+        m.put("photographer", "PHOTOGRAPHER"); m.put("photo", "PHOTOGRAPHER");
+        m.put("designer", "GRAPHIC_DESIGNER"); m.put("design", "GRAPHIC_DESIGNER");
+        m.put("it", "IT_TECHNICIAN");        m.put("computer", "IT_TECHNICIAN");
         m.put("other", "OTHER");
         // Swahili / Sheng
         m.put("fundi stima", "ELECTRICIAN"); m.put("stima", "ELECTRICIAN");
@@ -128,19 +145,19 @@ public class WhatsAppBotService {
             abandonSession(phone);
             sendText(phone,
                 "Your booking request has been cancelled. " +
-                "Type *Hi* anytime to start a new one, or visit tufixit.com to browse artisans.");
+                "Type *Hi* anytime to start a new one, or visit fudari.co to browse artisans.");
             return;
         }
 
         // Global: HELP
         if (input.equalsIgnoreCase("HELP")) {
             sendText(phone,
-                "\u2139\ufe0f *TuFixIt WhatsApp Help*\n\n" +
+                "\u2139\ufe0f *Fudari WhatsApp Help*\n\n" +
                 "\u2022 Type *Hi* to start a new booking\n" +
                 "\u2022 Type *BACK* to go to the previous step\n" +
                 "\u2022 Type *CANCEL* to stop the current booking\n" +
-                "\u2022 Visit tufixit.com for full platform access\n" +
-                "\u2022 Email support@tufixit.com for assistance\n\n" +
+                "\u2022 Visit fudari.co for full platform access\n" +
+                "\u2022 Email support@fudari.co for assistance\n\n" +
                 "_Your data is safe \u2014 we never share your phone number with artisans._");
             return;
         }
@@ -185,7 +202,7 @@ public class WhatsAppBotService {
                 "Which service do you need? Reply with a number:\n\n" +
                 buildCategoryList() + "\n" +
                 "Or type the service name directly.\n\n" +
-                "_Powered by TuFixIt \u2014 type CANCEL at any time to stop._");
+                "_Powered by Fudari \u2014 type CANCEL at any time to stop._");
             return;
         }
 
@@ -279,7 +296,7 @@ public class WhatsAppBotService {
                 s = sessionRepo.save(s);
                 String friendlySkill = skill.charAt(0) + skill.substring(1).toLowerCase(Locale.ROOT);
                 sendText(phone,
-                    "\ud83d\udc4b Welcome to *TuFixIt*! I see you need a *" + friendlySkill +
+                    "\ud83d\udc4b Welcome to *Fudari*! I see you need a *" + friendlySkill +
                     "* in *" + location + "*.\n\n" +
                     "\ud83d\udcdd Please briefly describe the work you need done.\n" +
                     "Example: _\"Faulty socket in bedroom, needs replacing\"_\n\n" +
@@ -303,7 +320,7 @@ public class WhatsAppBotService {
                 if (messageId != null) s.setLastMessageId(messageId);
                 s = sessionRepo.save(s);
                 sendText(phone,
-                    "\ud83d\udc4b Welcome to *TuFixIt*! I see you're in *" + location + "*.\n\n" +
+                    "\ud83d\udc4b Welcome to *Fudari*! I see you're in *" + location + "*.\n\n" +
                     "Which service do you need? Reply with a number:\n\n" +
                     buildCategoryList() + "\n" +
                     "Or type the service name directly.\n\n" +
@@ -337,7 +354,7 @@ public class WhatsAppBotService {
                 abandonSession(session.getCustomerPhone());
                 sendText(session.getCustomerPhone(),
                     "Too many unrecognised replies. Your session has ended. " +
-                    "Type *Hi* to start again or visit tufixit.com");
+                    "Type *Hi* to start again or visit fudari.co");
                 return;
             }
             sendText(session.getCustomerPhone(),
@@ -393,7 +410,7 @@ public class WhatsAppBotService {
                 abandonSession(session.getCustomerPhone());
                 sendText(session.getCustomerPhone(),
                     "Too many invalid descriptions. Your session has ended. " +
-                    "Type *Hi* to start again or visit tufixit.com");
+                    "Type *Hi* to start again or visit fudari.co");
                 return;
             }
             sendText(session.getCustomerPhone(), rejection);
@@ -478,7 +495,7 @@ public class WhatsAppBotService {
             sendText(session.getCustomerPhone(),
                 "\u26a0\ufe0f No available " + session.getSkillType().toLowerCase(Locale.ROOT) +
                 " found near " + session.getCustomerLocation() + " right now.\n\n" +
-                "Browse all artisans: tufixit.com/artisans\n" +
+                "Browse all artisans: fudari.co/artisans\n" +
                 "Type *Hi* to try a different category.");
             abandonSession(session.getCustomerPhone());
             return;
@@ -549,7 +566,7 @@ public class WhatsAppBotService {
         if (answer.equals("NO") || answer.equals("CANCEL")) {
             abandonSession(session.getCustomerPhone());
             sendText(session.getCustomerPhone(),
-                "Booking cancelled. Type *Hi* to search again, or visit tufixit.com/artisans.");
+                "Booking cancelled. Type *Hi* to search again, or visit fudari.co/artisans.");
             return;
         }
 
@@ -627,7 +644,7 @@ public class WhatsAppBotService {
                 "\ud83c\udf89 *Booking Confirmed!*\n\n" +
                 "Your code: *%s*\n" +
                 "%s\n" +
-                "Track your job: tufixit.com/track/%s\n\n" +
+                "Track your job: fudari.co/track/%s\n\n" +
                 "You'll receive updates here and via SMS when the artisan responds.\n\n" +
                 "_Reply HELP at any time for support._",
                 booking.getBookingCode(), scheduleNote, booking.getBookingCode()
@@ -636,7 +653,7 @@ public class WhatsAppBotService {
         } catch (Exception e) {
             log.error("[WA-BOT] Failed to create booking for phone {}: {}", session.getCustomerPhone(), e.getMessage());
             sendText(session.getCustomerPhone(),
-                "\u26a0\ufe0f Something went wrong creating your booking. Please try again or visit tufixit.com");
+                "\u26a0\ufe0f Something went wrong creating your booking. Please try again or visit fudari.co");
         }
     }
 
@@ -874,7 +891,7 @@ public class WhatsAppBotService {
 
     private void sendCategoryMenu(String to) {
         sendText(to,
-            "\ud83d\udc4b Welcome to *TuFixIt*!\n\n" +
+            "\ud83d\udc4b Welcome to *Fudari*!\n\n" +
             "Which service do you need? Reply with a number:\n\n" +
             buildCategoryList() + "\n" +
             "Or type the service name directly (English or Swahili).\n\n" +

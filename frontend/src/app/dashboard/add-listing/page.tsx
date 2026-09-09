@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { listingsAPI, aiAPI } from '@/lib/api';
+import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 interface FormData {
   title: string;
@@ -13,21 +14,6 @@ interface FormData {
   allowBidding: boolean;
   beforeImages: string;
 }
-
-const CATEGORIES = [
-  { label: 'Electrician', value: 'ELECTRICIAN' },
-  { label: 'Plumber', value: 'PLUMBER' },
-  { label: 'Mechanic', value: 'MECHANIC' },
-  { label: 'Painter', value: 'PAINTER' },
-  { label: 'Carpenter', value: 'CARPENTER' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
-  { label: 'Welder', value: 'WELDER' },
-  { label: 'Mason', value: 'MASON' },
-  { label: 'Mover', value: 'MOVER' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
-  { label: 'Other', value: 'OTHER' },
-];
 
 export default function AddListingPage() {
   const router = useRouter();
@@ -126,6 +112,12 @@ export default function AddListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!form.price || Number(form.price) <= 0) {
+      setError('Enter a starting price. Customers skip listings that hide the price.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -134,7 +126,7 @@ export default function AddListingPage() {
         description: form.description,
         skillType: form.category,
         location: form.location || undefined,
-        priceStart: form.price || undefined,
+        priceStart: form.price,
         images: form.beforeImages || undefined,
       });
       setSubmitted(true);
@@ -230,7 +222,7 @@ export default function AddListingPage() {
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="price" className="form-label fw-medium">
-                      Starting Price (KES)
+                      Starting Price (KES) <span className="text-danger">*</span>
                     </label>
                     <div className="input-group">
                       <span className="input-group-text bg-light">KES</span>
@@ -240,10 +232,14 @@ export default function AddListingPage() {
                         name="price"
                         className="form-control"
                         placeholder="500"
-                        min="0"
+                        min="1"
+                        required
                         value={form.price}
                         onChange={handleChange}
                       />
+                    </div>
+                    <div className="form-text">
+                      Listings without a price get far fewer calls. This is your &ldquo;from&rdquo; price, not a final quote.
                     </div>
                     <button
                       type="button"

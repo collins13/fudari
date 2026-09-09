@@ -85,7 +85,7 @@ public class QualityVerificationService {
     private AiDTO.QualityVerifyResponse aiVisionVerification(Job job, List<String> beforeImages, List<String> afterImages) {
         try {
             String systemPrompt = String.format("""
-                You are a quality verification AI for TUFIXIT, a service marketplace in Kenya.
+                You are a quality verification AI for FUDARI, a service marketplace in Kenya.
                 You are examining before/after photos of a %s job.
                 Job description: %s
 

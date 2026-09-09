@@ -5,36 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { jobsAPI, subscriptionsAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-
-const SKILL_OPTIONS = [
-  { value: 'ELECTRICIAN', label: 'Electrician' },
-  { value: 'PLUMBER', label: 'Plumber' },
-  { value: 'MECHANIC', label: 'Mechanic' },
-  { value: 'CARPENTER', label: 'Carpenter' },
-  { value: 'PAINTER', label: 'Painter' },
-  { value: 'WELDER', label: 'Welder' },
-  { value: 'HVAC_TECHNICIAN', label: 'HVAC Technician' },
-  { value: 'APPLIANCE_REPAIR', label: 'Appliance Repair' },
-  { value: 'ROOFING', label: 'Roofing' },
-  { value: 'TILING', label: 'Tiling' },
-  { value: 'MASON', label: 'Mason' },
-  { value: 'GARDENER', label: 'Gardener' },
-  { value: 'CLEANER', label: 'Cleaner' },
-  { value: 'SECURITY', label: 'Security' },
-  { value: 'SOLAR_TECHNICIAN', label: 'Solar Technician' },
-  { value: 'BOREHOLE_DRILLING', label: 'Borehole Drilling' },
-  { value: 'FUMIGATION', label: 'Fumigation' },
-  { value: 'WATER_TANK_CLEANING', label: 'Water Tank Cleaning' },
-  { value: 'GLASS_FITTER', label: 'Glass Fitter' },
-  { value: 'CEILING_BOARD', label: 'Ceiling Board' },
-  { value: 'LOCKSMITH', label: 'Locksmith' },
-  { value: 'CCTV_INSTALLER', label: 'CCTV Installer' },
-  { value: 'INTERIOR_DESIGNER', label: 'Interior Designer' },
-  { value: 'MOVER', label: 'Mover' },
-  { value: 'TRANSPORT_PROVIDER', label: 'Transport Provider' },
-  { value: 'EVENT_LIGHTING', label: 'Event Lighting' },
-  { value: 'OTHER', label: 'Other' },
-];
+import { SKILL_OPTIONS } from '@/lib/kenya';
 
 interface FormState {
   title: string;

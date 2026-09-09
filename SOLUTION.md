@@ -1,8 +1,8 @@
-# TUFIXIT — Solution Document
+# FUDARI — Solution Document
 
 ## 1. Executive Summary
 
-TUFIXIT is a location-based service platform connecting customers in Kenya with verified local service providers (artisans/Jua Kali workers). The platform enables fast discovery, trust-based verification, and direct communication via phone/WhatsApp without requiring customer login.
+FUDARI is a location-based service platform connecting customers in Kenya with verified local service providers (artisans/Jua Kali workers). The platform enables fast discovery, trust-based verification, and direct communication via phone/WhatsApp without requiring customer login.
 
 **Tech Stack:**
 - Frontend: Next.js 14 (React), Bootstrap 5, FontAwesome
@@ -263,7 +263,7 @@ The DataSeeder runs on startup and creates:
 
 | Data | Details |
 |------|---------|
-| Admin | admin@tufixit.com / admin123 |
+| Admin | admin@fudari.co / admin123 |
 | Categories | 10 categories with icons (Electrical, Plumbing, Mechanics, etc.) |
 | Artisans | 8 sample artisans with profile images |
 | Skills | 1 skill per artisan |
@@ -280,7 +280,7 @@ Old seed data is cleaned up on startup (deletes FK references in order).
 
 ```
 backend/
-├── src/main/java/com/tufixit/backend/
+├── src/main/java/com/fudari/backend/
 │   ├── config/
 │   │   ├── SecurityConfig.java          # JWT + CORS + endpoint permissions
 │   │   ├── GlobalExceptionHandler.java  # Proper error responses
@@ -383,7 +383,7 @@ docker-compose up --build
 | DATABASE_URL | jdbc:postgresql://localhost:5432/tufixit | DB connection |
 | DATABASE_USERNAME | postgres | DB user |
 | DATABASE_PASSWORD | 22@Admin123 | DB password |
-| JWT_SECRET | tufixit-dev-secret... | JWT signing key |
+| JWT_SECRET | fudari-dev-secret... | JWT signing key |
 | JWT_EXPIRATION | 86400000 | Token validity (ms) |
 | REDIS_HOST | localhost | Redis host |
 | CORS_ALLOWED_ORIGINS | http://localhost:3000 | Allowed origins |

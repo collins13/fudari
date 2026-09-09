@@ -120,7 +120,7 @@ public class PaymentService {
                 MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
                         workerPhone, amount,
                         "TUF-MAT-" + escrow.getJob().getId(),
-                        "TuFixIt material cost release");
+                        "Fudari material cost release");
                 log.info("[Payment] Material release STK Push sent: {}", result.checkoutRequestId());
             } catch (Exception e) {
                 log.error("[Payment] Material release STK Push failed for job {}: {}",
@@ -158,7 +158,7 @@ public class PaymentService {
                 MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
                         workerPhone, amount,
                         "TUF-LAB-" + escrow.getJob().getId(),
-                        "TuFixIt labor payment");
+                        "Fudari labor payment");
                 log.info("[Payment] Labor release STK Push sent: {}", result.checkoutRequestId());
             } catch (Exception e) {
                 log.error("[Payment] Labor release STK Push failed for job {}: {}",
@@ -243,7 +243,7 @@ public class PaymentService {
             MpesaDarajaService.StkPushResult result = mpesaService.initiateSTKPush(
                     request.getPhoneNumber(),
                     request.getAmount().intValue(),
-                    request.getAccountReference() != null ? request.getAccountReference() : "TUFIXIT",
+                    request.getAccountReference() != null ? request.getAccountReference() : "FUDARI",
                     request.getTransactionDesc());
 
             return PaymentDTO.StkPushResponse.builder()

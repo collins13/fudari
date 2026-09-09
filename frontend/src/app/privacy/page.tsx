@@ -5,10 +5,10 @@ import Footer from '@/components/Footer';
 import LegalPageClient from '@/components/LegalPageClient';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | TUFIXIT',
+  title: 'Privacy Policy | FUDARI',
   description:
-    'How TUFIXIT collects, uses, and protects personal data of customers, artisans, and estate partners under the Kenya Data Protection Act, 2019.',
-  alternates: { canonical: 'https://tufixit.com/privacy' },
+    'How FUDARI collects, uses, and protects personal data of customers, artisans, and estate partners under the Kenya Data Protection Act, 2019.',
+  alternates: { canonical: 'https://fudari.co/privacy' },
 };
 
 const EFFECTIVE_DATE = 'April 28, 2026';
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
                 <div className="card-body p-4 p-lg-5 legal-doc">
 
                   <p className="lead">
-                    This Privacy Policy explains how <strong>TUFIXIT</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo;
+                    This Privacy Policy explains how <strong>FUDARI</strong> (&ldquo;we,&rdquo; &ldquo;our,&rdquo;
                     or &ldquo;us&rdquo;) collects, uses, shares, and protects personal data when you use our
                     website, mobile experiences, WhatsApp services, or any related APIs (the
                     &ldquo;<strong>Platform</strong>&rdquo;).
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
                   {/* ── 1 ── */}
                   <h2 id="who-we-are" className="h4 fw-bold mt-5">1. Who we are</h2>
                   <p>
-                    TuFixIt Limited is the data controller for personal data processed through the Platform. Our
+                    Fudari Limited is the data controller for personal data processed through the Platform. Our
                     contact details are at the bottom of this page.
                   </p>
 
@@ -334,7 +334,7 @@ export default function PrivacyPage() {
                   </div>
                   <p>
                     To exercise any right, email{' '}
-                    <a href="mailto:privacy@tufixit.com" className="text-primary fw-semibold">privacy@tufixit.com</a>{' '}
+                    <a href="mailto:privacy@fudari.co" className="text-primary fw-semibold">privacy@fudari.co</a>{' '}
                     from the address registered on your account. We will respond within 30 days. You may also{' '}
                     <a href="https://www.odpc.go.ke" target="_blank" rel="noreferrer" className="text-primary fw-semibold">
                       lodge a complaint with the ODPC
@@ -370,18 +370,18 @@ export default function PrivacyPage() {
                   <h2 id="contact" className="h4 fw-bold mt-5">15. Contact us</h2>
                   <p>Data-related enquiries:</p>
                   <div className="contact-grid mt-3">
-                    <a href="mailto:privacy@tufixit.com" className="contact-item text-decoration-none">
+                    <a href="mailto:privacy@fudari.co" className="contact-item text-decoration-none">
                       <span className="contact-icon"><i className="fa-solid fa-user-shield"></i></span>
                       <span>
                         <div className="small text-muted fw-semibold mb-1">Data Protection Officer</div>
-                        <div className="fw-medium text-dark">privacy@tufixit.com</div>
+                        <div className="fw-medium text-dark">privacy@fudari.co</div>
                       </span>
                     </a>
-                    <a href="mailto:info@tufixit.com" className="contact-item text-decoration-none">
+                    <a href="mailto:info@fudari.co" className="contact-item text-decoration-none">
                       <span className="contact-icon"><i className="fa-solid fa-envelope"></i></span>
                       <span>
                         <div className="small text-muted fw-semibold mb-1">General</div>
-                        <div className="fw-medium text-dark">info@tufixit.com</div>
+                        <div className="fw-medium text-dark">info@fudari.co</div>
                       </span>
                     </a>
                     <a href="tel:+254703954539" className="contact-item text-decoration-none">
@@ -422,7 +422,7 @@ export default function PrivacyPage() {
               <div className="flex-grow-1 text-white">
                 <h5 className="fw-bold mb-1">Also read our Terms of Service</h5>
                 <p className="mb-0 opacity-75 small">
-                  The contractual rules that govern your use of TUFIXIT — covering accounts, payments, and disputes.
+                  The contractual rules that govern your use of FUDARI — covering accounts, payments, and disputes.
                 </p>
               </div>
               <Link href="/terms" className="btn btn-light fw-semibold flex-shrink-0">
@@ -441,7 +441,7 @@ export default function PrivacyPage() {
         @supports (animation-timeline: scroll()) {
           .reading-progress {
             position: fixed; top: 0; left: 0; width: 100%; height: 3px;
-            background: #F84525; z-index: 9999;
+            background: var(--bs-primary); z-index: 9999;
             transform-origin: 0 50%; transform: scaleX(0);
             animation: readProgress linear;
             animation-timeline: scroll(root);
@@ -451,7 +451,7 @@ export default function PrivacyPage() {
 
         /* Hero */
         .legal-hero.dark-overlay::before {
-          background: linear-gradient(135deg, rgba(248,69,37,0.92) 0%, rgba(20,20,50,0.88) 100%);
+          background: linear-gradient(135deg, rgba(13,92,99,0.94) 0%, rgba(11,27,35,0.9) 100%);
         }
         .hero-badge {
           background: rgba(255,255,255,0.18);
@@ -471,10 +471,10 @@ export default function PrivacyPage() {
           transition: all .15s ease; padding: .25rem .6rem !important;
           border-radius: 0 .25rem .25rem 0; display: block;
         }
-        .legal-toc a:hover { color: #F84525 !important; background: rgba(248,69,37,.05); }
+        .legal-toc a:hover { color: var(--bs-primary) !important; background: rgba(13,92,99,.06); }
         .legal-toc a.toc-active {
-          color: #F84525 !important; font-weight: 600;
-          border-left-color: #F84525; background: rgba(248,69,37,.08);
+          color: var(--bs-primary) !important; font-weight: 600;
+          border-left-color: var(--bs-primary); background: rgba(13,92,99,.1);
         }
 
         /* Document typography */
@@ -487,8 +487,8 @@ export default function PrivacyPage() {
         .legal-doc p { line-height: 1.78; color: #444; }
         .legal-doc ul { line-height: 1.88; color: #444; }
         .legal-doc li { margin-bottom: .35rem; }
-        .legal-doc a { color: #F84525; }
-        .legal-doc a:hover { color: #c73616; }
+        .legal-doc a { color: var(--bs-primary); }
+        .legal-doc a:hover { color: var(--tx-primary-dark); }
         .legal-doc code {
           background: #f4f4f7; padding: 2px 6px; border-radius: 4px;
           font-size: .9em; color: #c7254e;
@@ -496,8 +496,8 @@ export default function PrivacyPage() {
 
         /* Callout boxes */
         .legal-callout {
-          background: rgba(248,69,37,.05);
-          border-left: 4px solid #F84525;
+          background: rgba(13,92,99,.06);
+          border-left: 4px solid var(--bs-primary);
           border-radius: 0 .5rem .5rem 0;
           padding: 1rem 1.25rem; margin: 1.5rem 0;
         }
@@ -514,7 +514,7 @@ export default function PrivacyPage() {
         }
         .right-icon {
           width: 2rem; height: 2rem; border-radius: .35rem;
-          background: #F84525; color: #fff; flex-shrink: 0;
+          background: var(--bs-primary); color: #fff; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
           font-size: .8rem;
         }
@@ -533,14 +533,14 @@ export default function PrivacyPage() {
         .contact-item:hover { background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.08); }
         .contact-icon {
           width: 2.25rem; height: 2.25rem; border-radius: .4rem;
-          background: #F84525; color: #fff; flex-shrink: 0;
+          background: var(--bs-primary); color: #fff; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
           font-size: .85rem;
         }
 
         /* Cross-link banner */
         .cross-link-banner {
-          background: linear-gradient(135deg, #1e1e3c 0%, #F84525 100%);
+          background: linear-gradient(135deg, var(--tx-ink) 0%, var(--bs-primary) 100%);
         }
 
         @media print {

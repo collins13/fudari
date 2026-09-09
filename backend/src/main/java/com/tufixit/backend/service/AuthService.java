@@ -359,7 +359,7 @@ public class AuthService {
         userRepository.save(user);
 
         smsService.send(user.getPhoneNumber(),
-                "TUFIXIT password reset code: " + otp + ". Valid for 10 minutes. Do not share this code.");
+                "FUDARI password reset code: " + otp + ". Valid for 10 minutes. Do not share this code.");
         log.info("Password reset OTP sent to {}", user.getPhoneNumber());
     }
 
@@ -491,7 +491,7 @@ public class AuthService {
         user.setLoginOtpAttempts(0);
         userRepository.save(user);
 
-        smsService.send(phone, "TUFIXIT code: " + otp + ". Valid for " + OTP_TTL_MINUTES
+        smsService.send(phone, "FUDARI code: " + otp + ". Valid for " + OTP_TTL_MINUTES
                 + " minutes. Do not share this code with anyone.");
         log.info("Login OTP sent to {} (newAccount={})", phone, isNewAccount);
         return isNewAccount;
@@ -863,15 +863,12 @@ public class AuthService {
         if (!wasAlreadyApproved) {
             try {
                 smsService.send(user.getPhoneNumber(),
-                        "TUFIXIT: Hi " + user.getFirstName() + ", your artisan account has been APPROVED. "
-                                + "You are now visible to customers. Login: tufixit.com/login");
+                        "FUDARI: Hi " + user.getFirstName() + ", your artisan account has been APPROVED. "
+                                + "You are now visible to customers. Login: fudari.co/login");
             } catch (Exception ignored) {}
             if (user.getEmail() != null && !user.getEmail().isBlank()) {
                 try {
-                    emailService.sendText(user.getEmail(),
-                            "Your TUFIXIT artisan account is approved",
-                            "Hi " + user.getFirstName() + ",\n\nYour artisan account has been approved "
-                                    + "and is now visible to customers on TUFIXIT.\n\nLogin: https://tufixit.com/login\n\n— TUFIXIT");
+                    emailService.sendProviderApprovedEmail(user.getEmail(), user.getFirstName());
                 } catch (Exception ignored) {}
             }
         }
@@ -894,19 +891,14 @@ public class AuthService {
                         + (user.getRejectionReason() != null ? ": " + user.getRejectionReason() : ""));
         try {
             smsService.send(user.getPhoneNumber(),
-                    "TUFIXIT: Hi " + user.getFirstName() + ", your artisan application was not approved."
+                    "FUDARI: Hi " + user.getFirstName() + ", your artisan application was not approved."
                             + (user.getRejectionReason() != null ? " Reason: " + user.getRejectionReason() : "")
-                            + " Contact support@tufixit.com for more info.");
+                            + " Contact support@fudari.co for more info.");
         } catch (Exception ignored) {}
         if (user.getEmail() != null && !user.getEmail().isBlank()) {
             try {
-                emailService.sendText(user.getEmail(),
-                        "Your TUFIXIT artisan application",
-                        "Hi " + user.getFirstName() + ",\n\n"
-                                + "After review, your artisan application has not been approved at this time.\n"
-                                + (user.getRejectionReason() != null
-                                    ? "Reason: " + user.getRejectionReason() + "\n\n" : "\n")
-                                + "You may contact support@tufixit.com if you believe this was a mistake.\n\n— TUFIXIT");
+                emailService.sendProviderRejectedEmail(
+                        user.getEmail(), user.getFirstName(), user.getRejectionReason());
             } catch (Exception ignored) {}
         }
         return mapToUserDTO(user);

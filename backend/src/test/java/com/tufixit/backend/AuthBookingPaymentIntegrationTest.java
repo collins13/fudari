@@ -261,7 +261,7 @@ class AuthBookingPaymentIntegrationTest {
         PaymentDTO.InitiatePaymentRequest request = PaymentDTO.InitiatePaymentRequest.builder()
                 .amount(BigDecimal.valueOf(500))
                 .phoneNumber("0712345678")
-                .accountReference("TUFIXIT-BASIC")
+                .accountReference("FUDARI-BASIC")
                 .transactionDesc("Test payment")
                 .build();
 
@@ -281,7 +281,7 @@ class AuthBookingPaymentIntegrationTest {
         PaymentDTO.InitiatePaymentRequest request = PaymentDTO.InitiatePaymentRequest.builder()
                 .amount(BigDecimal.valueOf(500))
                 .phoneNumber("12345") // invalid
-                .accountReference("TUFIXIT")
+                .accountReference("FUDARI")
                 .build();
 
         mockMvc.perform(post("/api/payments/initiate")

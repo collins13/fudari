@@ -20,4 +20,4 @@ Disallow: /api/
 # Keep crawl budget for valuable pages
 Crawl-delay: 1
 
-Sitemap: https://tufixit.com/sitemap.xml
+Sitemap: https://fudari.co/sitemap.xml

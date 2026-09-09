@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { listingsAPI } from '@/lib/api';
+import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 interface FormData {
   title: string;
@@ -11,21 +12,6 @@ interface FormData {
   location: string;
   images: string;
 }
-
-const CATEGORIES = [
-  { label: 'Electrician', value: 'ELECTRICIAN' },
-  { label: 'Plumber', value: 'PLUMBER' },
-  { label: 'Mechanic', value: 'MECHANIC' },
-  { label: 'Painter', value: 'PAINTER' },
-  { label: 'Carpenter', value: 'CARPENTER' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
-  { label: 'Welder', value: 'WELDER' },
-  { label: 'Mason', value: 'MASON' },
-  { label: 'Mover', value: 'MOVER' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
-  { label: 'Other', value: 'OTHER' },
-];
 
 export default function EditListingPage() {
   const router = useRouter();
@@ -109,6 +95,12 @@ export default function EditListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!form.price || Number(form.price) <= 0) {
+      setError('Enter a starting price. Customers skip listings that hide the price.');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -116,7 +108,7 @@ export default function EditListingPage() {
         title: form.title,
         skillType: form.category,
         description: form.description,
-        priceStart: form.price || undefined,
+        priceStart: form.price,
         location: form.location || undefined,
         images: form.images || undefined,
       });
@@ -201,12 +193,15 @@ export default function EditListingPage() {
                     </select>
                   </div>
                   <div className="col-md-6">
-                    <label htmlFor="price" className="form-label fw-medium">Starting Price (KES)</label>
+                    <label htmlFor="price" className="form-label fw-medium">
+                      Starting Price (KES) <span className="text-danger">*</span>
+                    </label>
                     <div className="input-group">
                       <span className="input-group-text bg-light">KES</span>
                       <input type="number" id="price" name="price" className="form-control"
-                        placeholder="500" min="0" value={form.price} onChange={handleChange} />
+                        placeholder="500" min="1" required value={form.price} onChange={handleChange} />
                     </div>
+                    <div className="form-text">Your &ldquo;from&rdquo; price. Customers skip listings that hide it.</div>
                   </div>
                 </div>
 

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI } from '@/lib/api';
+import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI, apiErrorMessage } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
-import { profileImageFor } from '@/lib/avatar';
+import { skillLabelSwahili } from '@/lib/kenya';
+import { profileImageFor, isGeneratedAvatar } from '@/lib/avatar';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
 import TrustScoreCard from '@/components/TrustScoreCard';
 
@@ -93,8 +95,10 @@ export default function ArtisanProfilePage() {
     rating: 5,
     comment: '',
     reviewerName: '',
+    bookingCode: '',
   });
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   // Report state
@@ -181,25 +185,34 @@ export default function ArtisanProfilePage() {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (reviewSubmitting) return;
+    if (!reviewForm.bookingCode.trim()) {
+      setActionFeedback({
+        type: 'danger',
+        text: 'Enter the booking code from your completed job so we can verify the review.',
+      });
+      return;
+    }
+    setReviewSubmitting(true);
     try {
       await publicReviewsAPI.createReview({
         artisanId: workerId,
         rating: reviewForm.rating,
         comment: reviewForm.comment || undefined,
         reviewerName: reviewForm.reviewerName || undefined,
+        bookingCode: reviewForm.bookingCode.trim(),
       });
       setReviewSubmitted(true);
       setActionFeedback({ type: 'success', text: 'Thanks, your review was submitted successfully.' });
-      setReviewForm({ rating: 5, comment: '', reviewerName: '' });
+      setReviewForm({ rating: 5, comment: '', reviewerName: '', bookingCode: '' });
 
       // Refresh reviews
       const res = await publicReviewsAPI.getReviewsForArtisan(workerId);
       setReviews(res.data);
     } catch (err: any) {
-      setActionFeedback({
-        type: 'danger',
-        text: err?.response?.data?.message || 'Failed to submit review. Please try again.',
-      });
+      setActionFeedback({ type: 'danger', text: apiErrorMessage(err, 'Failed to submit review. Please try again.') });
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -260,7 +273,7 @@ export default function ArtisanProfilePage() {
 
       {/* ===== PROFILE HEADER ===== */}
       <section className="dark-overlay hero mx-3 overflow-hidden position-relative py-4 py-lg-5 rounded-4 text-white mt-3">
-        <img className="bg-image" src="/liston/images/header/04.jpg" alt="Cover" />
+        <Image className="bg-image" src="/liston/images/header/04.jpg" alt="" fill priority sizes="100vw" style={{ objectFit: 'cover' }} />
         <div className="container overlay-content py-5">
           {/* Breadcrumb */}
           <nav aria-label="breadcrumb" className="mb-4">
@@ -273,12 +286,15 @@ export default function ArtisanProfilePage() {
           </nav>
           <div className="row align-items-end g-4">
             <div className="col-auto">
-              <img
+              <Image
                 src={profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id)}
                 alt={`${worker.firstName} ${worker.lastName}`}
+                width={120}
+                height={120}
+                priority
                 className="rounded-circle border border-3 border-white"
-                style={{ width: 120, height: 120, objectFit: 'cover' }}
-                loading="eager"
+                style={{ objectFit: 'cover' }}
+                unoptimized={isGeneratedAvatar(profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id))}
               />
             </div>
             <div className="col">
@@ -287,11 +303,14 @@ export default function ArtisanProfilePage() {
                   {pkg === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
                   {packageLabel(pkg)}
                 </span>
-                {worker.isVerified && <span className="badge bg-success"><i className="fa-solid fa-shield-halved me-1"></i>TUFIXIT Verified</span>}
+                {worker.isVerified && <span className="badge bg-success"><i className="fa-solid fa-shield-halved me-1"></i>FUDARI Verified</span>}
               </div>
               <h1 className="fw-bold mb-1">{worker.firstName} {worker.lastName}</h1>
               <p className="fs-5 mb-2 opacity-90">
                 <i className="fa-solid fa-screwdriver-wrench me-2"></i>{skillLabel}
+                {primarySkill && skillLabelSwahili(primarySkill.skillType) && (
+                  <span className="opacity-75"> &middot; {skillLabelSwahili(primarySkill.skillType)}</span>
+                )}
               </p>
               <div className="d-flex align-items-center gap-2 mb-2">
                 {renderStars(worker.trustScore)}
@@ -307,7 +326,7 @@ export default function ArtisanProfilePage() {
             <div className="col-auto d-flex gap-2 flex-wrap">
               <Link
                 href={`/artisans/${worker.id}/book`}
-                className="btn btn-primary rounded-5 fw-medium"
+                className="btn btn-accent rounded-5 fw-medium"
               >
                 <i className="fa-solid fa-calendar-check me-2"></i>Book Now
               </Link>
@@ -328,7 +347,7 @@ export default function ArtisanProfilePage() {
               <div className="d-flex flex-wrap gap-2">
                 <span className="badge bg-light text-dark border">
                   <i className="fa-solid fa-id-card text-success me-1"></i>
-                  {worker.isVerified ? 'ID verified by TUFIXIT' : 'ID verification in progress'}
+                  {worker.isVerified ? 'ID verified by FUDARI' : 'ID verification in progress'}
                 </span>
                 {worker.approvedAt && (
                   <span className="badge bg-light text-dark border">
@@ -345,7 +364,7 @@ export default function ArtisanProfilePage() {
                 {worker.createdAt && (
                   <span className="badge bg-light text-dark border">
                     <i className="fa-solid fa-calendar-check text-primary me-1"></i>
-                    On TUFIXIT since {formatLongDate(worker.createdAt)}
+                    On FUDARI since {formatLongDate(worker.createdAt)}
                   </span>
                 )}
               </div>
@@ -402,8 +421,8 @@ export default function ArtisanProfilePage() {
                   <div className="row g-3 portfolio-gallery">
                     {portfolioImages.map((img, i) => (
                       <div key={i} className="col-6 col-md-4">
-                        <a href={img} className="d-block rounded-3 overflow-hidden">
-                          <img src={img} alt={`Portfolio ${i + 1}`} style={{ height: 200, objectFit: 'cover', width: '100%' }} />
+                        <a href={img} className="d-block rounded-3 overflow-hidden position-relative" style={{ height: 200 }}>
+                          <Image src={img} alt={`Portfolio ${i + 1}`} fill sizes="(max-width: 768px) 50vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" />
                         </a>
                       </div>
                     ))}
@@ -434,7 +453,9 @@ export default function ArtisanProfilePage() {
                               )}
                             </td>
                             <td className="text-end fw-semibold text-primary">
-                              {skill.hourlyRate ? `KES ${parseFloat(skill.hourlyRate).toLocaleString()}/hr` : 'Contact for price'}
+                              {skill.hourlyRate
+                                ? `KES ${parseFloat(skill.hourlyRate).toLocaleString()}/hr`
+                                : <span className="text-muted fw-normal small">Ask for a quote before work starts</span>}
                             </td>
                           </tr>
                         ))}
@@ -460,25 +481,44 @@ export default function ArtisanProfilePage() {
                 {showReviewForm && !reviewSubmitted && (
                   <div className="bg-light rounded-3 p-3 mb-4">
                     <h6 className="fw-semibold mb-3">Leave a Review for {worker.firstName}</h6>
+                    <p className="small text-muted mb-3">
+                      Only customers who completed a job with this pro can leave a review. Your booking
+                      code is on your tracking page and in the SMS you received.
+                    </p>
                     <form onSubmit={handleReviewSubmit}>
                       <div className="mb-3">
+                        <label className="form-label fw-medium" htmlFor="reviewBookingCode">Booking code</label>
+                        <input
+                          id="reviewBookingCode"
+                          type="text"
+                          className="form-control text-uppercase"
+                          placeholder="e.g. TUF-123456"
+                          value={reviewForm.bookingCode}
+                          onChange={(e) => setReviewForm({ ...reviewForm, bookingCode: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="mb-3">
                         <label className="form-label fw-medium">Rating</label>
-                        <div className="d-flex gap-1">
+                        <div className="d-flex gap-1" role="group" aria-label="Rating out of 5">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
                               key={star}
                               type="button"
                               className="btn btn-link p-0"
+                              aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                              aria-pressed={star === reviewForm.rating}
                               onClick={() => setReviewForm({ ...reviewForm, rating: star })}
                             >
-                              <i className={`fa-${star <= reviewForm.rating ? 'solid' : 'regular'} fa-star fa-lg ${star <= reviewForm.rating ? 'text-warning' : 'text-muted'}`}></i>
+                              <i className={`fa-${star <= reviewForm.rating ? 'solid' : 'regular'} fa-star fa-lg ${star <= reviewForm.rating ? 'text-warning' : 'text-muted'}`} aria-hidden="true"></i>
                             </button>
                           ))}
                         </div>
                       </div>
                       <div className="mb-3">
-                        <label className="form-label fw-medium">Your Name</label>
+                        <label className="form-label fw-medium" htmlFor="reviewerName">Your Name</label>
                         <input
+                          id="reviewerName"
                           type="text"
                           className="form-control"
                           placeholder="Enter your name"
@@ -487,8 +527,9 @@ export default function ArtisanProfilePage() {
                         />
                       </div>
                       <div className="mb-3">
-                        <label className="form-label fw-medium">Comment</label>
+                        <label className="form-label fw-medium" htmlFor="reviewComment">Comment</label>
                         <textarea
+                          id="reviewComment"
                           className="form-control"
                           rows={3}
                           placeholder="Share your experience..."
@@ -496,8 +537,17 @@ export default function ArtisanProfilePage() {
                           onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                         ></textarea>
                       </div>
-                      <button type="submit" className="btn btn-primary rounded-5">
-                        <i className="fa-solid fa-paper-plane me-2"></i>Submit Review
+                      <button type="submit" className="btn btn-primary rounded-5" disabled={reviewSubmitting}>
+                        {reviewSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Submit Review
+                          </>
+                        )}
                       </button>
                     </form>
                   </div>
@@ -565,14 +615,14 @@ export default function ArtisanProfilePage() {
                   >
                     <i className="fa-brands fa-whatsapp me-2"></i>Book via WhatsApp
                   </a>
-                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary rounded-5">
+                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent rounded-5">
                     <i className="fa-solid fa-calendar-check me-2"></i>Book Now
                   </Link>
                 </div>
                 <div className="mt-3 pt-3 border-top">
                   <p className="text-muted small mb-1">
                     <i className="fa-solid fa-shield-halved text-success me-1"></i>
-                    {worker.isVerified ? 'Verified by TUFIXIT' : 'TUFIXIT Member'}
+                    {worker.isVerified ? 'Verified by FUDARI' : 'FUDARI Member'}
                   </p>
                   <p className="text-success small mb-0">
                     <i className="fa-solid fa-clock me-1"></i>
@@ -595,7 +645,7 @@ export default function ArtisanProfilePage() {
                 </div>
                 {pkg === 'Gold' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Fully vetted &amp; background-checked by TUFIXIT</li>
+                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Fully vetted &amp; background-checked by FUDARI</li>
                     <li className="mb-2"><i className="fa-solid fa-id-card text-success me-2"></i>Government ID verified</li>
                     <li className="mb-2"><i className="fa-solid fa-star text-warning me-2"></i>Top-rated Pro — consistently high ratings</li>
                     <li><i className="fa-solid fa-headset text-primary me-2"></i>Priority customer support included</li>
@@ -603,14 +653,14 @@ export default function ArtisanProfilePage() {
                 )}
                 {pkg === 'Silver' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Identity verified by TUFIXIT</li>
+                    <li className="mb-2"><i className="fa-solid fa-shield-halved text-success me-2"></i>Identity verified by FUDARI</li>
                     <li className="mb-2"><i className="fa-solid fa-id-card text-success me-2"></i>National ID on file</li>
                     <li><i className="fa-solid fa-star text-warning me-2"></i>Verified professional with track record</li>
                   </ul>
                 )}
                 {pkg === 'Bronze' && (
                   <ul className="list-unstyled mb-0 small">
-                    <li className="mb-2"><i className="fa-solid fa-user-check text-primary me-2"></i>Registered TUFIXIT member</li>
+                    <li className="mb-2"><i className="fa-solid fa-user-check text-primary me-2"></i>Registered FUDARI member</li>
                     <li><i className="fa-solid fa-star text-muted me-2"></i>Building their review history</li>
                   </ul>
                 )}
@@ -623,7 +673,7 @@ export default function ArtisanProfilePage() {
                   No account needed. You&apos;ll receive a booking code via SMS to track your job in real time.
                 </p>
                 <div className="d-flex flex-column gap-2">
-                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary rounded-5 fw-medium">
+                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent rounded-5 fw-medium">
                     <i className="fa-solid fa-calendar-check me-2"></i>Request a Booking
                   </Link>
                   <div className="text-center text-muted small">
@@ -718,14 +768,15 @@ export default function ArtisanProfilePage() {
         aria-hidden={!stickyVisible}
       >
         <div className="d-flex align-items-center gap-2 overflow-hidden">
-          <img
+          <Image
             src={profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id)}
             alt={worker.firstName}
             width={40}
             height={40}
             className="rounded-circle flex-shrink-0"
-            style={{ objectFit: 'cover', width: 40, height: 40 }}
+            style={{ objectFit: 'cover' }}
             loading="lazy"
+            unoptimized={isGeneratedAvatar(profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id))}
           />
           <div className="overflow-hidden">
             <div className="fw-semibold small text-truncate">{worker.firstName} {worker.lastName}</div>
@@ -743,7 +794,7 @@ export default function ArtisanProfilePage() {
             <i className="fa-brands fa-whatsapp me-1"></i>
             <span className="d-none d-sm-inline">WhatsApp</span>
           </a>
-          <Link href={`/artisans/${worker.id}/book`} className="btn btn-primary btn-sm rounded-5">
+          <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent btn-sm rounded-5">
             <i className="fa-solid fa-calendar-check me-1"></i>Book Now
           </Link>
         </div>

@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
           { label: 'Profile Views', value: stats.profileViews, icon: 'fa-eye', color: '#0d6efd', bg: '#e8f0fe' },
           { label: 'Call Clicks', value: stats.callClicks, icon: 'fa-phone', color: '#198754', bg: '#d1f2e0' },
           { label: 'WhatsApp Clicks', value: stats.whatsappClicks, icon: 'fa-brands fa-whatsapp', color: '#25d366', bg: '#d4f8e2' },
-          { label: 'Total Leads', value: stats.totalLeads, icon: 'fa-bullseye', color: '#F84525', bg: '#fde8e4' },
+          { label: 'Total Leads', value: stats.totalLeads, icon: 'fa-bullseye', color: 'var(--bs-primary)', bg: 'var(--tx-primary-tint)' },
           { label: 'Conversion Rate', value: convRate + '%', icon: 'fa-chart-line', color: '#fd7e14', bg: '#fff3e0' },
         ].map((s, i) => (
           <div key={i} className="col-6 col-xl">

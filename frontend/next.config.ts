@@ -49,8 +49,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        has: [{ type: 'host', value: 'www.tufixit.com' }],
-        destination: 'https://tufixit.com/:path*',
+        has: [{ type: 'host', value: 'www.fudari.co' }],
+        destination: 'https://fudari.co/:path*',
         permanent: true,
       },
     ];

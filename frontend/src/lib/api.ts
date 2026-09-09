@@ -2,8 +2,12 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
+// Mobile data in Kenya stalls often enough that an unbounded request means an endless spinner.
+const REQUEST_TIMEOUT_MS = 15000;
+
 const api = axios.create({
   baseURL: API_URL,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -41,6 +45,20 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/** Turns an Axios failure into copy a customer can act on. */
+export function apiErrorMessage(error: any, fallback = 'Something went wrong. Please try again.') {
+  if (error?.code === 'ECONNABORTED') {
+    return 'That took too long. Check your connection and try again.';
+  }
+  if (!error?.response) {
+    return 'No connection. Check your data or Wi-Fi and try again.';
+  }
+  const status = error.response.status;
+  if (status === 429) return 'Too many attempts. Please wait a moment and try again.';
+  if (status >= 500) return 'Our system is having trouble right now. Please try again shortly.';
+  return error.response.data?.message || error.response.data?.error || fallback;
+}
 
 // Auth API
 export const authAPI = {
@@ -161,6 +179,9 @@ export const workersAPI = {
   searchWorkers: (params: { 
     skillType?: string; 
     name?: string;
+    location?: string;
+    maxHourlyRate?: number;
+    availableNow?: boolean;
     latitude?: number; 
     longitude?: number; 
     radiusKm?: number 
@@ -255,6 +276,7 @@ export const publicReviewsAPI = {
     reviewerName?: string;
     reviewerPhone?: string;
     reviewerEmail?: string;
+    bookingCode?: string;
   }) => api.post('/reviews/public', data),
 
   getReviewsForArtisan: (artisanId: number) =>

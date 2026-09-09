@@ -1,42 +1,12 @@
 'use client';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { adminUsersAPI, authAPI } from '@/lib/api';
+import { SKILL_OPTIONS as SKILL_CATEGORIES } from '@/lib/kenya';
 
 const PHONE_REGEX = /^(?:\+254|0)[17]\d{8}$/;
 const NAME_REGEX = /^[A-Za-z\s'-]{2,50}$/;
 const NATIONAL_ID_REGEX = /^[A-Za-z0-9-]{5,30}$/;
 const MAX_DOC_BYTES = 2 * 1024 * 1024; // 2MB
-
-// Mirrors WorkerSkill.SkillType enum on the backend
-const SKILL_CATEGORIES: { label: string; value: string }[] = [
-  { label: 'Electrician', value: 'ELECTRICIAN' },
-  { label: 'Plumber', value: 'PLUMBER' },
-  { label: 'Mechanic', value: 'MECHANIC' },
-  { label: 'Carpenter', value: 'CARPENTER' },
-  { label: 'Painter', value: 'PAINTER' },
-  { label: 'Welder', value: 'WELDER' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
-  { label: 'Appliance Repair', value: 'APPLIANCE_REPAIR' },
-  { label: 'Roofing', value: 'ROOFING' },
-  { label: 'Tiling', value: 'TILING' },
-  { label: 'Mason', value: 'MASON' },
-  { label: 'Gardener', value: 'GARDENER' },
-  { label: 'Cleaner', value: 'CLEANER' },
-  { label: 'Security', value: 'SECURITY' },
-  { label: 'Solar Technician', value: 'SOLAR_TECHNICIAN' },
-  { label: 'Borehole Drilling', value: 'BOREHOLE_DRILLING' },
-  { label: 'Fumigation', value: 'FUMIGATION' },
-  { label: 'Water Tank Cleaning', value: 'WATER_TANK_CLEANING' },
-  { label: 'Glass Fitter', value: 'GLASS_FITTER' },
-  { label: 'Ceiling Board', value: 'CEILING_BOARD' },
-  { label: 'Locksmith', value: 'LOCKSMITH' },
-  { label: 'CCTV Installer', value: 'CCTV_INSTALLER' },
-  { label: 'Interior Designer', value: 'INTERIOR_DESIGNER' },
-  { label: 'Mover', value: 'MOVER' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
-  { label: 'Other', value: 'OTHER' },
-];
 
 function getPasswordStrength(password: string) {
   let score = 0;

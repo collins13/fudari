@@ -255,7 +255,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="sidebar-header">
           <Link href="/dashboard" className="sidebar-brand">
             <span className="sidebar-brand_text">
-              TUF<span>IXIT</span>
+              FUDARI
             </span>
           </Link>
           {/* Mobile close button */}
@@ -606,12 +606,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .sidebar-nav .nav-group_items a:hover,
         .sidebar-nav .nav-logout:hover {
           background: #f6f7f9;
-          color: var(--bs-primary, #F84525);
+          color: var(--bs-primary, #0D5C63);
         }
         .sidebar-nav .nav-group_items .mm-active > a {
-          color: var(--bs-primary, #F84525);
-          background: rgba(248, 69, 37, 0.08);
-          border-left-color: var(--bs-primary, #F84525);
+          color: var(--bs-primary, #0D5C63);
+          background: rgba(13, 92, 99, 0.09);
+          border-left-color: var(--bs-primary, #0D5C63);
           font-weight: 600;
         }
         .sidebar-nav .nav-logout { color: #d6336c; }
@@ -797,7 +797,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           border-right: 3px solid transparent;
         }
         .sidebar.sidebar-collapsed .sidebar-nav .nav-group_items .mm-active > a {
-          border-right-color: var(--bs-primary, #F84525);
+          border-right-color: var(--bs-primary, #0D5C63);
         }
         .sidebar.sidebar-collapsed .sidebar-nav .nav-group_items a i,
         .sidebar.sidebar-collapsed .sidebar-nav .nav-logout i {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import localFont from "next/font/local";
 import { AuthProvider } from "@/context/AuthContext";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import "./globals.css";
 
 // Self-hosted so the production build cannot fail on a Google Fonts fetch,
@@ -24,17 +25,18 @@ const caveat = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "TUFIXIT Kenya: Get It Fixed Today",
-    template: "%s | TUFIXIT Kenya",
+    default: "FUDARI Kenya: Get It Fixed Today",
+    template: "%s | FUDARI Kenya",
   },
   description:
-    "Hire verified service providers in Nairobi and across Kenya. Book trusted electricians, plumbers, mechanics, movers, transport providers and more on TUFIXIT.",
+    "Book verified local service providers in Nairobi and across Kenya — artisans, cleaners and mama fua, boda boda and movers, barbers and salons, car wash and tyre services, photographers, designers and IT technicians.",
   keywords: [
     // Brand
-    "tufixit", "tufixit kenya", "tufixit nairobi",
+    "fudari", "fudari kenya", "fudari nairobi",
     // Core intent
+    "local services kenya", "book services online kenya", "service provider kenya",
     "jua kali", "jua kali nairobi", "find artisan kenya", "hire handyman nairobi",
-    "home services kenya", "service provider kenya", "book artisan online kenya",
+    "home services kenya", "book artisan online kenya",
     // Skill-specific
     "electrician nairobi", "electrician kenya", "licensed electrician kenya",
     "plumber nairobi", "plumber kenya", "emergency plumber nairobi",
@@ -49,8 +51,16 @@ export const metadata: Metadata = {
     "movers nairobi", "house movers kenya", "office movers nairobi",
     "transport provider kenya", "pickup transport nairobi", "truck for hire kenya",
     "event lighting kenya", "stage lighting nairobi", "party lighting services kenya",
+    // Expanded verticals
+    "mama fua nairobi", "laundry services kenya", "house help nairobi",
+    "boda boda nairobi", "tuk tuk kenya", "courier services nairobi", "same day delivery kenya",
+    "barber nairobi", "mobile barber kenya", "hair salon nairobi", "braiding nairobi",
+    "makeup artist nairobi", "nail technician kenya",
+    "car wash nairobi", "car detailing kenya", "tyre services nairobi", "puncture repair kenya",
+    "photographer nairobi", "event photographer kenya", "graphic designer nairobi",
+    "logo design kenya", "it technician nairobi", "laptop repair kenya",
     // Location + service combos
-    "verified artisans kenya", "trusted handyman kenya", "artisan marketplace kenya",
+    "verified service providers kenya", "trusted handyman kenya", "services marketplace kenya",
   ],
   manifest: "/manifest.json",
   icons: {
@@ -60,39 +70,39 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TUFIXIT",
+    title: "FUDARI",
   },
-  metadataBase: new URL("https://tufixit.com"),
+  metadataBase: new URL("https://fudari.co"),
   alternates: {
-    canonical: "https://tufixit.com",
+    canonical: "https://fudari.co",
     languages: {
-      "en-KE": "https://tufixit.com",
+      "en-KE": "https://fudari.co",
     },
   },
   openGraph: {
     type: "website",
     locale: "en_KE",
-    url: "https://tufixit.com",
-    siteName: "TUFIXIT",
-    title: "TUFIXIT – Find Verified Artisans & Service Providers in Kenya",
+    url: "https://fudari.co",
+    siteName: "FUDARI",
+    title: "FUDARI – Book Verified Local Service Providers in Kenya",
     description:
-      "Kenya's #1 Jua Kali marketplace. Book verified electricians, plumbers, mechanics, movers, transport providers, event lighting pros and more in Nairobi, Mombasa & beyond.",
+      "Kenya's local services marketplace. Book verified artisans, cleaners, mama fua, boda boda, movers, barbers, salons, car wash, photographers, designers and IT pros in Nairobi, Mombasa & beyond.",
     images: [
       {
-        url: "https://tufixit.com/liston/images/header/lg-01.jpg",
+        url: "https://fudari.co/liston/images/header/lg-01.jpg",
         width: 1200,
         height: 630,
-        alt: "TUFIXIT – Kenya's Jua Kali Marketplace",
+        alt: "FUDARI – Kenya's Local Services Marketplace",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@tufixit_ke",
-    creator: "@tufixit_ke",
-    title: "TUFIXIT – Verified Artisans Near You in Kenya",
-    description: "Book verified Jua Kali workers in seconds. Electricians, plumbers, mechanics, movers, transport providers & more across Kenya.",
-    images: ["https://tufixit.com/liston/images/header/lg-01.jpg"],
+    site: "@fudari_ke",
+    creator: "@fudari_ke",
+    title: "FUDARI – Verified Service Providers Near You in Kenya",
+    description: "Book verified local pros in seconds. Artisans, cleaners, mama fua, boda boda, movers, barbers, salons, car wash, photographers & IT across Kenya.",
+    images: ["https://fudari.co/liston/images/header/lg-01.jpg"],
   },
   robots: {
     index: true,
@@ -106,7 +116,7 @@ export const metadata: Metadata = {
     },
   },
   category: "marketplace",
-  classification: "Home Services / Jua Kali Marketplace",
+  classification: "Local Services Marketplace",
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: true, address: true },
   verification: {
@@ -124,7 +134,7 @@ export default function RootLayout({
   return (
     <html lang="en-KE" className={`${wixMadefor.variable} ${caveat.variable}`}>
       <head>
-        <meta name="theme-color" content="#F84525" />
+        <meta name="theme-color" content="#0D5C63" />
         {/* Geo meta for local SEO */}
         <meta name="geo.region" content="KE" />
         <meta name="geo.placename" content="Nairobi, Kenya" />
@@ -142,17 +152,17 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "@id": "https://tufixit.com/#website",
-              name: "TUFIXIT",
-              alternateName: "TuFixIt Kenya",
-              url: "https://tufixit.com",
-              description: "Kenya's #1 Jua Kali marketplace connecting customers with verified artisans",
+              "@id": "https://fudari.co/#website",
+              name: "FUDARI",
+              alternateName: "Fudari Kenya",
+              url: "https://fudari.co",
+              description: "Kenya's local services marketplace connecting customers with verified service providers",
               inLanguage: "en-KE",
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: "https://tufixit.com/artisans?category={search_term_string}",
+                  urlTemplate: "https://fudari.co/artisans?category={search_term_string}",
                 },
                 "query-input": "required name=search_term_string",
               },
@@ -165,17 +175,17 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "@id": "https://tufixit.com/#organization",
-              name: "TuFixIt Limited",
-              alternateName: "TUFIXIT",
-              url: "https://tufixit.com",
+              "@id": "https://fudari.co/#organization",
+              name: "Fudari Limited",
+              alternateName: "FUDARI",
+              url: "https://fudari.co",
               logo: {
                 "@type": "ImageObject",
-                url: "https://tufixit.com/favicon.svg",
+                url: "https://fudari.co/favicon.svg",
                 width: 512,
                 height: 512,
               },
-              description: "Kenya's leading digital marketplace for verified Jua Kali artisans and home service providers.",
+              description: "Kenya's leading digital marketplace for verified local service providers — artisans, cleaning, transport, beauty, automotive and digital services.",
               foundingDate: "2024",
               foundingLocation: "Nairobi, Kenya",
               areaServed: { "@type": "Country", name: "Kenya" },
@@ -193,12 +203,12 @@ export default function RootLayout({
                   availableLanguage: ["English", "Swahili"],
                 },
               ],
-              email: "info@tufixit.com",
+              email: "info@fudari.co",
               sameAs: [
-                "https://www.facebook.com/tufixit",
-                "https://www.instagram.com/tufixit_ke",
-                "https://twitter.com/tufixit_ke",
-                "https://www.linkedin.com/company/tufixit",
+                "https://www.facebook.com/fudari",
+                "https://www.instagram.com/fudari_ke",
+                "https://twitter.com/fudari_ke",
+                "https://www.linkedin.com/company/fudari",
               ],
             }),
           }}
@@ -209,13 +219,13 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
-              "@id": "https://tufixit.com/#localbusiness",
-              name: "TUFIXIT",
-              url: "https://tufixit.com",
+              "@id": "https://fudari.co/#localbusiness",
+              name: "FUDARI",
+              url: "https://fudari.co",
               telephone: "+254703954539",
-              email: "info@tufixit.com",
-              description: "Digital marketplace connecting Kenyan customers with verified Jua Kali artisans for home, vehicle and commercial services.",
-              priceRange: "KES 0–3000/mo (artisan plans)",
+              email: "info@fudari.co",
+              description: "Digital marketplace connecting Kenyan customers with verified local service providers for home, vehicle, personal care, delivery and digital services.",
+              priceRange: "KES 0–3000/mo (provider plans)",
               currenciesAccepted: "KES",
               paymentAccepted: "M-Pesa, Cash",
               address: {
@@ -259,7 +269,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <MobileBottomNav />
+        </AuthProvider>
 
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
           <>

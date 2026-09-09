@@ -62,7 +62,7 @@ public class GeocodingService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .header("User-Agent", "TuFixIt/1.0 (support@tufixit.com)")
+                    .header("User-Agent", "Fudari/1.0 (support@fudari.co)")
                     .timeout(Duration.ofSeconds(5))
                     .GET()
                     .build();

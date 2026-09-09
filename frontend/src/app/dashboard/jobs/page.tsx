@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jobsAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { SKILL_TYPES, skillLabel } from '@/lib/kenya';
 
 interface Job {
   id: number;
@@ -33,17 +34,11 @@ interface Bid {
 }
 
 const SKILL_LABELS: Record<string, string> = {
-  ELECTRICIAN: 'Electrician', PLUMBER: 'Plumber', MECHANIC: 'Mechanic',
-  CARPENTER: 'Carpenter', PAINTER: 'Painter', WELDER: 'Welder',
-  HVAC_TECHNICIAN: 'HVAC', APPLIANCE_REPAIR: 'Appliance Repair',
-  ROOFING: 'Roofing', TILING: 'Tiling', MASON: 'Mason',
-  GARDENER: 'Gardener', CLEANER: 'Cleaner', SECURITY: 'Security',
-  SOLAR_TECHNICIAN: 'Solar', BOREHOLE_DRILLING: 'Borehole',
-  FUMIGATION: 'Fumigation', WATER_TANK_CLEANING: 'Water Tank',
-  GLASS_FITTER: 'Glass Fitter', CEILING_BOARD: 'Ceiling Board',
-  LOCKSMITH: 'Locksmith', CCTV_INSTALLER: 'CCTV', INTERIOR_DESIGNER: 'Interior Design',
-  MOVER: 'Mover', TRANSPORT_PROVIDER: 'Transport', EVENT_LIGHTING: 'Event Lighting',
-  OTHER: 'Other',
+  ...Object.fromEntries(SKILL_TYPES.map((s) => [s, skillLabel(s)])),
+  HVAC_TECHNICIAN: 'HVAC', SOLAR_TECHNICIAN: 'Solar', BOREHOLE_DRILLING: 'Borehole',
+  WATER_TANK_CLEANING: 'Water Tank', CCTV_INSTALLER: 'CCTV',
+  INTERIOR_DESIGNER: 'Interior Design', TRANSPORT_PROVIDER: 'Transport',
+  GRAPHIC_DESIGNER: 'Design', IT_TECHNICIAN: 'IT Support',
 };
 
 function formatDate(dateStr: string): string {

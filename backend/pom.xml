@@ -13,8 +13,8 @@
     <groupId>com.tufixit</groupId>
     <artifactId>tufixit-backend</artifactId>
     <version>1.0.0</version>
-    <name>TUFIXIT Backend API</name>
-    <description>TUFIXIT - Connecting skilled laborers with clients in East Africa</description>
+    <name>FUDARI Backend API</name>
+    <description>FUDARI - Connecting skilled laborers with clients in East Africa</description>
     
     <properties>
         <java.version>21</java.version>

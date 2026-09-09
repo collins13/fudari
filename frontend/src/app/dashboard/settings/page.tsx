@@ -255,7 +255,7 @@ export default function SettingsPage() {
               {([
                 { key: 'smsBookings' as keyof NotificationPrefs, label: 'Booking confirmations', desc: 'SMS when a booking is confirmed or updated' },
                 { key: 'smsPayments' as keyof NotificationPrefs, label: 'Payment alerts', desc: 'SMS when you receive a payment' },
-                { key: 'smsPricing' as keyof NotificationPrefs, label: 'Promotional offers', desc: 'SMS about TUFIXIT promotions and discounts' },
+                { key: 'smsPricing' as keyof NotificationPrefs, label: 'Promotional offers', desc: 'SMS about FUDARI promotions and discounts' },
               ]).map((item) => (
                 <div key={item.key} className="d-flex justify-content-between align-items-center py-2 border-bottom">
                   <div>

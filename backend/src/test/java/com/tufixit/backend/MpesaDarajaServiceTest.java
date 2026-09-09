@@ -154,7 +154,7 @@ class MpesaDarajaServiceTest {
     @DisplayName("STK Push returns stub result when not configured")
     void stkPushStubMode() throws Exception {
         MpesaDarajaService.StkPushResult result = service.initiateSTKPush(
-                "0712345678", 500, "TUFIXIT-BASIC", "Test");
+                "0712345678", 500, "FUDARI-BASIC", "Test");
 
         assertNotNull(result);
         assertTrue(result.checkoutRequestId().startsWith("STUB_CHECKOUT_"));

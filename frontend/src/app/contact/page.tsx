@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ContactForm from '@/components/ContactForm';
+import { PLATFORM_WHATSAPP_NUMBER, whatsappBotLink } from '@/lib/whatsapp';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | TUFIXIT',
-  description: 'Get in touch with the TUFIXIT team. We are here to help customers and artisans across Kenya.',
-  alternates: { canonical: 'https://tufixit.com/contact' },
+  title: 'Contact Us | FUDARI',
+  description: 'Get in touch with the FUDARI team. We are here to help customers and artisans across Kenya.',
+  alternates: { canonical: 'https://fudari.co/contact' },
 };
 
 export default function ContactPage() {
@@ -18,7 +20,7 @@ export default function ContactPage() {
         {/* Hero */}
         <section
           className="position-relative overflow-hidden mx-3 mt-3 rounded-4 d-flex align-items-center justify-content-center"
-          style={{ minHeight: 260, background: 'linear-gradient(135deg, #F84525, #ff6b4a)' }}
+          style={{ minHeight: 260, background: 'var(--tx-primary-gradient)' }}
         >
           <div className="text-center text-white py-5 px-3" style={{ zIndex: 1, position: 'relative' }}>
             <h1 className="display-5 fw-bold mb-2">Contact Us</h1>
@@ -42,8 +44,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <div className="fw-semibold small text-muted mb-1">Email</div>
-                      <a href="mailto:info@tufixit.com" className="fw-medium text-dark text-decoration-none">
-                        info@tufixit.com
+                      <a href="mailto:info@fudari.co" className="fw-medium text-dark text-decoration-none">
+                        info@fudari.co
                       </a>
                     </div>
                   </div>
@@ -56,12 +58,12 @@ export default function ContactPage() {
                     <div>
                       <div className="fw-semibold small text-muted mb-1">WhatsApp</div>
                       <a
-                        href="https://wa.me/254700000000"
+                        href={whatsappBotLink()}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="fw-medium text-dark text-decoration-none"
                       >
-                        +254 700 000 000
+                        +{PLATFORM_WHATSAPP_NUMBER}
                       </a>
                     </div>
                   </div>
@@ -82,9 +84,9 @@ export default function ContactPage() {
                   <h6 className="fw-bold mb-3">Follow Us</h6>
                   <div className="d-flex gap-2">
                     {[
-                      { href: 'https://twitter.com/tufixit_ke', icon: 'fa-x-twitter', label: 'X (Twitter)' },
-                      { href: 'https://facebook.com/tufixit', icon: 'fa-facebook-f', label: 'Facebook' },
-                      { href: 'https://instagram.com/tufixit_ke', icon: 'fa-instagram', label: 'Instagram' },
+                      { href: 'https://twitter.com/fudari_ke', icon: 'fa-x-twitter', label: 'X (Twitter)' },
+                      { href: 'https://facebook.com/fudari', icon: 'fa-facebook-f', label: 'Facebook' },
+                      { href: 'https://instagram.com/fudari_ke', icon: 'fa-instagram', label: 'Instagram' },
                     ].map(({ href, icon, label }) => (
                       <a
                         key={icon}
@@ -108,70 +110,12 @@ export default function ContactPage() {
               <div className="card border-0 shadow-sm rounded-4">
                 <div className="card-body p-4">
                   <h5 className="fw-bold mb-4">Send a Message</h5>
-                  <form
-                    action="mailto:info@tufixit.com"
-                    method="get"
-                    encType="text/plain"
-                    noValidate
-                  >
-                    <div className="row g-3 mb-3">
-                      <div className="col-sm-6">
-                        <label className="form-label fw-medium small" htmlFor="contact-name">Full Name</label>
-                        <input
-                          type="text"
-                          id="contact-name"
-                          name="name"
-                          className="form-control"
-                          placeholder="Jane Doe"
-                          required
-                        />
-                      </div>
-                      <div className="col-sm-6">
-                        <label className="form-label fw-medium small" htmlFor="contact-email">Email</label>
-                        <input
-                          type="email"
-                          id="contact-email"
-                          name="email"
-                          className="form-control"
-                          placeholder="jane@example.com"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label fw-medium small" htmlFor="contact-subject">Subject</label>
-                      <input
-                        type="text"
-                        id="contact-subject"
-                        name="subject"
-                        className="form-control"
-                        placeholder="How can we help?"
-                        required
-                      />
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="form-label fw-medium small" htmlFor="contact-message">Message</label>
-                      <textarea
-                        id="contact-message"
-                        name="body"
-                        className="form-control"
-                        rows={5}
-                        placeholder="Tell us more about your inquiry..."
-                        required
-                      />
-                    </div>
-
-                    <button type="submit" className="btn btn-primary rounded-5 px-4">
-                      <i className="fa-solid fa-paper-plane me-2"></i>Send Message
-                    </button>
-                  </form>
+                  <ContactForm />
 
                   <p className="text-muted small mt-3 mb-0">
                     Prefer a faster response?{' '}
                     <a
-                      href="https://wa.me/254700000000"
+                      href={whatsappBotLink()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-success fw-medium text-decoration-none"

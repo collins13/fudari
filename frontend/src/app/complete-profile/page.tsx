@@ -3,23 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, workersAPI, aiAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-
-const CATEGORIES = [
-  { label: 'Electrician', value: 'ELECTRICIAN', icon: 'fa-bolt' },
-  { label: 'Plumber', value: 'PLUMBER', icon: 'fa-faucet' },
-  { label: 'Mechanic', value: 'MECHANIC', icon: 'fa-car' },
-  { label: 'Painter', value: 'PAINTER', icon: 'fa-paint-roller' },
-  { label: 'Carpenter', value: 'CARPENTER', icon: 'fa-hammer' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN', icon: 'fa-wind' },
-  { label: 'Welder', value: 'WELDER', icon: 'fa-fire' },
-  { label: 'Mason', value: 'MASON', icon: 'fa-building' },
-  { label: 'Cleaner', value: 'CLEANER', icon: 'fa-broom' },
-  { label: 'Gardener', value: 'GARDENER', icon: 'fa-leaf' },
-  { label: 'Mover', value: 'MOVER', icon: 'fa-truck-moving' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER', icon: 'fa-truck' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING', icon: 'fa-lightbulb' },
-  { label: 'Other', value: 'OTHER', icon: 'fa-wrench' },
-];
+import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -248,7 +232,7 @@ export default function CompleteProfilePage() {
               {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex-grow-1 rounded-pill" style={{
                   height: 4,
-                  background: s <= step ? '#F84525' : '#e9ecef',
+                  background: s <= step ? 'var(--bs-primary)' : '#e9ecef',
                   transition: 'background 0.3s',
                 }} />
               ))}
@@ -341,7 +325,7 @@ export default function CompleteProfilePage() {
           {/* Step 1 for clients */}
           {step === 1 && !isWorker && (
             <>
-              <h4 className="fw-bold mb-1">Welcome to TUFIXIT!</h4>
+              <h4 className="fw-bold mb-1">Welcome to FUDARI!</h4>
               <p className="text-muted mb-4">Let&apos;s set up your account</p>
               <div className="mb-3">
                 <label className="form-label fw-medium">Your Location</label>

@@ -1,18 +1,70 @@
 /**
- * TUFIXIT Logo component — renders the SVG logo inline for crisp rendering at any size.
- * Supports both light and dark variants.
+ * FUDARI logo — inline SVG so it stays crisp at any size.
+ *
+ * Mark: an "F" monogram in a teal squircle with an amber crossbar as the brand accent.
+ * `variant="white"` inverts the tile rather than dropping the mark to a flat silhouette.
  */
 
 interface LogoProps {
   variant?: 'dark' | 'white';
+  /** Icon only, no wordmark — for avatars, app tiles and tight navbars. */
+  markOnly?: boolean;
   height?: number;
   showTagline?: boolean;
   className?: string;
 }
 
-export default function Logo({ variant = 'dark', height = 36, showTagline = false, className = '' }: LogoProps) {
-  const textColor = variant === 'white' ? '#ffffff' : '#1a1a2e';
-  const taglineColor = variant === 'white' ? 'rgba(255,255,255,0.7)' : '#6c757d';
+const TEAL = '#0D5C63';
+const AMBER = '#FFB020';
+
+export default function Logo({
+  variant = 'dark',
+  markOnly = false,
+  height = 36,
+  showTagline = false,
+  className = '',
+}: LogoProps) {
+  const onDark = variant === 'white';
+  const glyphFill = onDark ? TEAL : '#ffffff';
+  const wordFill = onDark ? '#ffffff' : '#12333A';
+  const taglineFill = onDark ? 'rgba(255,255,255,0.72)' : '#6C7F84';
+
+  const gradient = (
+    <defs>
+      <linearGradient id="fudari-mark" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#157A83" />
+        <stop offset="1" stopColor="#0A4A50" />
+      </linearGradient>
+    </defs>
+  );
+
+  const mark = (
+    <>
+      <rect width="48" height="48" rx="13" fill={onDark ? '#ffffff' : 'url(#fudari-mark)'} />
+      <rect x="15" y="12" width="6.5" height="24" rx="3.25" fill={glyphFill} />
+      <rect x="15" y="12" width="18" height="6.5" rx="3.25" fill={glyphFill} />
+      <rect x="15" y="21.75" width="13" height="6.5" rx="3.25" fill={AMBER} />
+    </>
+  );
+
+  if (markOnly) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 48 48"
+        fill="none"
+        height={height}
+        width={height}
+        className={className}
+        aria-label="Fudari"
+        role="img"
+      >
+        {!onDark && gradient}
+        {mark}
+      </svg>
+    );
+  }
+
   const viewBox = showTagline ? '0 0 240 48' : '0 0 240 38';
   const aspectRatio = showTagline ? 240 / 48 : 240 / 38;
 
@@ -24,45 +76,38 @@ export default function Logo({ variant = 'dark', height = 36, showTagline = fals
       height={height}
       width={height * aspectRatio}
       className={className}
-      aria-label="TUFIXIT logo"
+      aria-label="Fudari"
       role="img"
     >
-      {/* Icon mark — red rounded square with wrench */}
-      <g transform="translate(4, 2)">
-        <rect width="34" height="34" rx="8" fill="#F84525" />
-        <path
-          d="M24 10a6 6 0 0 0-5.4 3.3l-7.2 7.2a2.7 2.7 0 1 0 3.8 3.8l7.2-7.2A6 6 0 1 0 24 10Zm0 9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"
-          fill="#fff"
-        />
-        <path d="M12 11.5l2 1.2-2 1.3-2-1.2Z" fill="#fff" opacity="0.7" />
+      {!onDark && gradient}
+
+      <g transform={showTagline ? 'translate(4 4) scale(0.83333)' : 'translate(4 2) scale(0.70833)'}>
+        {mark}
       </g>
 
-      {/* Wordmark */}
       <text
-        x="46"
-        y="27"
+        x={showTagline ? 54 : 46}
+        y={showTagline ? 31 : 27}
         fontFamily="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
         fontWeight="800"
-        fontSize="28"
-        letterSpacing="-0.5"
+        fontSize={showTagline ? 28 : 26}
+        letterSpacing="0.5"
+        fill={wordFill}
       >
-        <tspan fill={textColor}>TU</tspan>
-        <tspan fill="#F84525">FIX</tspan>
-        <tspan fill={textColor}>IT</tspan>
+        FUDARI
       </text>
 
-      {/* Tagline (optional) */}
       {showTagline && (
         <text
-          x="47"
-          y="44"
+          x="55"
+          y="43"
           fontFamily="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
-          fontWeight="500"
-          fontSize="7.5"
-          fill={taglineColor}
-          letterSpacing="2.2"
+          fontWeight="600"
+          fontSize="7"
+          letterSpacing="1.6"
+          fill={taglineFill}
         >
-          KENYA&apos;S JUA KALI MARKETPLACE
+          KENYA&apos;S SERVICES MARKETPLACE
         </text>
       )}
     </svg>

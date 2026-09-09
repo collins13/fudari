@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PRIMARY_HOST = 'tufixit.com';
-const WWW_HOST = 'www.tufixit.com';
+const PRIMARY_HOST = 'fudari.co';
+const WWW_HOST = 'www.fudari.co';
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') || '';

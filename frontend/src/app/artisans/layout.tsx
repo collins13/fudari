@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 const SKILL_LABELS = [
   "electricians", "plumbers", "mechanics", "painters", "carpenters",
   "welders", "HVAC technicians", "solar technicians", "tilers", "roofers",
-  "masons", "gardeners", "cleaners", "CCTV installers", "locksmiths",
-  "movers", "transport providers", "event lighting providers",
+  "masons", "gardeners", "cleaners", "mama fua", "CCTV installers", "locksmiths",
+  "movers", "transport providers", "boda boda riders", "tuk tuk operators", "couriers",
+  "barbers", "hair salons", "makeup artists", "car wash services", "tyre services",
+  "photographers", "graphic designers", "IT technicians", "event lighting providers",
 ];
 
 export const metadata: Metadata = {
-  title: "Plumbers, Electricians, Movers & More Near You in Kenya",
+  title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya",
   description:
     "Browse Kenya's largest directory of verified service pros — " +
     SKILL_LABELS.join(", ") +
@@ -22,32 +24,36 @@ export const metadata: Metadata = {
     "verified electrician nairobi", "plumber near me kenya", "mechanic near me nairobi",
     "hire carpenter kenya", "trusted painter nairobi", "book artisan online",
     "movers nairobi", "transport providers kenya", "event lighting nairobi",
-    "artisan marketplace kenya", "home repair kenya", "handyman directory kenya",
+    "mama fua near me", "boda boda nairobi", "tuk tuk kenya", "courier nairobi",
+    "barber near me nairobi", "hair salon nairobi", "makeup artist kenya",
+    "car wash near me nairobi", "tyre repair nairobi",
+    "photographer near me kenya", "graphic designer nairobi", "laptop repair nairobi",
+    "services marketplace kenya", "home repair kenya", "handyman directory kenya",
     "service provider directory nairobi",
   ],
   openGraph: {
     type: "website",
-    title: "Plumbers, Electricians, Movers & More Near You in Kenya | TUFIXIT",
+    title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya | FUDARI",
     description:
       "Kenya's largest directory of verified service pros. Compare trust scores, read reviews and book directly.",
-    url: "https://tufixit.com/artisans",
+    url: "https://fudari.co/artisans",
     images: [
       {
         url: "/liston/images/header/lg-01.jpg",
         width: 1200,
         height: 630,
-        alt: "Browse verified service pros on TUFIXIT Kenya",
+        alt: "Browse verified service pros on FUDARI Kenya",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Plumbers, Electricians, Movers & More Near You in Kenya | TUFIXIT",
+    title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya | FUDARI",
     description: "Kenya's largest directory of verified service pros. Book directly.",
     images: ["/liston/images/header/lg-01.jpg"],
   },
   alternates: {
-    canonical: "https://tufixit.com/artisans",
+    canonical: "https://fudari.co/artisans",
   },
 };
 
@@ -55,23 +61,23 @@ export const metadata: Metadata = {
 const artisansJsonLd = JSON.stringify({
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "@id": "https://tufixit.com/artisans#page",
-  name: "Find Verified Artisans Near You in Kenya",
+  "@id": "https://fudari.co/artisans#page",
+  name: "Find Verified Service Providers Near You in Kenya",
   description:
-    "Browse Kenya's largest directory of verified Jua Kali artisans across all skill categories.",
-  url: "https://tufixit.com/artisans",
+    "Browse Kenya's largest directory of verified service providers across every category.",
+  url: "https://fudari.co/artisans",
   breadcrumb: {
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://tufixit.com" },
-      { "@type": "ListItem", position: 2, name: "Find Artisans", item: "https://tufixit.com/artisans" },
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://fudari.co" },
+      { "@type": "ListItem", position: 2, name: "Find Providers", item: "https://fudari.co/artisans" },
     ],
   },
   about: {
     "@type": "Service",
-    name: "Jua Kali Artisan Marketplace",
-    serviceType: "Home Services Directory",
-    provider: { "@id": "https://tufixit.com/#organization" },
+    name: "Local Services Marketplace",
+    serviceType: "Local Services Directory",
+    provider: { "@id": "https://fudari.co/#organization" },
     areaServed: { "@type": "Country", name: "Kenya" },
   },
 });

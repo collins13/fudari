@@ -218,6 +218,9 @@ public class BookingService {
         if (job.getStatus() != Job.JobStatus.COMPLETED) {
             throw new IllegalStateException("You can only rate a completed job.");
         }
+        if (publicReviewRepository.existsByBookingCode(job.getBookingCode())) {
+            throw new IllegalStateException("This booking has already been reviewed.");
+        }
 
         User artisan = job.getAssignedWorker();
 
@@ -228,14 +231,15 @@ public class BookingService {
                 .comment(req.getComment())
                 .reviewerName(job.getCustomerName())
                 .reviewerPhone(job.getCustomerPhone())
+                .bookingCode(job.getBookingCode())
                 .isVerified(true) // verified because they have the booking code
                 .build();
 
         publicReviewRepository.save(review);
 
         // Update artisan trust score
-        Double avg = publicReviewRepository.getAverageRatingByArtisanId(artisan.getId());
-        Integer count = publicReviewRepository.getReviewCountByArtisanId(artisan.getId());
+        Double avg = publicReviewRepository.getVerifiedAverageRatingByArtisanId(artisan.getId());
+        Integer count = publicReviewRepository.getVerifiedReviewCountByArtisanId(artisan.getId());
         artisan.setTrustScore(avg != null ? avg : req.getRating().doubleValue());
         artisan.setTotalReviews(count != null ? count : 1);
         userRepository.save(artisan);
@@ -326,7 +330,7 @@ public class BookingService {
                 "\ud83d\udc77 " + artisan.getFirstName() + " " + artisan.getLastName() +
                 " has accepted your booking *" + job.getBookingCode() + "*\n" +
                 "\ud83d\udcb0 Agreed price: KES " + req.getPrice() + "\n\n" +
-                "Track: tufixit.com/track/" + job.getBookingCode());
+                "Track: fudari.co/track/" + job.getBookingCode());
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job accepted successfully.").build();
@@ -354,7 +358,7 @@ public class BookingService {
                 "\u274c *Job Declined*\n\n" +
                 "Booking *" + job.getBookingCode() + "* was declined.\n" +
                 (req.getReason() != null ? "Reason: " + req.getReason() + "\n\n" : "\n") +
-                "Type *Hi* to find another artisan, or visit tufixit.com/artisans");
+                "Type *Hi* to find another artisan, or visit fudari.co/artisans");
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job declined.").build();
@@ -540,8 +544,8 @@ public class BookingService {
         notifyViaWhatsApp(job.getCustomerPhone(),
                 "\ud83c\udf89 *Job Completed!*\n\n" +
                 "Booking *" + job.getBookingCode() + "* is done.\n\n" +
-                "\u2b50 Please rate your experience: tufixit.com/track/" + job.getBookingCode() + "\n\n" +
-                "Thank you for using TuFixIt!");
+                "\u2b50 Please rate your experience: fudari.co/track/" + job.getBookingCode() + "\n\n" +
+                "Thank you for using Fudari!");
 
         return BookingDTO.BookingResponse.builder()
                 .success(true).message("Job completed and payment recorded successfully.").build();

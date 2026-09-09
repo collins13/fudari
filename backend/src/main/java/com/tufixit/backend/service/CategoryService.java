@@ -106,17 +106,36 @@ public class CategoryService {
         }
 
         // Map category names to skill types (rough match — categories are named after skill groups)
-        Map<String, String> categoryToSkill = Map.of(
-            "Electrical", "ELECTRICIAN",
-            "Plumbing", "PLUMBER",
-            "Mechanics", "MECHANIC",
-            "Painting", "PAINTER",
-            "Carpentry", "CARPENTER",
-            "HVAC", "HVAC_TECHNICIAN",
-            "Welding", "WELDER",
-            "Masonry", "MASON",
-            "Cleaning", "CLEANER",
-            "Gardening", "GARDENER"
+        Map<String, String> categoryToSkill = Map.ofEntries(
+            Map.entry("Electrical", "ELECTRICIAN"),
+            Map.entry("Plumbing", "PLUMBER"),
+            Map.entry("Mechanics", "MECHANIC"),
+            Map.entry("Painting", "PAINTER"),
+            Map.entry("Carpentry", "CARPENTER"),
+            Map.entry("HVAC", "HVAC_TECHNICIAN"),
+            Map.entry("Welding", "WELDER"),
+            Map.entry("Masonry", "MASON"),
+            Map.entry("Cleaning", "CLEANER"),
+            Map.entry("Gardening", "GARDENER"),
+            Map.entry("Roofing", "ROOFING"),
+            Map.entry("Tiling", "TILING"),
+            Map.entry("Security", "SECURITY"),
+            Map.entry("Appliance Repair", "APPLIANCE_REPAIR"),
+            Map.entry("Moving", "MOVER"),
+            Map.entry("Transport", "TRANSPORT_PROVIDER"),
+            Map.entry("Event Lighting", "EVENT_LIGHTING"),
+            Map.entry("Mama Fua", "MAMA_FUA"),
+            Map.entry("Boda Boda", "BODA_BODA"),
+            Map.entry("Tuk Tuk", "TUK_TUK"),
+            Map.entry("Courier & Delivery", "COURIER"),
+            Map.entry("Barber", "BARBER"),
+            Map.entry("Hair Salon", "HAIR_SALON"),
+            Map.entry("Makeup & Beauty", "MAKEUP_ARTIST"),
+            Map.entry("Car Wash", "CAR_WASH"),
+            Map.entry("Tyre Services", "TYRE_SERVICES"),
+            Map.entry("Photography", "PHOTOGRAPHER"),
+            Map.entry("Design", "GRAPHIC_DESIGNER"),
+            Map.entry("IT Support", "IT_TECHNICIAN")
         );
 
         return categoryRepository.findByIsActiveTrueOrderBySortOrderAsc()

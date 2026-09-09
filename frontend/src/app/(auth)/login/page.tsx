@@ -47,7 +47,7 @@ function LoginForm() {
           <div className="col-md-6 bg-white p-4 p-lg-5 d-flex flex-column justify-content-center">
             <div className="mb-4">
               <h3 className="fw-bold mb-1">Welcome back</h3>
-              <p className="text-muted mb-0">Sign in to your TUFIXIT account</p>
+              <p className="text-muted mb-0">Sign in to your FUDARI account</p>
             </div>
 
             {sessionExpired && (
@@ -147,10 +147,10 @@ function LoginForm() {
 
           {/* Info Side */}
           <div className="col-md-6 d-none d-md-flex flex-column justify-content-center p-4 p-lg-5 text-white position-relative"
-            style={{ background: 'linear-gradient(135deg, #F84525, #ff6b4a)' }}>
+            style={{ background: 'var(--tx-primary-gradient)' }}>
             <div className="position-relative">
               <div className="font-caveat fs-3 mb-2">Kenya&apos;s #1</div>
-              <h3 className="fw-bold mb-3">Jua Kali Marketplace</h3>
+              <h3 className="fw-bold mb-3">Services Marketplace</h3>
               <p className="opacity-75 mb-4">
                 Find trusted service providers or grow your business. Customers browse free.
               </p>

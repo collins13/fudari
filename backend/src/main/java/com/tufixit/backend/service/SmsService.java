@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
  * Set the following env vars to go live:
  *   AT_API_KEY   – Africa's Talking API key
  *   AT_USERNAME  – Africa's Talking username (use "sandbox" for testing)
- *   AT_SENDER_ID – Short-code or sender ID (e.g. "TUFIXIT")
+ *   AT_SENDER_ID – Short-code or sender ID (e.g. "FUDARI")
  *
  * When AT_API_KEY is blank the service logs the message instead of sending it,
  * so the app works without configuration in development.
@@ -38,6 +38,24 @@ public class SmsService {
         log.info("[SMS] Config — env={}, username={}, apiKey={}, senderId={}",
                 environment, username, maskedKey,
                 (senderId == null || senderId.isBlank()) ? "(default)" : senderId);
+
+        if (apiKey != null && !apiKey.isBlank() && !apiKey.startsWith("atsk_")) {
+            log.error("[SMS] AT_API_KEY does not look like a real key (expected 'atsk_' prefix). "
+                    + "Sends will fail authentication.");
+        }
+        if ((senderId == null || senderId.isBlank()) && !"sandbox".equalsIgnoreCase(environment)) {
+            log.error("[SMS] AT_SENDER_ID is blank. AT's default sender ID only delivers to Airtel "
+                    + "Kenya numbers; Safaricom recipients are rejected as UserInBlacklist (406). "
+                    + "Register an alphanumeric sender ID at account.africastalking.com.");
+        }
+        // Live credentials against the sandbox host (or vice versa) always fail auth.
+        boolean sandboxEnv = "sandbox".equalsIgnoreCase(environment);
+        boolean sandboxUser = "sandbox".equalsIgnoreCase(username);
+        if (sandboxEnv != sandboxUser) {
+            log.error("[SMS] Mismatch — AT_ENVIRONMENT={} but AT_USERNAME={}. "
+                    + "Use username 'sandbox' with the sandbox environment, or your live "
+                    + "username with the live environment.", environment, username);
+        }
     }
 
     // ── Public send method ────────────────────────────────────────────────────
@@ -64,68 +82,68 @@ public class SmsService {
 
     public void notifyArtisanNewBooking(String artisanPhone, String customerName, String bookingCode) {
         send(artisanPhone,
-            "TUFIXIT: New job from " + customerName + ". " +
-            "Booking #" + bookingCode + ". View: tufixit.com/dashboard/jobs");
+            "FUDARI: New job from " + customerName + ". " +
+            "Booking #" + bookingCode + ". View: fudari.co/dashboard/jobs");
     }
 
     public void notifyCustomerAccepted(String customerPhone, String artisanName, String bookingCode) {
         send(customerPhone,
-            "TUFIXIT: " + artisanName + " accepted your job. " +
-            "Track: tufixit.com/track/" + bookingCode);
+            "FUDARI: " + artisanName + " accepted your job. " +
+            "Track: fudari.co/track/" + bookingCode);
     }
 
     public void notifyCustomerDeclined(String customerPhone, String bookingCode, String reason) {
         send(customerPhone,
-            "TUFIXIT: Sorry, artisan could not take your job (" + reason + "). " +
-            "Browse others: tufixit.com/artisans");
+            "FUDARI: Sorry, artisan could not take your job (" + reason + "). " +
+            "Browse others: fudari.co/artisans");
     }
 
     public void notifyCustomerArtisanArrived(String customerPhone, String startPin, String bookingCode) {
         send(customerPhone,
-            "TUFIXIT: Your artisan has arrived! Give them this START PIN: " + startPin +
-            ". Track: tufixit.com/track/" + bookingCode);
+            "FUDARI: Your artisan has arrived! Give them this START PIN: " + startPin +
+            ". Track: fudari.co/track/" + bookingCode);
     }
 
     public void notifyCustomerJobCompleted(String customerPhone, String artisanName, String bookingCode) {
         send(customerPhone,
-            "TUFIXIT: Job complete! Rate " + artisanName + " at tufixit.com/rate/" + bookingCode);
+            "FUDARI: Job complete! Rate " + artisanName + " at fudari.co/rate/" + bookingCode);
     }
 
     public void notifyArtisanPaymentReminder(String artisanPhone, String bookingCode) {
         send(artisanPhone,
-            "TUFIXIT: Please record payment for job " + bookingCode + ". " +
+            "FUDARI: Please record payment for job " + bookingCode + ". " +
             "Customers trust artisans who keep complete records.");
     }
 
     public void notifyCancellation(String phone, String bookingCode, String reason) {
         send(phone,
-            "TUFIXIT: Job " + bookingCode + " has been cancelled. Reason: " + reason);
+            "FUDARI: Job " + bookingCode + " has been cancelled. Reason: " + reason);
     }
 
     public void notifyCustomerCounterOffer(String customerPhone, String artisanName,
                                             String bookingCode, Integer counterPrice, String note) {
         String extra = (note != null && !note.isBlank()) ? " Note: " + note + "." : "";
         send(customerPhone,
-            "TUFIXIT: " + artisanName + " proposed a new price of KES " + counterPrice +
+            "FUDARI: " + artisanName + " proposed a new price of KES " + counterPrice +
             " for job " + bookingCode + "." + extra +
-            " Accept/reject: tufixit.com/track/" + bookingCode);
+            " Accept/reject: fudari.co/track/" + bookingCode);
     }
 
     public void notifyArtisanCounterAccepted(String artisanPhone, String bookingCode, Integer price) {
         send(artisanPhone,
-            "TUFIXIT: Customer accepted your counter-offer of KES " + price +
+            "FUDARI: Customer accepted your counter-offer of KES " + price +
             " for job " + bookingCode + ". Proceed to the customer location.");
     }
 
     public void notifyArtisanCounterRejected(String artisanPhone, String bookingCode) {
         send(artisanPhone,
-            "TUFIXIT: Customer rejected your counter-offer for job " + bookingCode +
+            "FUDARI: Customer rejected your counter-offer for job " + bookingCode +
             ". The booking has been declined.");
     }
 
     public void notifyGatePass(String phone, String accessCode, String bookingCode, String location) {
         send(phone,
-            "TUFIXIT GATEPASS: Access code " + accessCode + " for job " + bookingCode +
+            "FUDARI GATEPASS: Access code " + accessCode + " for job " + bookingCode +
             " at " + location + ". Show this code at the estate gate for entry.");
     }
 
@@ -135,12 +153,18 @@ public class SmsService {
                 ? "Your account is APPROVED and live."
                 : "Your account is PENDING admin review.";
         send(artisanPhone,
-            "TUFIXIT: Karibu " + firstName + "! " + status +
-            " Login at tufixit.com/login with phone " + artisanPhone +
+            "FUDARI: Karibu " + firstName + "! " + status +
+            " Login at fudari.co/login with phone " + artisanPhone +
             " and temp password: " + tempPassword + ". Change it after login.");
     }
 
     // ── Africa's Talking HTTP call ────────────────────────────────────────────
+
+    // AT pretty-prints its JSON, so the status field arrives as `"status": "Success"`.
+    private static final java.util.regex.Pattern RECIPIENT_STATUS =
+            java.util.regex.Pattern.compile("\"status\"\\s*:");
+    private static final java.util.regex.Pattern SUCCESS_STATUS =
+            java.util.regex.Pattern.compile("\"status\"\\s*:\\s*\"Success\"");
 
     private void sendViaat(String phone, String message) throws Exception {
         // Africa's Talking REST API — use sandbox URL for testing
@@ -175,7 +199,15 @@ public class SmsService {
                         : conn.getErrorStream());
 
         if (responseCode == 201 || responseCode == 200) {
-            log.info("[SMS] Sent to {} — AT response: {}", phone, responseBody);
+            // AT still returns 201 when a recipient is rejected, so the per-recipient
+            // status is the only reliable signal that the message actually went out.
+            if (RECIPIENT_STATUS.matcher(responseBody).find()
+                    && !SUCCESS_STATUS.matcher(responseBody).find()) {
+                log.error("[SMS] AT accepted the request but did NOT send to {} — response: {}",
+                        phone, responseBody);
+            } else {
+                log.info("[SMS] Sent to {} — AT response: {}", phone, responseBody);
+            }
         } else {
             log.warn("[SMS] AT returned HTTP {} for {} — response: {}", responseCode, phone, responseBody);
         }

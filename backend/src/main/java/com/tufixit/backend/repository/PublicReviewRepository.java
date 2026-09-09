@@ -20,6 +20,15 @@ public interface PublicReviewRepository extends JpaRepository<PublicReview, Long
     
     @Query("SELECT COUNT(r) FROM PublicReview r WHERE r.artisan.id = :artisanId")
     Integer getReviewCountByArtisanId(@Param("artisanId") Long artisanId);
+
+    /** Only verified reviews feed the public rating and trust score. */
+    @Query("SELECT AVG(r.rating) FROM PublicReview r WHERE r.artisan.id = :artisanId AND r.isVerified = true")
+    Double getVerifiedAverageRatingByArtisanId(@Param("artisanId") Long artisanId);
+
+    @Query("SELECT COUNT(r) FROM PublicReview r WHERE r.artisan.id = :artisanId AND r.isVerified = true")
+    Integer getVerifiedReviewCountByArtisanId(@Param("artisanId") Long artisanId);
+
+    boolean existsByBookingCode(String bookingCode);
     
     boolean existsByArtisanIdAndReviewerPhone(Long artisanId, String reviewerPhone);
     

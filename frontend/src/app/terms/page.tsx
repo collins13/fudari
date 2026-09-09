@@ -5,10 +5,10 @@ import Footer from '@/components/Footer';
 import LegalPageClient from '@/components/LegalPageClient';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | TUFIXIT',
+  title: 'Terms of Service | FUDARI',
   description:
-    'Terms of Service governing the use of the TUFIXIT marketplace by customers, artisans (Jua Kali workers), and estate partners in Kenya.',
-  alternates: { canonical: 'https://tufixit.com/terms' },
+    'Terms of Service governing the use of the FUDARI marketplace by customers, service providers, and estate partners in Kenya.',
+  alternates: { canonical: 'https://fudari.co/terms' },
 };
 
 const EFFECTIVE_DATE = 'April 28, 2026';
@@ -135,9 +135,9 @@ export default function TermsPage() {
                 <div className="card-body p-4 p-lg-5 legal-doc">
 
                   <p className="lead">
-                    Welcome to <strong>TUFIXIT</strong>. These Terms of Service (the &ldquo;<strong>Terms</strong>&rdquo;)
-                    form a binding agreement between you and TuFixIt Limited, a company operating in Kenya
-                    (&ldquo;<strong>TUFIXIT</strong>,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;), and govern
+                    Welcome to <strong>FUDARI</strong>. These Terms of Service (the &ldquo;<strong>Terms</strong>&rdquo;)
+                    form a binding agreement between you and Fudari Limited, a company operating in Kenya
+                    (&ldquo;<strong>FUDARI</strong>,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;), and govern
                     your access to and use of our website, mobile experiences, WhatsApp services, and any related
                     APIs (collectively, the &ldquo;<strong>Platform</strong>&rdquo;).
                   </p>
@@ -151,8 +151,8 @@ export default function TermsPage() {
                   {/* ── 1 ── */}
                   <h2 id="acceptance" className="h4 fw-bold mt-5">1. Acceptance of these Terms</h2>
                   <p>
-                    These Terms apply to every visitor, registered customer, registered artisan
-                    (also referred to as a &ldquo;Jua Kali worker&rdquo; or &ldquo;service provider&rdquo;), estate manager,
+                    These Terms apply to every visitor, registered customer, registered service provider
+                    (also referred to as an &ldquo;artisan&rdquo;, &ldquo;fundi&rdquo; or &ldquo;pro&rdquo;), estate manager,
                     and administrator. If you do not agree with any part of these Terms, you must not use the
                     Platform.
                   </p>
@@ -160,14 +160,15 @@ export default function TermsPage() {
                   {/* ── 2 ── */}
                   <h2 id="service" className="h4 fw-bold mt-5">2. Our Service</h2>
                   <p>
-                    TUFIXIT is a location-based marketplace that connects customers in Kenya with verified local
-                    artisans for home, vehicle, and commercial services (electrical, plumbing, mechanics,
-                    carpentry, painting, welding, HVAC, masonry, roofing, tiling, cleaning, gardening, security,
-                    appliance repair, and other categories we may add).
+                    FUDARI is a location-based marketplace that connects customers in Kenya with verified local
+                    service providers (electrical, plumbing, mechanics, carpentry, painting, welding, HVAC,
+                    masonry, roofing, tiling, cleaning and laundry, gardening, security, appliance repair,
+                    moving and delivery, boda boda and tuk tuk transport, beauty and personal care, car wash
+                    and tyre services, photography, design, IT support, and other categories we may add).
                   </p>
                   <div className="legal-callout">
                     <p>
-                      <strong>TUFIXIT is a neutral marketplace.</strong> We are <strong>not</strong> the employer,
+                      <strong>FUDARI is a neutral marketplace.</strong> We are <strong>not</strong> the employer,
                       agent, partner, or representative of any artisan listed on the Platform. Each artisan is an
                       independent contractor who alone performs the services. The contract for the actual service
                       (the &ldquo;<strong>Service Contract</strong>&rdquo;) is concluded directly between the customer
@@ -180,7 +181,7 @@ export default function TermsPage() {
                   <ul>
                     <li>You must be at least <strong>18 years old</strong> and able to enter into a binding contract under Kenyan law to register an account.</li>
                     <li>You must provide accurate, current, and complete information (full name, Kenyan phone number, email, and location) and keep it up to date.</li>
-                    <li>You are responsible for safeguarding your password and any activity that occurs under your account. Notify us immediately at <a href="mailto:security@tufixit.com" className="text-primary">security@tufixit.com</a> if you suspect unauthorised access.</li>
+                    <li>You are responsible for safeguarding your password and any activity that occurs under your account. Notify us immediately at <a href="mailto:security@fudari.co" className="text-primary">security@fudari.co</a> if you suspect unauthorised access.</li>
                     <li>One natural person may hold one customer account and, separately, one artisan account. Duplicate, fictitious, or shared accounts may be suspended without notice.</li>
                     <li>Customers may also use the Platform via WhatsApp or as guests without registering. Guest contact details supplied to start a chat are subject to these Terms.</li>
                   </ul>
@@ -249,18 +250,18 @@ export default function TermsPage() {
                   {/* ── 6 ── */}
                   <h2 id="estates" className="h4 fw-bold mt-5">6. Estate Partners</h2>
                   <p>
-                    Residential estates may partner with TUFIXIT to offer maintenance services to their residents
+                    Residential estates may partner with FUDARI to offer maintenance services to their residents
                     via a branded estate page (e.g., <code>/estate/fedha-estate</code>) and a WhatsApp short-code.
                     The estate manager is responsible for the accuracy of the estate&rsquo;s details, the list of
                     approved artisans, and any communications sent to residents through the Platform. Commission
-                    rates and contract terms between TUFIXIT and the estate are set out in a separate written
+                    rates and contract terms between FUDARI and the estate are set out in a separate written
                     agreement.
                   </p>
 
                   {/* ── 7 ── */}
                   <h2 id="payments" className="h4 fw-bold mt-5">7. Payments &amp; M-Pesa</h2>
                   <ul>
-                    <li>Subscription payments are made via M-Pesa Pay Bill (Business Number <strong>522522</strong>, account <em>TUFIXIT-&lt;PLAN&gt;</em>) and confirmed by submitting the M-Pesa transaction ID.</li>
+                    <li>Subscription payments are made via M-Pesa Pay Bill (Business Number <strong>522522</strong>, account <em>FUDARI-&lt;PLAN&gt;</em>) and confirmed by submitting the M-Pesa transaction ID.</li>
                     <li>Job payments between customer and artisan may be made in cash or via M-Pesa direct to the artisan, unless an escrow option is used. Where escrow is used, funds are released to the artisan only after the customer marks the job as completed or after the dispute window closes.</li>
                     <li>Prices are quoted in Kenyan Shillings (KES) and are inclusive of taxes where applicable. Artisans are individually responsible for declaring and paying their own income tax.</li>
                   </ul>
@@ -282,7 +283,7 @@ export default function TermsPage() {
                   <ul>
                     <li>Use the Platform for any unlawful, fraudulent, or harmful purpose;</li>
                     <li>Impersonate any person or misrepresent your affiliation with any individual or entity;</li>
-                    <li>Bypass TUFIXIT to avoid platform fees on a job that originated through the Platform;</li>
+                    <li>Bypass FUDARI to avoid platform fees on a job that originated through the Platform;</li>
                     <li>Post offensive, defamatory, sexually explicit, discriminatory, or violent content;</li>
                     <li>Upload viruses, scrape the Platform, attempt to reverse engineer it, or interfere with its security;</li>
                     <li>Send spam, unsolicited promotions, or phishing messages via chat, SMS, or WhatsApp;</li>
@@ -293,12 +294,12 @@ export default function TermsPage() {
                   <h2 id="liability" className="h4 fw-bold mt-5">10. Disclaimers &amp; Limitation of Liability</h2>
                   <p>
                     The Platform is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;. To the maximum extent
-                    permitted by law, TUFIXIT disclaims all warranties, express or implied, including merchantability,
+                    permitted by law, FUDARI disclaims all warranties, express or implied, including merchantability,
                     fitness for a particular purpose, and non-infringement. We do not warrant that the Platform will
                     be uninterrupted or error-free.
                   </p>
                   <p>
-                    TUFIXIT is not a party to the Service Contract between customer and artisan and is therefore not
+                    FUDARI is not a party to the Service Contract between customer and artisan and is therefore not
                     liable for the quality of work performed, damage to property, personal injury, theft, late
                     arrival, no-shows, or any direct or consequential loss arising from a Service Contract. Customers
                     and artisans deal with each other at their own risk.
@@ -351,11 +352,11 @@ export default function TermsPage() {
                   <h2 id="contact" className="h4 fw-bold mt-5">15. Contact Us</h2>
                   <p>Questions about these Terms? Reach us at:</p>
                   <div className="contact-grid mt-3">
-                    <a href="mailto:legal@tufixit.com" className="contact-item text-decoration-none">
+                    <a href="mailto:legal@fudari.co" className="contact-item text-decoration-none">
                       <span className="contact-icon"><i className="fa-solid fa-envelope"></i></span>
                       <span>
                         <div className="small text-muted fw-semibold mb-1">Legal Email</div>
-                        <div className="fw-medium text-dark">legal@tufixit.com</div>
+                        <div className="fw-medium text-dark">legal@fudari.co</div>
                       </span>
                     </a>
                     <a href="tel:+254703954539" className="contact-item text-decoration-none">
@@ -376,14 +377,14 @@ export default function TermsPage() {
                       <span className="contact-icon"><i className="fa-solid fa-building-columns"></i></span>
                       <span>
                         <div className="small text-muted fw-semibold mb-1">Entity</div>
-                        <div className="fw-medium text-dark">TuFixIt Limited</div>
+                        <div className="fw-medium text-dark">Fudari Limited</div>
                       </span>
                     </div>
                   </div>
 
                   <hr className="my-4" />
                   <p className="text-muted small mb-0">
-                    By using TUFIXIT you acknowledge that you have read these Terms in conjunction with our{' '}
+                    By using FUDARI you acknowledge that you have read these Terms in conjunction with our{' '}
                     <Link href="/privacy" className="text-primary fw-semibold">Privacy Policy</Link>.
                   </p>
                 </div>
@@ -421,7 +422,7 @@ export default function TermsPage() {
         @supports (animation-timeline: scroll()) {
           .reading-progress {
             position: fixed; top: 0; left: 0; width: 100%; height: 3px;
-            background: #F84525; z-index: 9999;
+            background: var(--bs-primary); z-index: 9999;
             transform-origin: 0 50%; transform: scaleX(0);
             animation: readProgress linear;
             animation-timeline: scroll(root);
@@ -431,7 +432,7 @@ export default function TermsPage() {
 
         /* Hero */
         .legal-hero.dark-overlay::before {
-          background: linear-gradient(135deg, rgba(248,69,37,0.92) 0%, rgba(20,20,50,0.88) 100%);
+          background: linear-gradient(135deg, rgba(13,92,99,0.94) 0%, rgba(11,27,35,0.9) 100%);
         }
         .hero-badge {
           background: rgba(255,255,255,0.18);
@@ -451,10 +452,10 @@ export default function TermsPage() {
           transition: all .15s ease; padding: .25rem .6rem !important;
           border-radius: 0 .25rem .25rem 0; display: block;
         }
-        .legal-toc a:hover { color: #F84525 !important; background: rgba(248,69,37,.05); }
+        .legal-toc a:hover { color: var(--bs-primary) !important; background: rgba(13,92,99,.06); }
         .legal-toc a.toc-active {
-          color: #F84525 !important; font-weight: 600;
-          border-left-color: #F84525; background: rgba(248,69,37,.08);
+          color: var(--bs-primary) !important; font-weight: 600;
+          border-left-color: var(--bs-primary); background: rgba(13,92,99,.1);
         }
 
         /* Document typography */
@@ -467,8 +468,8 @@ export default function TermsPage() {
         .legal-doc p { line-height: 1.78; color: #444; }
         .legal-doc ul { line-height: 1.88; color: #444; }
         .legal-doc li { margin-bottom: .35rem; }
-        .legal-doc a { color: #F84525; }
-        .legal-doc a:hover { color: #c73616; }
+        .legal-doc a { color: var(--bs-primary); }
+        .legal-doc a:hover { color: var(--tx-primary-dark); }
         .legal-doc code {
           background: #f4f4f7; padding: 2px 6px; border-radius: 4px;
           font-size: .9em; color: #c7254e;
@@ -476,8 +477,8 @@ export default function TermsPage() {
 
         /* Callout boxes */
         .legal-callout {
-          background: rgba(248,69,37,.05);
-          border-left: 4px solid #F84525;
+          background: rgba(13,92,99,.06);
+          border-left: 4px solid var(--bs-primary);
           border-radius: 0 .5rem .5rem 0;
           padding: 1rem 1.25rem; margin: 1.5rem 0;
         }
@@ -496,14 +497,14 @@ export default function TermsPage() {
         .contact-item:hover { background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.08); }
         .contact-icon {
           width: 2.25rem; height: 2.25rem; border-radius: .4rem;
-          background: #F84525; color: #fff; flex-shrink: 0;
+          background: var(--bs-primary); color: #fff; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
           font-size: .85rem;
         }
 
         /* Cross-link banner */
         .cross-link-banner {
-          background: linear-gradient(135deg, #1e1e3c 0%, #F84525 100%);
+          background: linear-gradient(135deg, var(--tx-ink) 0%, var(--bs-primary) 100%);
         }
 
         @media print {

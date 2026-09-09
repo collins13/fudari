@@ -44,7 +44,7 @@ public class Estate {
     private String name;
 
     /**
-     * URL-safe slug for the branded booking link: tufixit.com/book?estate={slug}
+     * URL-safe slug for the branded booking link: fudari.co/book?estate={slug}
      * Generated from name, e.g. "greenpark-athi-river". Must be unique.
      */
     @Column(nullable = false, unique = true, length = 100)

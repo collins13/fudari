@@ -31,6 +31,7 @@ public class ListingDTO {
         @Size(max = 2000, message = "Description must not exceed 2000 characters")
         private String description;
 
+        @NotBlank(message = "A starting price is required so customers know what to expect")
         private String priceStart;
 
         private String location;

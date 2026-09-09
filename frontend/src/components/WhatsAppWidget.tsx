@@ -46,7 +46,7 @@ export default function WhatsAppWidget() {
             </div>
             <div className="flex-grow-1">
               <div className="d-flex align-items-center gap-2">
-                <strong className="text-white">TUFIXIT Booking Bot</strong>
+                <strong className="text-white">FUDARI Booking Bot</strong>
                 <span className="tx-wa-online">
                   <span className="dot"></span> Online
                 </span>
@@ -76,7 +76,7 @@ export default function WhatsAppWidget() {
               {QUICK_PROMPTS.map((p) => (
                 <a
                   key={p.label}
-                  href={buildLink(`Hi TUFIXIT, I need an artisan: ${p.label}`)}
+                  href={buildLink(`Hi FUDARI, I need an artisan: ${p.label}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="tx-wa-prompt"
@@ -89,7 +89,7 @@ export default function WhatsAppWidget() {
           </div>
 
           <a
-            href={buildLink('Hi TUFIXIT, I need help with a job')}
+            href={buildLink('Hi FUDARI, I need help with a job')}
             target="_blank"
             rel="noopener noreferrer"
             className="tx-wa-cta"
@@ -160,7 +160,7 @@ export default function WhatsAppWidget() {
           min-width: 20px;
           height: 20px;
           padding: 0 5px;
-          background: #f84525;
+          background: #0d5c63;
           color: #fff;
           border-radius: 999px;
           font-size: 11px;

@@ -1,5 +1,5 @@
 /**
- * Kenya-specific constants for TUFIXIT.
+ * Kenya-specific constants for FUDARI.
  * Counties, major towns, and Swahili skill labels for the Kenyan market.
  */
 
@@ -58,9 +58,79 @@ export const SKILL_LABELS_KE: Record<string, { en: string; sw: string }> = {
   INTERIOR_DESIGNER:  { en: 'Interior Designer',   sw: 'Fundi Mapambo' },
   MOVER:              { en: 'Mover',               sw: 'Wahamishaji' },
   TRANSPORT_PROVIDER: { en: 'Transport Provider',  sw: 'Usafiri wa Mizigo' },
+  BODA_BODA:          { en: 'Boda Boda',           sw: 'Boda Boda' },
+  TUK_TUK:            { en: 'Tuk Tuk',             sw: 'Tuk Tuk' },
+  COURIER:            { en: 'Courier & Delivery',  sw: 'Mtumaji' },
+  MAMA_FUA:           { en: 'Mama Fua',            sw: 'Mama Fua' },
+  BARBER:             { en: 'Barber',              sw: 'Kinyozi' },
+  HAIR_SALON:         { en: 'Hair Salon',          sw: 'Saluni' },
+  MAKEUP_ARTIST:      { en: 'Makeup Artist',       sw: 'Msanii wa Urembo' },
+  CAR_WASH:           { en: 'Car Wash',            sw: 'Kuosha Gari' },
+  TYRE_SERVICES:      { en: 'Tyre Services',       sw: 'Fundi Matairi' },
+  PHOTOGRAPHER:       { en: 'Photographer',        sw: 'Mpiga Picha' },
+  GRAPHIC_DESIGNER:   { en: 'Graphic Designer',    sw: 'Mbunifu wa Michoro' },
+  IT_TECHNICIAN:      { en: 'IT Technician',       sw: 'Fundi Kompyuta' },
   EVENT_LIGHTING:     { en: 'Event Lighting',      sw: 'Taa za Hafla' },
   OTHER:              { en: 'Other',               sw: 'Nyingine' },
 };
+
+/** Every skill type the platform supports, in the order shown to users. */
+export const SKILL_TYPES: string[] = Object.keys(SKILL_LABELS_KE);
+
+/** Font Awesome class per skill type; `fa-wrench` is the fallback. */
+export const SKILL_ICONS: Record<string, string> = {
+  ELECTRICIAN: 'fa-bolt',
+  PLUMBER: 'fa-faucet',
+  MECHANIC: 'fa-car',
+  CARPENTER: 'fa-hammer',
+  PAINTER: 'fa-paint-roller',
+  WELDER: 'fa-fire',
+  HVAC_TECHNICIAN: 'fa-wind',
+  APPLIANCE_REPAIR: 'fa-blender',
+  ROOFING: 'fa-house-chimney',
+  TILING: 'fa-border-all',
+  MASON: 'fa-building',
+  GARDENER: 'fa-leaf',
+  CLEANER: 'fa-broom',
+  SECURITY: 'fa-shield-halved',
+  SOLAR_TECHNICIAN: 'fa-solar-panel',
+  BOREHOLE_DRILLING: 'fa-water',
+  FUMIGATION: 'fa-bug',
+  WATER_TANK_CLEANING: 'fa-droplet',
+  GLASS_FITTER: 'fa-window-maximize',
+  CEILING_BOARD: 'fa-table-cells',
+  LOCKSMITH: 'fa-key',
+  CCTV_INSTALLER: 'fa-video',
+  INTERIOR_DESIGNER: 'fa-couch',
+  MOVER: 'fa-truck-moving',
+  TRANSPORT_PROVIDER: 'fa-truck',
+  BODA_BODA: 'fa-motorcycle',
+  TUK_TUK: 'fa-van-shuttle',
+  COURIER: 'fa-box',
+  MAMA_FUA: 'fa-shirt',
+  BARBER: 'fa-scissors',
+  HAIR_SALON: 'fa-wand-magic-sparkles',
+  MAKEUP_ARTIST: 'fa-spa',
+  CAR_WASH: 'fa-spray-can-sparkles',
+  TYRE_SERVICES: 'fa-circle-dot',
+  PHOTOGRAPHER: 'fa-camera',
+  GRAPHIC_DESIGNER: 'fa-palette',
+  IT_TECHNICIAN: 'fa-laptop',
+  EVENT_LIGHTING: 'fa-lightbulb',
+  OTHER: 'fa-wrench',
+};
+
+export function skillIcon(skillType: string): string {
+  return SKILL_ICONS[skillType] || 'fa-wrench';
+}
+
+/** Ready-made option list for every skill dropdown / picker in the app. */
+export const SKILL_OPTIONS: { label: string; value: string; icon: string }[] =
+  SKILL_TYPES.map((value) => ({
+    value,
+    label: SKILL_LABELS_KE[value].en,
+    icon: skillIcon(value),
+  }));
 
 // Format KES currency Kenyan style
 export function formatKES(amount: number): string {
@@ -77,6 +147,13 @@ export function skillLabelBilingual(skillType: string): string {
   const entry = SKILL_LABELS_KE[skillType];
   if (!entry) return skillType;
   return `${entry.en} (${entry.sw})`;
+}
+
+/** Swahili/Sheng trade name, or null when the trade has no distinct local name. */
+export function skillLabelSwahili(skillType: string): string | null {
+  const entry = SKILL_LABELS_KE[skillType];
+  if (!entry || entry.sw === entry.en) return null;
+  return entry.sw;
 }
 
 /**
@@ -139,6 +216,39 @@ const SYMPTOM_KEYWORDS: Record<string, string[]> = {
   GARDENER: ['garden', 'lawn', 'grass', 'hedge', 'shamba', 'bustani'],
   CEILING_BOARD: ['ceiling', 'gypsum', 'ceiling board', 'dari'],
   SECURITY: ['alarm', 'electric fence', 'gate motor', 'intercom'],
+  MAMA_FUA: [
+    'laundry', 'washing clothes', 'wash clothes', 'ironing', 'iron clothes', 'mama fua',
+    'house help', 'househelp', 'domestic', 'dishes', 'kufua nguo', 'kupiga pasi',
+  ],
+  BODA_BODA: ['boda', 'boda boda', 'motorbike', 'motorcycle', 'bike ride', 'pikipiki'],
+  TUK_TUK: ['tuk tuk', 'tuktuk', 'three wheeler', 'bajaj'],
+  COURIER: [
+    'send parcel', 'parcel', 'package', 'courier', 'same day delivery', 'errand',
+    'pick and drop', 'peleka', 'tuma kitu',
+  ],
+  BARBER: ['haircut', 'hair cut', 'shave', 'barber', 'fade', 'beard trim', 'kinyozi', 'kunyoa'],
+  HAIR_SALON: [
+    'braids', 'braiding', 'weave', 'wig', 'dreadlocks', 'locs', 'hair styling', 'blow dry',
+    'relaxer', 'salon', 'saluni', 'kusuka',
+  ],
+  MAKEUP_ARTIST: [
+    'makeup', 'make up', 'bridal makeup', 'nails', 'manicure', 'pedicure', 'lashes',
+    'beauty therapist', 'urembo',
+  ],
+  CAR_WASH: ['car wash', 'carwash', 'wash my car', 'valet', 'detailing', 'kuosha gari'],
+  TYRE_SERVICES: ['tyre', 'tire', 'puncture', 'wheel balancing', 'wheel alignment', 'matairi'],
+  PHOTOGRAPHER: [
+    'photographer', 'photography', 'photoshoot', 'photo shoot', 'wedding photos',
+    'videographer', 'video shoot', 'mpiga picha',
+  ],
+  GRAPHIC_DESIGNER: [
+    'logo', 'graphic design', 'designer', 'branding', 'flyer', 'poster', 'banner design',
+    'business card', 'social media design',
+  ],
+  IT_TECHNICIAN: [
+    'laptop', 'computer', 'pc repair', 'printer', 'wifi', 'router', 'network', 'software',
+    'virus', 'data recovery', 'website', 'kompyuta',
+  ],
 };
 
 /**

@@ -47,7 +47,7 @@ public class MpesaDarajaService {
     @Value("${mpesa.passkey:bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919}")
     private String passkey;
 
-    @Value("${mpesa.callback.url:https://api.tufixit.com/api/mpesa/stk-callback}")
+    @Value("${mpesa.callback.url:https://api.fudari.co/api/mpesa/stk-callback}")
     private String callbackUrl;
 
     @Value("${mpesa.base.url:https://sandbox.safaricom.co.ke}")
@@ -121,7 +121,7 @@ public class MpesaDarajaService {
      *
      * @param phoneNumber Kenyan phone number (254XXXXXXXXX format)
      * @param amount      Amount in KES (integer)
-     * @param accountRef  Account reference (e.g. "TUFIXIT-PRO" or "TUF-ABC123")
+     * @param accountRef  Account reference (e.g. "FUDARI-PRO" or "TUF-ABC123")
      * @param description Transaction description
      * @return StkPushResult with CheckoutRequestID and merchant request ID
      */
@@ -151,7 +151,7 @@ public class MpesaDarajaService {
         payload.put("PhoneNumber", phone);
         payload.put("CallBackURL", callbackUrl);
         payload.put("AccountReference", accountRef);
-        payload.put("TransactionDesc", description != null ? description : "TuFixIt Payment");
+        payload.put("TransactionDesc", description != null ? description : "Fudari Payment");
 
         String body = objectMapper.writeValueAsString(payload);
 

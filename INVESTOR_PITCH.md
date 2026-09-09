@@ -1,4 +1,4 @@
-# TuFixIt — Investor Pitch Document
+# Fudari — Investor Pitch Document
 
 **Connecting Africa's 50 Million Informal Artisans to 400 Million Customers**
 
@@ -11,7 +11,7 @@
 
 1. [Executive Summary](#1-executive-summary)
 2. [Problem Statement](#2-problem-statement)
-3. [Solution](#3-solution--the-tufixit-platform)
+3. [Solution](#3-solution--the-fudari-platform)
 4. [Market Opportunity](#4-market-opportunity)
 5. [Product Overview](#5-product-overview)
 6. [Business Model](#6-business-model)
@@ -28,11 +28,11 @@
 
 ## 1. Executive Summary
 
-**TuFixIt** is a technology platform that connects customers with verified artisans — electricians, plumbers, mechanics, carpenters, and 20+ other trade categories — across Kenya and, ultimately, across Africa.
+**Fudari** is a technology platform that connects customers with verified artisans — electricians, plumbers, mechanics, carpenters, and 20+ other trade categories — across Kenya and, ultimately, across Africa.
 
 Africa's informal skilled-trades sector employs an estimated 50 million people and generates over USD 200 billion annually, yet it remains one of the least digitized industries on the continent. Customers have no reliable way to find, vet, or book a qualified artisan. Artisans have no tools to grow their businesses, manage their reputation, or access steady work.
 
-TuFixIt solves both sides of this market with a mobile-first platform that offers:
+Fudari solves both sides of this market with a mobile-first platform that offers:
 
 - **For customers:** Instant artisan discovery, AI-powered matching, no-login booking, real-time tracking, escrow-protected payments, and a transparent trust system.
 - **For artisans:** A digital storefront, subscription-based ranking for visibility, lead analytics, AI-driven pricing tools, demand forecasting, and direct M-Pesa earnings.
@@ -79,17 +79,17 @@ Existing solutions — WhatsApp groups, Facebook Marketplace, Jiji classifieds �
 - AI-driven matching and pricing
 - Subscription-based growth tools for artisans
 
-**TuFixIt is purpose-built for this gap.**
+**Fudari is purpose-built for this gap.**
 
 ---
 
-## 3. Solution — The TuFixIt Platform
+## 3. Solution — The Fudari Platform
 
-TuFixIt is a two-sided marketplace with three user roles:
+Fudari is a two-sided marketplace with three user roles:
 
 ```
 ┌─────────────┐          ┌─────────────────┐          ┌─────────────┐
-│  CUSTOMERS  │◄────────►│    TuFixIt       │◄────────►│  ARTISANS   │
+│  CUSTOMERS  │◄────────►│    Fudari       │◄────────►│  ARTISANS   │
 │             │  Search   │    Platform      │  Manage  │             │
 │  - Browse   │  Book     │                 │  Earn    │  - Listings │
 │  - Book     │  Track    │  AI • Escrow •  │  Grow    │  - Bids     │
@@ -147,7 +147,7 @@ TuFixIt is a two-sided marketplace with three user roles:
 
 ### Expansion Opportunity
 
-The same model applies across East Africa (Tanzania, Uganda, Rwanda — combined TAM: USD 12B) and West Africa (Nigeria, Ghana — TAM: USD 25B+). TuFixIt's category-agnostic architecture (24 skill types, extensible) and mobile-money-first payments make it natively portable.
+The same model applies across East Africa (Tanzania, Uganda, Rwanda — combined TAM: USD 12B) and West Africa (Nigeria, Ghana — TAM: USD 25B+). Fudari's category-agnostic architecture (24 skill types, extensible) and mobile-money-first payments make it natively portable.
 
 ---
 
@@ -240,7 +240,7 @@ This creates a natural upgrade funnel: artisans see their ranking score breakdow
 
 ## 6. Business Model
 
-TuFixIt operates a **marketplace + SaaS hybrid** model with four revenue streams:
+Fudari operates a **marketplace + SaaS hybrid** model with four revenue streams:
 
 ```
 Revenue = Subscriptions + Transaction Fees + Lead Monetization + Value-Added Services
@@ -269,7 +269,7 @@ Revenue = Subscriptions + Transaction Fees + Lead Monetization + Value-Added Ser
 
 ### Competitive Landscape
 
-| Feature | TuFixIt | Jiji/OLX | WhatsApp Groups | Lynk | M-Fundi |
+| Feature | Fudari | Jiji/OLX | WhatsApp Groups | Lynk | M-Fundi |
 |---|---|---|---|---|---|
 | Artisan-specific platform | ✅ | ❌ (general classifieds) | ❌ | ✅ | ✅ |
 | AI-powered matching & pricing | ✅ (10 AI features) | ❌ | ❌ | ❌ | ❌ |
@@ -300,16 +300,16 @@ Revenue = Subscriptions + Transaction Fees + Lead Monetization + Value-Added Ser
 | Channel | Tactic | Budget Allocation |
 |---|---|---|
 | **Field Sales** | 5-person ground team in Jua Kali hubs (Gikomba, Kamukunji, Industrial Area) — onboard artisans in-person with live demo | 30% |
-| **WhatsApp Virality** | Each booking sends SMS to customer + artisan with share link. Artisans share their TuFixIt profile as a digital business card | 5% |
+| **WhatsApp Virality** | Each booking sends SMS to customer + artisan with share link. Artisans share their Fudari profile as a digital business card | 5% |
 | **M-Pesa Partnership** | Feature in Safaricom's SME ecosystem (Jua Kali has 60%+ M-Pesa penetration) | 10% |
-| **Social Media** | TikTok/Instagram content: "Day in the life of a TuFixIt Pro artisan" — showcase earnings, tools, verified badge | 15% |
+| **Social Media** | TikTok/Instagram content: "Day in the life of a Fudari Pro artisan" — showcase earnings, tools, verified badge | 15% |
 | **Hardware Estates & Property Managers** | Partner with hardware shops and estate management companies — they refer artisans to customers | 15% |
 | **SEO & Content** | "Best plumber in Westlands" style pages — capture high-intent Google searches | 10% |
 | **Referral Program** | Artisans earn KES 200 for every new artisan they refer who completes a job | 15% |
 
 ### Why No-Login Booking Is Key
 
-Traditional marketplaces require customers to register before booking. In Kenya, **registration is the #1 drop-off point** for informal-sector platforms. TuFixIt's no-login flow (name, phone, location → booking code → track) eliminates this barrier entirely. Customers can be served in 60 seconds.
+Traditional marketplaces require customers to register before booking. In Kenya, **registration is the #1 drop-off point** for informal-sector platforms. Fudari's no-login flow (name, phone, location → booking code → track) eliminates this barrier entirely. Customers can be served in 60 seconds.
 
 ---
 
@@ -327,7 +327,7 @@ Traditional marketplaces require customers to register before booking. In Kenya,
 - Launch in Mombasa, Kisumu, Nakuru, Eldoret
 - Expand to all 24 trade categories
 - Introduce enterprise API for property management companies and corporate facilities
-- Launch artisan training partnerships (TVET colleges → TuFixIt pipeline)
+- Launch artisan training partnerships (TVET colleges → Fudari pipeline)
 - Target 20% PRO conversion, 25% BASIC (subscription revenue scales)
 
 ### Year 3: East Africa (50,000–150,000 artisans)
@@ -335,7 +335,7 @@ Traditional marketplaces require customers to register before booking. In Kenya,
 - Launch in Dar es Salaam (Tanzania) and Kampala (Uganda)
 - Localize for Tigo Pesa / MTN Mobile Money
 - Introduce insurance partnerships (job guarantees for PRO artisans)
-- Explore B2B channel: corporate maintenance contracts fulfilled by TuFixIt artisans
+- Explore B2B channel: corporate maintenance contracts fulfilled by Fudari artisans
 
 ---
 
@@ -425,7 +425,7 @@ This is not a future feature — **it is built and operational today**.
 | Role | Name | Background |
 |---|---|---|
 | **Founder & CEO** | *[Name]* | *[Background — e.g., 5+ years in tech/marketplace startups, Kenya market experience]* |
-| **CTO / Lead Engineer** | *[Name]* | Full-stack architect — built the entire TuFixIt platform (Java 21 + Next.js + AI integration) |
+| **CTO / Lead Engineer** | *[Name]* | Full-stack architect — built the entire Fudari platform (Java 21 + Next.js + AI integration) |
 | **Head of Operations** | *[Name]* | *[Background — e.g., field operations, informal sector experience]* |
 | **Head of Growth** | *[Name]* | *[Background — e.g., growth marketing, mobile-first Africa startups]* |
 
@@ -547,17 +547,17 @@ Comparable exits in African marketplace tech: Lynk (acquired), SweepSouth (Serie
 
 ## Appendix: Why Now?
 
-Five secular trends converge to make **2026 the right moment** for TuFixIt:
+Five secular trends converge to make **2026 the right moment** for Fudari:
 
 1. **Smartphone inflection** — Kenya passed 67% smartphone penetration in 2025; the demographic that hires artisans now lives on their phones
 2. **M-Pesa ubiquity** — 35M users means digital payments are not an adoption challenge; they are the default
 3. **AI cost collapse** — GPT-4o-mini costs USD 0.15/1M tokens — features that would have cost KES 50M to build in 2022 now cost KES 500K
 4. **Post-COVID trade boom** — Home improvement and renovation spending in Kenya grew 28% since 2020 as remote work drives housing investment
-5. **Government digitization push** — Kenya's Huduma framework and Digital Economy Blueprint prioritize informal sector formalization — TuFixIt is aligned with national policy
+5. **Government digitization push** — Kenya's Huduma framework and Digital Economy Blueprint prioritize informal sector formalization — Fudari is aligned with national policy
 
 ---
 
-**TuFixIt — Transforming Africa's largest informal workforce into a trusted digital economy.**
+**Fudari — Transforming Africa's largest informal workforce into a trusted digital economy.**
 
 *Contact: [Founder Name] — [email] — [phone]*
 

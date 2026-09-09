@@ -1,15 +1,11 @@
 import { MetadataRoute } from 'next';
+import { SKILL_TYPES as ALL_SKILL_TYPES } from '@/lib/kenya';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
-const SKILL_TYPES = [
-  'electrician', 'plumber', 'mechanic', 'painter', 'carpenter', 'welder',
-  'hvac_technician', 'appliance_repair', 'roofing', 'tiling', 'mason',
-  'gardener', 'cleaner', 'security', 'solar_technician', 'borehole_drilling',
-  'fumigation', 'water_tank_cleaning', 'glass_fitter', 'ceiling_board',
-  'locksmith', 'cctv_installer', 'interior_designer',
-  'mover', 'transport_provider', 'event_lighting',
-];
+const SKILL_TYPES = ALL_SKILL_TYPES
+  .filter((s) => s !== 'OTHER')
+  .map((s) => s.toLowerCase());
 
 const MAJOR_LOCATIONS = [
   'nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret',
@@ -18,7 +14,7 @@ const MAJOR_LOCATIONS = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://tufixit.com';
+  const baseUrl = 'https://fudari.co';
   const now = new Date();
 
   // Static indexable pages

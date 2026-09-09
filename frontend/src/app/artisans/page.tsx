@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback, Suspense, type ReactElement } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { workersAPI, listingsAPI } from '@/lib/api';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
-import { skillLabelBilingual } from '@/lib/kenya';
+import { skillLabelBilingual, skillLabelSwahili, skillIcon } from '@/lib/kenya';
 import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ interface Artisan {
   id: number;
   name: string;
   skill: string;
+  skillType: string;
   package: 'Gold' | 'Silver' | 'Bronze';
   rating: number;
   reviews: number;
@@ -65,13 +67,7 @@ interface Listing {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getCategoryIcon(s: string) {
-  const map: Record<string, string> = {
-    ELECTRICIAN: 'fa-bolt', PLUMBER: 'fa-faucet', MECHANIC: 'fa-car',
-    PAINTER: 'fa-paint-roller', CARPENTER: 'fa-hammer', HVAC_TECHNICIAN: 'fa-wind',
-    WELDER: 'fa-fire', MASON: 'fa-building',
-    MOVER: 'fa-truck-moving', TRANSPORT_PROVIDER: 'fa-truck', EVENT_LIGHTING: 'fa-lightbulb',
-  };
-  return map[s] || 'fa-wrench';
+  return skillIcon(s);
 }
 
 function mapWorkerToArtisan(w: any): Artisan {
@@ -80,6 +76,7 @@ function mapWorkerToArtisan(w: any): Artisan {
     id: w.id,
     name: `${w.firstName} ${w.lastName}`,
     skill: primarySkill ? skillTypeToLabel(primarySkill.skillType) : 'General',
+    skillType: primarySkill?.skillType || '',
     package: vettingToPackage(w.vettingLevel),
     rating: w.trustScore || 0,
     reviews: w.totalReviews || 0,
@@ -151,8 +148,14 @@ function TrustFacts({ pkg, jobs, rating, reviews }: { pkg: string; jobs: number;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = ['All', 'Electrical', 'Plumbing', 'Mechanics', 'Painting', 'Carpentry', 'HVAC', 'Welding', 'Masonry', 'Moving', 'Transport', 'Event Lighting'];
+const CATEGORIES = [
+  'All', 'Electrical', 'Plumbing', 'Mechanics', 'Painting', 'Carpentry', 'HVAC',
+  'Welding', 'Masonry', 'Cleaning', 'Mama Fua', 'Moving', 'Transport',
+  'Boda Boda', 'Tuk Tuk', 'Delivery', 'Barber', 'Salon', 'Beauty',
+  'Car Wash', 'Tyres', 'Photography', 'Design', 'IT Support', 'Event Lighting',
+];
 const PACKAGES = ['All', 'Gold', 'Silver', 'Bronze'];
+const MAX_PRICE = 50000;
 const SORT_OPTIONS = [
   { value: 'ranking', label: 'Top Ranked' },
   { value: 'distance', label: 'Nearest first' },
@@ -164,8 +167,12 @@ const SORT_OPTIONS = [
 const CATEGORY_TO_SKILL_TYPE: Record<string, string> = {
   electrical: 'ELECTRICIAN', plumbing: 'PLUMBER', mechanics: 'MECHANIC',
   painting: 'PAINTER', carpentry: 'CARPENTER', hvac: 'HVAC_TECHNICIAN',
-  welding: 'WELDER', masonry: 'MASON',
+  welding: 'WELDER', masonry: 'MASON', cleaning: 'CLEANER', 'mama fua': 'MAMA_FUA',
   moving: 'MOVER', transport: 'TRANSPORT_PROVIDER', 'event lighting': 'EVENT_LIGHTING',
+  'boda boda': 'BODA_BODA', 'tuk tuk': 'TUK_TUK', delivery: 'COURIER',
+  barber: 'BARBER', salon: 'HAIR_SALON', beauty: 'MAKEUP_ARTIST',
+  'car wash': 'CAR_WASH', tyres: 'TYRE_SERVICES',
+  photography: 'PHOTOGRAPHER', design: 'GRAPHIC_DESIGNER', 'it support': 'IT_TECHNICIAN',
 };
 
 const QUICK_ISSUE_CHIPS: Array<{ label: string; query: string; skillType: string }> = [
@@ -175,8 +182,18 @@ const QUICK_ISSUE_CHIPS: Array<{ label: string; query: string; skillType: string
   { label: 'AC not cooling', query: 'AC not cooling and making noise', skillType: 'HVAC_TECHNICIAN' },
   { label: 'Broken door / cabinet', query: 'Door hinge broken and cabinet repair', skillType: 'CARPENTER' },
   { label: 'Need house painting', query: 'Need repainting for a 2 bedroom house', skillType: 'PAINTER' },
+  { label: 'Laundry / house cleaning', query: 'Need mama fua for laundry and house cleaning', skillType: 'MAMA_FUA' },
   { label: 'House / office moving', query: 'Need mover for house or office relocation', skillType: 'MOVER' },
-  { label: 'Pickup / delivery transport', query: 'Need transport provider with pickup or truck', skillType: 'TRANSPORT_PROVIDER' },
+  { label: 'Boda / quick errand', query: 'Need a boda boda rider for a quick errand', skillType: 'BODA_BODA' },
+  { label: 'Send a parcel', query: 'Need same day parcel delivery', skillType: 'COURIER' },
+  { label: 'Haircut at home', query: 'Need a barber for a haircut at home', skillType: 'BARBER' },
+  { label: 'Braids / hair styling', query: 'Need braiding and hair styling', skillType: 'HAIR_SALON' },
+  { label: 'Makeup / nails', query: 'Need makeup and nails done', skillType: 'MAKEUP_ARTIST' },
+  { label: 'Car wash / detailing', query: 'Need car wash and interior detailing', skillType: 'CAR_WASH' },
+  { label: 'Puncture / tyre change', query: 'Puncture repair and tyre change', skillType: 'TYRE_SERVICES' },
+  { label: 'Photoshoot / event photos', query: 'Need a photographer for an event shoot', skillType: 'PHOTOGRAPHER' },
+  { label: 'Logo / flyer design', query: 'Need a logo and flyer designed', skillType: 'GRAPHIC_DESIGNER' },
+  { label: 'Laptop / wifi problem', query: 'Laptop not working and wifi keeps dropping', skillType: 'IT_TECHNICIAN' },
   { label: 'Event lighting setup', query: 'Need event lighting and stage lights setup', skillType: 'EVENT_LIGHTING' },
 ];
 
@@ -193,8 +210,8 @@ function ArtisansContent() {
   const [packageFilter, setPackageFilter] = useState('All');
   const [sortBy, setSortBy] = useState('ranking');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [maxPrice, setMaxPrice] = useState(50000);
-  const [rangeValue, setRangeValue] = useState(50000);
+  const [maxPrice, setMaxPrice] = useState(MAX_PRICE);
+  const [rangeValue, setRangeValue] = useState(MAX_PRICE);
   const [searchInput, setSearchInput] = useState('');
   const [locationInput, setLocationInput] = useState(searchParams.get('location') || '');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -203,6 +220,19 @@ function ArtisansContent() {
   const [artisans, setArtisans] = useState<Artisan[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Text filters hit the API, so hold off until the customer stops typing.
+  const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
+  const [debouncedLocation, setDebouncedLocation] = useState(locationInput);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setDebouncedLocation(locationInput);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput, locationInput]);
 
   // Pagination state
   const PAGE_SIZE = 12;
@@ -234,24 +264,39 @@ function ArtisansContent() {
   // Fetch workers
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       // An explicit skill from symptom search is more precise than the broad category filter.
       const skillTypeParam = skillParam
         || (category !== 'All' ? CATEGORY_TO_SKILL_TYPE[category.toLowerCase()] : undefined)
         || undefined;
-      const response = await workersAPI.searchWorkers({ skillType: skillTypeParam });
+      const response = await workersAPI.searchWorkers({
+        skillType: skillTypeParam,
+        name: debouncedSearch || undefined,
+        location: debouncedLocation || undefined,
+        maxHourlyRate: maxPrice < MAX_PRICE ? maxPrice : undefined,
+        availableNow: availableOnly || undefined,
+        latitude: coords?.lat,
+        longitude: coords?.lng,
+      });
       setArtisans((response.data || []).map(mapWorkerToArtisan));
     } catch (err: any) {
       console.error('Failed to fetch workers:', err?.response?.status, err?.message);
       setArtisans([]);
+      setLoadError(
+        err?.response
+          ? 'We could not load pros right now. Please try again.'
+          : 'No connection. Check your data and try again.'
+      );
     } finally {
       setLoading(false);
     }
-  }, [category, skillParam]);
+  }, [category, skillParam, debouncedSearch, debouncedLocation, maxPrice, availableOnly, coords]);
 
   // Fetch listings (public - no auth required) — page param wired to backend
   const fetchListings = useCallback(async (page = 1) => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await listingsAPI.getListings({ page: page - 1, size: PAGE_SIZE });
       const data = res.data;
@@ -266,6 +311,11 @@ function ArtisansContent() {
     } catch (err: any) {
       console.error('Failed to fetch listings:', err?.response?.status, err?.message);
       setListings([]);
+      setLoadError(
+        err?.response
+          ? 'We could not load listings right now. Please try again.'
+          : 'No connection. Check your data and try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -296,16 +346,9 @@ function ArtisansContent() {
       }))
     : artisans;
 
+  // Search, location, price and availability are applied by the API; only the package tier is local.
   const filteredArtisans = withDistance
-    .filter((a) => {
-      if (packageFilter !== 'All' && a.package !== packageFilter) return false;
-      if (availableOnly && !a.availableNow) return false;
-      if (maxPrice > 0 && a.price > 0 && a.price > maxPrice) return false;
-      if (searchInput && !a.name.toLowerCase().includes(searchInput.toLowerCase()) &&
-          !a.skill.toLowerCase().includes(searchInput.toLowerCase())) return false;
-      if (locationInput && !a.location.toLowerCase().includes(locationInput.toLowerCase())) return false;
-      return true;
-    })
+    .filter((a) => packageFilter === 'All' || a.package === packageFilter)
     .sort((a, b) => {
       if (sortBy === 'ranking') return b.rankingScore - a.rankingScore;
       if (sortBy === 'distance') {
@@ -333,7 +376,7 @@ function ArtisansContent() {
 
   const clearFilters = () => {
     setCategory('All'); setPackageFilter('All'); setSortBy('newest');
-    setMaxPrice(5000); setRangeValue(5000); setSearchInput(''); setLocationInput('');
+    setMaxPrice(MAX_PRICE); setRangeValue(MAX_PRICE); setSearchInput(''); setLocationInput('');
     setAvailableOnly(false); setSkillParam('');
     setCurrentPage(1);
   };
@@ -373,10 +416,10 @@ function ArtisansContent() {
             <p className="mb-2 small text-muted">Up to KES {rangeValue.toLocaleString()}/hr</p>
             <input
               type="range" className="form-range"
-              min={0} max={50000} step={500} value={rangeValue}
+              min={0} max={MAX_PRICE} step={500} value={rangeValue}
               onChange={(e) => { setRangeValue(Number(e.target.value)); setMaxPrice(Number(e.target.value)); }}
             />
-            <div className="d-flex justify-content-between small text-muted"><span>KES 0</span><span>KES 50,000</span></div>
+            <div className="d-flex justify-content-between small text-muted"><span>KES 0</span><span>KES {MAX_PRICE.toLocaleString()}</span></div>
           </div>
           <div className="mb-4 border-bottom pb-4">
             <h6 className="fw-semibold mb-2">Category</h6>
@@ -508,11 +551,11 @@ function ArtisansContent() {
                     <p className="mb-0 small">Max: KES {rangeValue.toLocaleString()}/hr</p>
                     <input
                       type="range" className="form-range" id="priceRange"
-                      min={0} max={50000} step={500} value={rangeValue}
+                      min={0} max={MAX_PRICE} step={500} value={rangeValue}
                       onChange={(e) => { setRangeValue(Number(e.target.value)); setMaxPrice(Number(e.target.value)); }}
                     />
                     <div className="d-flex justify-content-between small text-muted">
-                      <span>KES 0</span><span>KES 50,000</span>
+                      <span>KES 0</span><span>KES {MAX_PRICE.toLocaleString()}</span>
                     </div>
                   </div>
 
@@ -609,6 +652,20 @@ function ArtisansContent() {
                 </div>
               )}
 
+              {!loading && loadError && (
+                <div className="alert alert-warning d-flex flex-wrap align-items-center gap-3" role="alert">
+                  <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                  <span className="flex-grow-1">{loadError}</span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary rounded-pill px-3"
+                    onClick={() => (tab === 'providers' ? fetchWorkers() : fetchListings(currentPage))}
+                  >
+                    <i className="fa-solid fa-rotate-right me-2" aria-hidden="true"></i>Try again
+                  </button>
+                </div>
+              )}
+
               {/* Recommendations belong here — while the customer is still choosing. */}
               {!loading && tab === 'providers' && skillTypeForCategory && (
                 <div className="mb-4">
@@ -634,7 +691,7 @@ function ArtisansContent() {
                           <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
                           <div style={{ position: 'relative', height: 180 }}>
                             {artisan.image ? (
-                              <img src={artisan.image} className="w-100 h-100" style={{ objectFit: 'cover' }} alt={artisan.name} />
+                              <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
                             ) : (
                               <div className="d-flex align-items-center justify-content-center w-100 h-100"
                                 style={{ background: 'linear-gradient(135deg, #f6d365, #fda085)' }}>
@@ -650,7 +707,12 @@ function ArtisansContent() {
                           </div>
                           <div className="card-body">
                             <h6 className="card-title fw-semibold mb-1">{artisan.name}</h6>
-                            <p className="text-primary small mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
+                            <p className="text-primary small mb-1">
+                              <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
+                              {skillLabelSwahili(artisan.skillType) && (
+                                <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
+                              )}
+                            </p>
                             {(() => { const av = getAvailability(artisan.availableNow); return (
                               <div className="d-flex align-items-center gap-1 mb-1">
                                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
@@ -674,7 +736,7 @@ function ArtisansContent() {
               )}
 
               {/* ── SERVICE PROVIDERS ─────────────────────────────── */}
-              {!loading && tab === 'providers' && filteredArtisans.length === 0 && (
+              {!loading && !loadError && tab === 'providers' && filteredArtisans.length === 0 && (
                 <div className="text-center py-5">
                   <i className="fa-solid fa-search fs-1 text-muted mb-3 d-block"></i>
                   <h5 className="text-muted">No one available for that yet.</h5>
@@ -707,9 +769,9 @@ function ArtisansContent() {
                       <div className="card-body p-0">
                         <div className="g-0 row">
                           <div className="col-lg-5 col-md-5 col-xl-4 position-relative">
-                            <div className="card-image-hover dark-overlay h-100 overflow-hidden position-relative">
+                            <div className="card-image-hover dark-overlay h-100 overflow-hidden position-relative" style={{ minHeight: 200 }}>
                               {artisan.image ? (
-                                <img src={artisan.image} alt={artisan.name} className="h-100 w-100 object-fit-cover" style={{ minHeight: 200 }} />
+                                <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="object-fit-cover" />
                               ) : (
                                 <div className="d-flex align-items-center justify-content-center h-100 w-100"
                                   style={{ minHeight: 200, background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
@@ -739,7 +801,12 @@ function ArtisansContent() {
                                 {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-2" title="Featured Gold pro"></i>}
                                 {artisan.name}
                               </h4>
-                              <p className="text-primary mt-1 mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
+                              <p className="text-primary mt-1 mb-1">
+                                <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
+                                {skillLabelSwahili(artisan.skillType) && (
+                                  <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
+                                )}
+                              </p>
                               <p className="mt-1 fs-15 text-muted">{artisan.bio}</p>
                               <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
                               <div className="d-flex flex-wrap gap-2 mt-auto z-1 align-items-center">
@@ -771,7 +838,7 @@ function ArtisansContent() {
                         <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
                         <div style={{ position: 'relative', height: 200 }}>
                           {artisan.image ? (
-                            <img src={artisan.image} className="w-100 h-100" style={{ objectFit: 'cover' }} alt={artisan.name} loading="lazy" decoding="async" />
+                            <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" />
                           ) : (
                             <div className="d-flex align-items-center justify-content-center w-100 h-100"
                               style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
@@ -793,10 +860,15 @@ function ArtisansContent() {
                             {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-1"></i>}
                             {artisan.name}
                             {artisan.package !== 'Bronze' && (
-                              <i className="fa-solid fa-circle-check text-success ms-1" style={{fontSize:'0.75rem'}} title="Verified by TUFIXIT"></i>
+                              <i className="fa-solid fa-circle-check text-success ms-1" style={{fontSize:'0.75rem'}} title="Verified by FUDARI"></i>
                             )}
                           </h6>
-                          <p className="text-primary small mb-1"><i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}</p>
+                          <p className="text-primary small mb-1">
+                            <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
+                            {skillLabelSwahili(artisan.skillType) && (
+                              <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
+                            )}
+                          </p>
                           <p className="text-muted small mb-1">
                             <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
                             {formatDistance(artisan.distanceKm) && (
@@ -814,7 +886,7 @@ function ArtisansContent() {
                             {artisan.price > 0 ? (
                               <strong className="text-primary">From KES {artisan.price.toLocaleString()}</strong>
                             ) : (
-                              <span className="text-muted small">Contact for price</span>
+                              <span className="text-muted small">Ask for a quote</span>
                             )}
                             <span className="btn btn-primary btn-sm rounded-5 z-1" aria-hidden="true">View</span>
                           </div>
@@ -826,7 +898,7 @@ function ArtisansContent() {
               )}
 
               {/* ── LISTINGS ───────────────────────────────────── */}
-              {!loading && tab === 'listings' && filteredListings.length === 0 && (
+              {!loading && !loadError && tab === 'listings' && filteredListings.length === 0 && (
                 <div className="text-center py-5">
                   <i className="fa-solid fa-folder-open fs-1 text-muted mb-3 d-block"></i>
                   <h5 className="text-muted">No approved listings found.</h5>
@@ -850,9 +922,9 @@ function ArtisansContent() {
                         {/* Listing card now navigates to artisan profile */}
                         <Link href={`/artisans/${l.artisanId}`} className="text-decoration-none">
                           <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden card-hover">
-                            <div className="position-relative" style={{ minHeight: 220 }}>
+                            <div className="position-relative" style={{ height: 220 }}>
                               {firstImage ? (
-                                <img src={firstImage} alt={l.title} className="card-img-top" style={{ height: 220, objectFit: 'cover', width: '100%' }} />
+                                <Image src={firstImage} alt={l.title} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" />
                               ) : (
                                 <div className="d-flex align-items-center justify-content-center"
                                   style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', height: 220 }}>

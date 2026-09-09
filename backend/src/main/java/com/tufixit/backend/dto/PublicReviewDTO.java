@@ -31,6 +31,9 @@ public class PublicReviewDTO {
         private String reviewerPhone;
 
         private String reviewerEmail;
+
+        /** Tracking code from a completed booking. Required for the review to count towards the rating. */
+        private String bookingCode;
     }
 
     @Data
@@ -47,7 +50,6 @@ public class PublicReviewDTO {
         private Boolean isVerified;
         private LocalDateTime createdAt;
     }
-
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

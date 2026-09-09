@@ -179,7 +179,7 @@ export default function DashboardPage() {
 
       {/* Welcome Banner */}
       <div className="header-banner align-items-center d-flex justify-content-between mb-4 p-4 rounded-4 w-100"
-        style={{ background: 'linear-gradient(135deg, #F84525, #ff6b4a)' }}>
+        style={{ background: 'var(--tx-primary-gradient)' }}>
         <div className="header-banner-context">
           <h4 className="text-white mb-2">Welcome back, {user?.firstName || 'Service Provider'}!</h4>
           <p className="text-white opacity-75 mb-3">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="row g-3 mb-4">
         {[
-          { label: 'Total Listings', value: loading ? '...' : String(stats.totalListings), icon: 'fa-list', color: '#F84525', bg: '#fff5f3' },
+          { label: 'Total Listings', value: loading ? '...' : String(stats.totalListings), icon: 'fa-list', color: 'var(--bs-primary)', bg: 'var(--tx-primary-tint)' },
           { label: 'Approved', value: loading ? '...' : String(stats.approvedListings), icon: 'fa-circle-check', color: '#198754', bg: '#f0fdf4' },
           { label: 'Reviews', value: loading ? '...' : String(stats.reviewCount), icon: 'fa-star', color: '#ffc107', bg: '#fffdf0' },
           { label: 'Avg Rating', value: loading ? '...' : stats.averageRating.toFixed(1), icon: 'fa-star-half-stroke', color: '#fd7e14', bg: '#fff8f0' },
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                   { label: 'Profile Views', value: leadStats.profileViews, icon: 'fa-eye', color: '#0d6efd' },
                   { label: 'Call Clicks', value: leadStats.callClicks, icon: 'fa-phone', color: '#198754' },
                   { label: 'WhatsApp Clicks', value: leadStats.whatsappClicks, icon: 'fa-brands fa-whatsapp', color: '#25d366' },
-                  { label: 'Total Leads', value: leadStats.totalLeads, icon: 'fa-bullseye', color: '#F84525' },
+                  { label: 'Total Leads', value: leadStats.totalLeads, icon: 'fa-bullseye', color: 'var(--bs-primary)' },
                 ].map((lead, i) => (
                   <div key={i} className="col-6 col-md-3">
                     <div className="text-center p-3 rounded-3" style={{ background: lead.color + '10' }}>

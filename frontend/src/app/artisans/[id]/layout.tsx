@@ -28,8 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? ` ${worker.totalJobsCompleted} jobs completed.`
         : "";
     const description =
-      `Hire ${name}, a verified ${primarySkill.toLowerCase()} in ${location}.${ratingStr}${jobsStr} Book on TUFIXIT Kenya.`;
-    const canonical = `https://tufixit.com/artisans/${id}`;
+      `Hire ${name}, a verified ${primarySkill.toLowerCase()} in ${location}.${ratingStr}${jobsStr} Book on FUDARI Kenya.`;
+    const canonical = `https://fudari.co/artisans/${id}`;
     const ogImage = worker.profileImage
       ? [{ url: worker.profileImage, width: 400, height: 400, alt: name }]
       : [{ url: "/liston/images/header/lg-01.jpg", width: 1200, height: 630, alt: name }];
@@ -41,20 +41,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `${primarySkill.toLowerCase()} ${location.toLowerCase()}`,
         `${primarySkill.toLowerCase()} kenya`,
         `hire ${primarySkill.toLowerCase()} ${location.toLowerCase()}`,
-        `${name.toLowerCase()} tufixit`,
+        `${name.toLowerCase()} fudari`,
         `verified ${primarySkill.toLowerCase()} kenya`,
         `book ${primarySkill.toLowerCase()} nairobi`,
       ],
       openGraph: {
         type: "profile",
-        title: `${title} | TUFIXIT`,
+        title: `${title} | FUDARI`,
         description,
         url: canonical,
         images: ogImage,
       },
       twitter: {
         card: "summary",
-        title: `${title} | TUFIXIT`,
+        title: `${title} | FUDARI`,
         description,
         images: [ogImage[0].url],
       },
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch {
     return {
       title: "Artisan Profile",
-      description: "View artisan profile on TUFIXIT — Kenya's Jua Kali marketplace.",
+      description: "View provider profile on FUDARI — Kenya's services marketplace.",
     };
   }
 }
@@ -89,12 +89,12 @@ async function getArtisanJsonLd(id: string): Promise<string | null> {
       "@graph": [
         {
           "@type": "Person",
-          "@id": `https://tufixit.com/artisans/${id}#person`,
+          "@id": `https://fudari.co/artisans/${id}#person`,
           name,
           jobTitle: primarySkill,
-          url: `https://tufixit.com/artisans/${id}`,
+          url: `https://fudari.co/artisans/${id}`,
           image: worker.profileImage || undefined,
-          worksFor: { "@id": "https://tufixit.com/#organization" },
+          worksFor: { "@id": "https://fudari.co/#organization" },
           address: {
             "@type": "PostalAddress",
             addressLocality: location,
@@ -113,12 +113,12 @@ async function getArtisanJsonLd(id: string): Promise<string | null> {
         ...skills.map((s) => ({
           "@type": "Service",
           name: s.skillType.replace(/_/g, " "),
-          provider: { "@id": `https://tufixit.com/artisans/${id}#person` },
+          provider: { "@id": `https://fudari.co/artisans/${id}#person` },
           areaServed: {
             "@type": "AdministrativeArea",
             name: location,
           },
-          url: `https://tufixit.com/artisans/${id}`,
+          url: `https://fudari.co/artisans/${id}`,
           ...(s.hourlyRate && {
             offers: {
               "@type": "Offer",
@@ -130,9 +130,9 @@ async function getArtisanJsonLd(id: string): Promise<string | null> {
         {
           "@type": "BreadcrumbList",
           itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Home", item: "https://tufixit.com" },
-            { "@type": "ListItem", position: 2, name: "Artisans", item: "https://tufixit.com/artisans" },
-            { "@type": "ListItem", position: 3, name: name, item: `https://tufixit.com/artisans/${id}` },
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://fudari.co" },
+            { "@type": "ListItem", position: 2, name: "Artisans", item: "https://fudari.co/artisans" },
+            { "@type": "ListItem", position: 3, name: name, item: `https://fudari.co/artisans/${id}` },
           ],
         },
       ],

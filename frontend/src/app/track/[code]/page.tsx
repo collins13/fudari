@@ -151,8 +151,8 @@ export default function TrackBookingPage() {
 
   const handleCopyHomeLink = async () => {
     try {
-      await navigator.clipboard?.writeText('https://tufixit.co.ke');
-      setUiMessage({ type: 'success', text: 'TuFixIt link copied to clipboard.' });
+      await navigator.clipboard?.writeText('https://fudari.co');
+      setUiMessage({ type: 'success', text: 'Fudari link copied to clipboard.' });
     } catch {
       setUiMessage({ type: 'danger', text: 'Could not copy the link. Please try again.' });
     }
@@ -318,7 +318,7 @@ export default function TrackBookingPage() {
                 <span className="badge text-bg-light border">Typical response: 5-30 mins</span>
                 <span className="badge text-bg-light border">Arrival target: within agreed window</span>
                 <a
-                  href={whatsappBotLink(`Hi TUFIXIT support, booking ${data.bookingCode} needs reassignment due to delay/no-show.`)}
+                  href={whatsappBotLink(`Hi FUDARI support, booking ${data.bookingCode} needs reassignment due to delay/no-show.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-sm btn-outline-primary rounded-5 ms-sm-auto"
@@ -496,17 +496,17 @@ export default function TrackBookingPage() {
           <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ background: 'linear-gradient(135deg, #fff8f6 0%, #fff 100%)' }}>
             <div className="d-flex align-items-start gap-3 flex-wrap">
               <div className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                style={{ width: 44, height: 44, background: 'rgba(248,69,37,0.1)' }}>
+                style={{ width: 44, height: 44, background: 'var(--tx-primary-soft)' }}>
                 <i className="fa-solid fa-people-group text-primary fs-5"></i>
               </div>
               <div className="flex-grow-1">
                 <h6 className="fw-bold mb-1">Know someone who needs a hand?</h6>
                 <p className="text-muted small mb-3">
-                  Share TuFixIt — book any service in 60 seconds, no account needed. M-Pesa payments, verified pros.
+                  Share Fudari — book any service in 60 seconds, no account needed. M-Pesa payments, verified pros.
                 </p>
                 <div className="d-flex gap-2 flex-wrap">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent('🔧 Found a great way to hire verified pros in Kenya! TuFixIt — Plumbers, Electricians, Carpenters, Movers & more near you. No sign-up, M-Pesa payments 👇 https://tufixit.co.ke')}`}
+                    href={`https://wa.me/?text=${encodeURIComponent('🔧 Found a great way to hire verified pros in Kenya! Fudari — Plumbers, Electricians, Carpenters, Movers & more near you. No sign-up, M-Pesa payments 👇 https://fudari.co')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-success rounded-5 btn-sm px-3"

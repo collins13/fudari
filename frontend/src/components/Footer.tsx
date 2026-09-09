@@ -12,11 +12,11 @@ export default function Footer() {
             {/* Brand + About */}
             <div className="col-lg-4 col-md-6">
               <Link href="/" className="navbar-brand fw-bold fs-3 text-white mb-3 d-inline-block">
-                TUF<span style={{ color: '#F84525' }}>IXIT</span>
+                FUDARI
               </Link>
               <p className="mb-4">
-                Kenya&apos;s #1 Jua Kali Marketplace — connecting customers with
-                trusted, verified pros for all home and business services.
+                Kenya&apos;s services marketplace — connecting customers with trusted,
+                verified pros for home, vehicle, personal care, delivery and digital services.
               </p>
               {/* Social icons */}
               <ul className="d-flex flex-wrap gap-2 list-unstyled mb-0 social-icon">
@@ -52,8 +52,11 @@ export default function Footer() {
                 <li className="mb-2"><Link href="/#how-it-works" className="d-block">How It Works</Link></li>
                 <li className="mb-2"><Link href="/artisans?category=electrical" className="d-block">Electricians</Link></li>
                 <li className="mb-2"><Link href="/artisans?category=plumbing" className="d-block">Plumbers</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=MAMA_FUA" className="d-block">Mama Fua</Link></li>
                 <li className="mb-2"><Link href="/artisans?skill=MOVER" className="d-block">Movers</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=TRANSPORT_PROVIDER" className="d-block">Transport Providers</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=BODA_BODA" className="d-block">Boda Boda</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=BARBER" className="d-block">Barbers &amp; Salons</Link></li>
+                <li className="mb-2"><Link href="/artisans?skill=IT_TECHNICIAN" className="d-block">IT &amp; Digital</Link></li>
               </ul>
             </div>
 
@@ -78,9 +81,9 @@ export default function Footer() {
                   <i className="fa-solid fa-phone text-primary"></i>
                   <span>+254703954539</span>
                 </a>
-                <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="mailto:info@tufixit.com">
+                <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="mailto:info@fudari.co">
                   <i className="fa-solid fa-envelope text-primary"></i>
-                  <span>info@tufixit.com</span>
+                  <span>info@fudari.co</span>
                 </a>
                 <div className="d-flex gap-2 align-items-center fw-medium mb-2">
                   <i className="fa-solid fa-location-dot text-primary"></i>
@@ -123,7 +126,7 @@ export default function Footer() {
                 <Logo variant="white" height={28} />
               </Link>
               <div className="col-sm-auto copy">
-                &copy; 2026 TUFIXIT. All rights reserved.
+                &copy; 2026 FUDARI. All rights reserved.
               </div>
             </div>
           </div>

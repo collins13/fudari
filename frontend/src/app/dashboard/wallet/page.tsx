@@ -92,7 +92,7 @@ export default function WalletPage() {
       await paymentsAPI.initiatePayment({
         amount: Number(withdrawAmount),
         phoneNumber: withdrawPhone,
-        accountReference: 'TUFIXIT_WITHDRAWAL',
+        accountReference: 'FUDARI_WITHDRAWAL',
       });
       setWithdrawDone(true);
       setTimeout(() => {
@@ -146,7 +146,7 @@ export default function WalletPage() {
               { label: 'Total Earnings', value: formatKES(totalEarnings), icon: 'fa-wallet', color: '#0d6efd', bg: '#f0f7ff', sub: `From ${payments.length} completed jobs` },
               { label: 'Confirmed', value: formatKES(confirmedEarnings), icon: 'fa-circle-check', color: '#198754', bg: '#f0fdf4', sub: 'Payment confirmed' },
               { label: 'Pending Clearance', value: formatKES(pendingPayments), icon: 'fa-clock', color: '#ffc107', bg: '#fffdf0', sub: 'Awaiting confirmation' },
-              { label: 'Transactions', value: String(payments.length), icon: 'fa-arrow-trend-up', color: '#F84525', bg: '#fff5f3', sub: 'Total payment records' },
+              { label: 'Transactions', value: String(payments.length), icon: 'fa-arrow-trend-up', color: 'var(--bs-primary)', bg: 'var(--tx-primary-tint)', sub: 'Total payment records' },
             ].map((s, i) => (
           <div key={i} className="col-sm-6 col-xl-3">
             <div className="card border-0 shadow-sm p-4" style={{ background: s.bg }}>
@@ -199,7 +199,7 @@ export default function WalletPage() {
                           style={{
                             height,
                             background: isLast
-                              ? 'linear-gradient(180deg, #F84525, #ff6b4a)'
+                              ? 'linear-gradient(180deg, #157A83, #0D5C63)'
                               : '#dee2e6',
                             transition: 'height 0.3s ease',
                             minWidth: 24,

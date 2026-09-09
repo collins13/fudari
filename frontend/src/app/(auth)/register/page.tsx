@@ -116,7 +116,7 @@ export default function RegisterPage() {
             <div className="authentication-wrap overflow-hidden position-relative my-4">
               <div className="mb-4">
                 <div className="d-inline-block font-caveat fs-1 fw-medium text-primary mb-2">
-                  Join TUFIXIT
+                  Join FUDARI
                 </div>
                 <h2 className="display-6 fw-semibold mb-2">
                   {step === 'phone' ? (
@@ -317,9 +317,9 @@ export default function RegisterPage() {
               className="background-image bg-light d-flex flex-column h-100 justify-content-center p-5 rounded-4"
               style={{ backgroundImage: 'url(/liston/images/header/lg-01.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}
             >
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(248,69,37,0.85)', borderRadius: 'inherit' }}></div>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,92,99,0.88)', borderRadius: 'inherit' }}></div>
               <div className="position-relative text-white text-center py-5">
-                <div className="font-caveat fs-1 mb-3">Kenya&apos;s #1 Jua Kali Marketplace</div>
+                <div className="font-caveat fs-1 mb-3">Kenya&apos;s #1 Services Marketplace</div>
                 <h2 className="fw-bold display-5 mb-4">
                   {role === 'WORKER' ? 'Grow Your Business' : 'Find Someone You Can Trust'}
                 </h2>

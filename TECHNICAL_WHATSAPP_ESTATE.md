@@ -1,4 +1,4 @@
-# TuFixIt — Technical Document: WhatsApp Integration & Estate System
+# Fudari — Technical Document: WhatsApp Integration & Estate System
 
 > **Version**: 1.0  
 > **Date**: 2025  
@@ -332,7 +332,7 @@ CreateBookingRequest {
 
 Returns a `BookingTrackResponse` with `bookingCode` (e.g., `TUF-ABC123`) and `jobId`. The customer receives:
 - Booking code
-- Tracking link: `tufixit.com/track/{bookingCode}`
+- Tracking link: `fudari.co/track/{bookingCode}`
 - Promise of SMS + WhatsApp updates when artisan responds
 
 #### Error Handling
@@ -435,7 +435,7 @@ export function whatsappBotLink(prefillText?: string): string {
 ### 2.1 Architecture Overview
 
 The Estate system is a **B2B distribution channel** — not a separate product. Residential estates (apartments, gated communities) get:
-1. A **branded booking URL** (`tufixit.com/estate/{slug}`) for residents
+1. A **branded booking URL** (`fudari.co/estate/{slug}`) for residents
 2. An **artisan approval system** where estate managers approve preferred artisans
 3. An **analytics dashboard** showing booking volume and artisan performance
 4. A **ranking boost** for approved artisans when bookings come through the estate link
@@ -605,7 +605,7 @@ The Estate system is a **B2B distribution channel** — not a separate product. 
 - **Estate list** with active/inactive status badges
 - **Create estate** form modal (name, area, coordinates, unit count, manager details, monthly fee, contract dates)
 - **Edit estate** — inline or modal editing
-- **Copy booking URL** — one-click copy of `tufixit.com/estate/{slug}`
+- **Copy booking URL** — one-click copy of `fudari.co/estate/{slug}`
 - **View analytics** — shows booking counts, top artisans, approved artisan count
 - **Manage artisans** — approve by artisan ID, view approved list, remove approvals
 

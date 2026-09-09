@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { authAPI } from '@/lib/api';
+import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 interface ProfileForm {
   firstName: string;
@@ -14,21 +15,6 @@ interface ProfileForm {
   hourlyRate: string;
   profileImage: string;
 }
-
-const CATEGORIES = [
-  { label: 'Electrician', value: 'ELECTRICIAN' },
-  { label: 'Plumber', value: 'PLUMBER' },
-  { label: 'Mechanic', value: 'MECHANIC' },
-  { label: 'Painter', value: 'PAINTER' },
-  { label: 'Carpenter', value: 'CARPENTER' },
-  { label: 'HVAC Technician', value: 'HVAC_TECHNICIAN' },
-  { label: 'Welder', value: 'WELDER' },
-  { label: 'Mason', value: 'MASON' },
-  { label: 'Mover', value: 'MOVER' },
-  { label: 'Transport Provider', value: 'TRANSPORT_PROVIDER' },
-  { label: 'Event Lighting', value: 'EVENT_LIGHTING' },
-  { label: 'Other', value: 'OTHER' },
-];
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileForm>({

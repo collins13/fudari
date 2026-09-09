@@ -4,6 +4,7 @@ import com.tufixit.backend.entity.*;
 import com.tufixit.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,12 @@ public class DataSeeder implements CommandLineRunner {
     private final EstateRepository estateRepository;
     private final EstateArtisanApprovalRepository estateArtisanApprovalRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${seed.admin.email:admin@fudari.co}")
+    private String adminEmail;
+
+    @Value("${seed.admin.password:Password123!}")
+    private String adminPassword;
 
     @Override
     public void run(String... args) {
@@ -58,7 +65,19 @@ public class DataSeeder implements CommandLineRunner {
                         Category.builder().name("Appliance Repair").icon("fa-blender").description("Fridge, washer, microwave repair").isActive(true).sortOrder(14).build(),
                         Category.builder().name("Moving").icon("fa-truck-moving").description("Home and office moving services").isActive(true).sortOrder(15).build(),
                         Category.builder().name("Transport").icon("fa-truck").description("Light transport, deliveries and van/truck hire").isActive(true).sortOrder(16).build(),
-                        Category.builder().name("Event Lighting").icon("fa-lightbulb").description("Event and stage lighting setup services").isActive(true).sortOrder(17).build()
+                        Category.builder().name("Event Lighting").icon("fa-lightbulb").description("Event and stage lighting setup services").isActive(true).sortOrder(17).build(),
+                        Category.builder().name("Mama Fua").icon("fa-shirt").description("Laundry, ironing and house cleaning").isActive(true).sortOrder(18).build(),
+                        Category.builder().name("Boda Boda").icon("fa-motorcycle").description("Motorbike rides and quick errands").isActive(true).sortOrder(19).build(),
+                        Category.builder().name("Tuk Tuk").icon("fa-van-shuttle").description("Tuk tuk rides and light loads").isActive(true).sortOrder(20).build(),
+                        Category.builder().name("Courier & Delivery").icon("fa-box").description("Parcel pickup and same-day delivery").isActive(true).sortOrder(21).build(),
+                        Category.builder().name("Barber").icon("fa-scissors").description("Haircuts, shaves and grooming").isActive(true).sortOrder(22).build(),
+                        Category.builder().name("Hair Salon").icon("fa-wand-magic-sparkles").description("Braiding, styling and treatments").isActive(true).sortOrder(23).build(),
+                        Category.builder().name("Makeup & Beauty").icon("fa-spa").description("Makeup, nails and beauty therapy").isActive(true).sortOrder(24).build(),
+                        Category.builder().name("Car Wash").icon("fa-spray-can-sparkles").description("Car washing, valeting and detailing").isActive(true).sortOrder(25).build(),
+                        Category.builder().name("Tyre Services").icon("fa-circle-dot").description("Puncture repair, balancing and tyre fitting").isActive(true).sortOrder(26).build(),
+                        Category.builder().name("Photography").icon("fa-camera").description("Event, product and portrait photography").isActive(true).sortOrder(27).build(),
+                        Category.builder().name("Design").icon("fa-palette").description("Graphic design, branding and print artwork").isActive(true).sortOrder(28).build(),
+                        Category.builder().name("IT Support").icon("fa-laptop").description("Computer repair, networks and software setup").isActive(true).sortOrder(29).build()
         );
         Set<String> existingNames = new HashSet<>();
         categoryRepository.findAll().forEach(c -> existingNames.add(c.getName()));
@@ -77,11 +96,11 @@ public class DataSeeder implements CommandLineRunner {
         //  2. ADMIN USER
         // ═══════════════════════════════════════════════════════════════════
         User admin = userRepository.save(User.builder()
-                .email("admin@tufixit.co.ke")
+                .email(adminEmail)
                 .phoneNumber("+254700000001")
-                .password(encodedPassword)
+                .password(passwordEncoder.encode(adminPassword))
                 .firstName("Admin")
-                .lastName("TuFixIt")
+                .lastName("Fudari")
                 .role(User.UserRole.ADMIN)
                 .vettingLevel(User.VettingLevel.PRO)
                 .accountStatus(User.AccountStatus.ACTIVE)
@@ -135,23 +154,23 @@ public class DataSeeder implements CommandLineRunner {
         // {first, last, phone, email, location, lat, lon, vettingLevel, trustScore, jobsCompleted, totalReviews}
         String[][] workerData = {
             // PRO artisans (5)
-            {"Samuel",  "Mwangi",    "+254722000001", "samuel.mwangi@tufixit.co.ke",   "Westlands, Nairobi",     "-1.2674", "36.8115", "PRO",      "4.8", "87", "42"},
-            {"Joseph",  "Ochieng",   "+254722000002", "joseph.ochieng@tufixit.co.ke",  "Industrial Area, Nairobi","-1.3107", "36.8569", "PRO",      "4.9", "124","68"},
-            {"Mary",    "Akinyi",    "+254722000003", "mary.akinyi@tufixit.co.ke",     "Kilimani, Nairobi",      "-1.2889", "36.7885", "PRO",      "4.7", "95", "51"},
-            {"David",   "Kimani",    "+254722000004", "david.kimani@tufixit.co.ke",    "Nyali, Mombasa",         "-4.0231", "39.7148", "PRO",      "4.6", "63", "35"},
-            {"Esther",  "Wanjiru",   "+254722000005", "esther.wanjiru@tufixit.co.ke",  "Ngong Road, Nairobi",    "-1.3010", "36.7700", "PRO",      "4.8", "78", "44"},
+            {"Samuel",  "Mwangi",    "+254722000001", "samuel.mwangi@fudari.co",   "Westlands, Nairobi",     "-1.2674", "36.8115", "PRO",      "4.8", "87", "42"},
+            {"Joseph",  "Ochieng",   "+254722000002", "joseph.ochieng@fudari.co",  "Industrial Area, Nairobi","-1.3107", "36.8569", "PRO",      "4.9", "124","68"},
+            {"Mary",    "Akinyi",    "+254722000003", "mary.akinyi@fudari.co",     "Kilimani, Nairobi",      "-1.2889", "36.7885", "PRO",      "4.7", "95", "51"},
+            {"David",   "Kimani",    "+254722000004", "david.kimani@fudari.co",    "Nyali, Mombasa",         "-4.0231", "39.7148", "PRO",      "4.6", "63", "35"},
+            {"Esther",  "Wanjiru",   "+254722000005", "esther.wanjiru@fudari.co",  "Ngong Road, Nairobi",    "-1.3010", "36.7700", "PRO",      "4.8", "78", "44"},
             // VERIFIED/BASIC artisans (5)
-            {"Patrick",  "Mutua",    "+254722000006", "patrick.mutua@tufixit.co.ke",   "Eastleigh, Nairobi",     "-1.2729", "36.8459", "VERIFIED", "4.3", "32", "18"},
-            {"Hannah",   "Njeri",    "+254722000007", "hannah.njeri@tufixit.co.ke",    "Kisumu CBD",             "-0.0917", "34.7680", "VERIFIED", "4.5", "41", "23"},
-            {"Daniel",   "Kiptoo",   "+254722000008", "daniel.kiptoo@tufixit.co.ke",   "Eldoret Town",           "0.5143",  "35.2698", "VERIFIED", "4.1", "19", "11"},
-            {"Catherine","Nyambura", "+254722000009", "catherine.nyambura@tufixit.co.ke","South C, Nairobi",      "-1.3100", "36.8270", "VERIFIED", "4.4", "27", "15"},
-            {"Michael",  "Wafula",   "+254722000010", "michael.wafula@tufixit.co.ke",  "Ruiru, Kiambu",          "-1.1485", "36.9609", "VERIFIED", "4.2", "22", "12"},
+            {"Patrick",  "Mutua",    "+254722000006", "patrick.mutua@fudari.co",   "Eastleigh, Nairobi",     "-1.2729", "36.8459", "VERIFIED", "4.3", "32", "18"},
+            {"Hannah",   "Njeri",    "+254722000007", "hannah.njeri@fudari.co",    "Kisumu CBD",             "-0.0917", "34.7680", "VERIFIED", "4.5", "41", "23"},
+            {"Daniel",   "Kiptoo",   "+254722000008", "daniel.kiptoo@fudari.co",   "Eldoret Town",           "0.5143",  "35.2698", "VERIFIED", "4.1", "19", "11"},
+            {"Catherine","Nyambura", "+254722000009", "catherine.nyambura@fudari.co","South C, Nairobi",      "-1.3100", "36.8270", "VERIFIED", "4.4", "27", "15"},
+            {"Michael",  "Wafula",   "+254722000010", "michael.wafula@fudari.co",  "Ruiru, Kiambu",          "-1.1485", "36.9609", "VERIFIED", "4.2", "22", "12"},
             // STANDARD/FREE artisans (5)
-            {"John",    "Kariuki",   "+254722000011", "john.kariuki@tufixit.co.ke",    "Thika Town",             "-1.0396", "37.0900", "STANDARD", "3.8", "8",  "5"},
-            {"Agnes",   "Jepkoech",  "+254722000012", "agnes.jepkoech@tufixit.co.ke",  "Nakuru Town",            "-0.3031", "36.0800", "STANDARD", "4.0", "11", "7"},
-            {"Robert",  "Omondi",    "+254722000013", "robert.omondi@tufixit.co.ke",   "Mombasa CBD",            "-4.0435", "39.6682", "STANDARD", "3.5", "5",  "3"},
-            {"Sharon",  "Cherop",    "+254722000014", "sharon.cherop@tufixit.co.ke",   "Ruaka, Kiambu",          "-1.2070", "36.7810", "STANDARD", "0.0", "0",  "0"},
-            {"Vincent", "Ndirangu",  "+254722000015", "vincent.ndirangu@tufixit.co.ke","Rongai, Kajiado",        "-1.3962", "36.7588", "STANDARD", "3.2", "3",  "2"},
+            {"John",    "Kariuki",   "+254722000011", "john.kariuki@fudari.co",    "Thika Town",             "-1.0396", "37.0900", "STANDARD", "3.8", "8",  "5"},
+            {"Agnes",   "Jepkoech",  "+254722000012", "agnes.jepkoech@fudari.co",  "Nakuru Town",            "-0.3031", "36.0800", "STANDARD", "4.0", "11", "7"},
+            {"Robert",  "Omondi",    "+254722000013", "robert.omondi@fudari.co",   "Mombasa CBD",            "-4.0435", "39.6682", "STANDARD", "3.5", "5",  "3"},
+            {"Sharon",  "Cherop",    "+254722000014", "sharon.cherop@fudari.co",   "Ruaka, Kiambu",          "-1.2070", "36.7810", "STANDARD", "0.0", "0",  "0"},
+            {"Vincent", "Ndirangu",  "+254722000015", "vincent.ndirangu@fudari.co","Rongai, Kajiado",        "-1.3962", "36.7588", "STANDARD", "3.2", "3",  "2"},
         };
 
         List<User> workers = new ArrayList<>();
@@ -714,11 +733,11 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("DataSeeder: ✅ seeding complete!");
         log.info("  Login credentials — all users: Password123!");
-        log.info("  Admin: admin@tufixit.co.ke");
+        log.info("  Admin: {}", adminEmail);
         log.info("  Sample client: grace.muthoni@gmail.com");
-        log.info("  Sample PRO worker: samuel.mwangi@tufixit.co.ke");
-        log.info("  Sample BASIC worker: patrick.mutua@tufixit.co.ke");
-        log.info("  Sample FREE worker: john.kariuki@tufixit.co.ke");
+        log.info("  Sample PRO worker: samuel.mwangi@fudari.co");
+        log.info("  Sample BASIC worker: patrick.mutua@fudari.co");
+        log.info("  Sample FREE worker: john.kariuki@fudari.co");
         log.info("  Estates: /estate/fedha-estate, /estate/greenpark-estate, /estate/safari-park-estate");
         log.info("  WhatsApp short codes: FDH1, GPK1, SPK1");
     }

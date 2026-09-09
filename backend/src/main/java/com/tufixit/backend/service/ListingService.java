@@ -28,6 +28,24 @@ public class ListingService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final SubscriptionRepository subscriptionRepository;
+
+    /** Stores the price as a plain number so the UI can format and filter on it. */
+    private static String parsePriceStart(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("A starting price is required so customers know what to expect");
+        }
+        String digits = raw.replaceAll("[^0-9.]", "");
+        double value;
+        try {
+            value = Double.parseDouble(digits);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Enter the starting price as a number, e.g. 1500");
+        }
+        if (value <= 0) {
+            throw new IllegalArgumentException("Starting price must be greater than zero");
+        }
+        return String.valueOf(Math.round(value));
+    }
     private final RankingService rankingService;
 
     @Transactional
@@ -50,13 +68,15 @@ public class ListingService {
             category = categoryRepository.findById(request.getCategoryId()).orElse(null);
         }
 
+        String priceStart = parsePriceStart(request.getPriceStart());
+
         Listing listing = Listing.builder()
                 .artisan(artisan)
                 .title(request.getTitle())
                 .category(category)
                 .skillType(request.getSkillType())
                 .description(request.getDescription())
-                .priceStart(request.getPriceStart())
+                .priceStart(priceStart)
                 .location(request.getLocation())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
@@ -87,7 +107,7 @@ public class ListingService {
         }
         if (request.getSkillType() != null) listing.setSkillType(request.getSkillType());
         if (request.getDescription() != null) listing.setDescription(request.getDescription());
-        if (request.getPriceStart() != null) listing.setPriceStart(request.getPriceStart());
+        if (request.getPriceStart() != null) listing.setPriceStart(parsePriceStart(request.getPriceStart()));
         if (request.getLocation() != null) listing.setLocation(request.getLocation());
         if (request.getLatitude() != null) listing.setLatitude(request.getLatitude());
         if (request.getLongitude() != null) listing.setLongitude(request.getLongitude());

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Estate management endpoints — B2B distribution channel for TuFixIt.
+ * Estate management endpoints — B2B distribution channel for Fudari.
  *
  * Public endpoints:
  *   GET /api/estates/{slug}          — Resolve an estate by slug (used by branded booking link)

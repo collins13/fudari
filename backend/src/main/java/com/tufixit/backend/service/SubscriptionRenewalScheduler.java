@@ -20,7 +20,7 @@ import java.util.List;
  * │  Scheduled jobs (all run within a DB transaction):                  │
  * │                                                                      │
  * │  1. [24h before expiry]  → Send M-Pesa renewal reminder via SMS     │
- * │     "Renew your TuFixIt PRO weekly — KES 800 to 522522..."          │
+ * │     "Renew your Fudari PRO weekly — KES 800 to 522522..."          │
  * │                                                                      │
  * │  2. [On expiry]          → Move ACTIVE → GRACE_PERIOD               │
  * │     Artisan retains ranking for 48 hours — no immediate disruption  │
@@ -83,7 +83,7 @@ public class SubscriptionRenewalScheduler {
             };
 
             smsService.send(artisan.getPhoneNumber(), String.format(
-                "TUFIXIT: Your %s %s plan expires in ~24 hours.\n" +
+                "FUDARI: Your %s %s plan expires in ~24 hours.\n" +
                 "Renew in the app - open Subscription and tap Renew. We'll send an M-Pesa prompt for KES %d.",
                 planLabel, cycleLabel, price
             ));
@@ -111,7 +111,7 @@ public class SubscriptionRenewalScheduler {
                 int price = sub.getPriceKes();
 
                 smsService.send(artisan.getPhoneNumber(), String.format(
-                    "TUFIXIT: Your %s plan has expired. You have 48 hours to renew before your " +
+                    "FUDARI: Your %s plan has expired. You have 48 hours to renew before your " +
                     "search ranking is reduced.\n" +
                     "Renew in the app - open Subscription and tap Renew (KES %d).",
                     sub.getPlanType().name(), price
@@ -146,8 +146,8 @@ public class SubscriptionRenewalScheduler {
 
                 if (artisan.getPhoneNumber() != null) {
                     smsService.send(artisan.getPhoneNumber(),
-                        "TUFIXIT: Your subscription has ended and your listing ranking has been reduced. " +
-                        "Renew anytime: tufixit.com/dashboard/subscription"
+                        "FUDARI: Your subscription has ended and your listing ranking has been reduced. " +
+                        "Renew anytime: fudari.co/dashboard/subscription"
                     );
                 }
 
