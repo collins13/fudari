@@ -93,6 +93,19 @@ services:
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@fudari.co}
       MAIL_ENABLED: ${MAIL_ENABLED:-true}
       LOGGING_LEVEL_COM_TUFIXIT: ${LOGGING_LEVEL_COM_TUFIXIT:-INFO}
+      # Required by application-prod.properties, which declares these with no
+      # fallback. Compose only forwards variables named here — a value sitting
+      # in .env is not visible to the container unless it is listed.
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL must be set in .env}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:?SEED_ADMIN_EMAIL must be set in .env}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?SEED_ADMIN_PASSWORD must be set in .env}
+      TWILIO_VALIDATE_SIGNATURE: ${TWILIO_VALIDATE_SIGNATURE:-true}
+      SPRING_JPA_DDL_AUTO: ${SPRING_JPA_DDL_AUTO:-update}
+      # Defaults point at the Twilio sandbox number, so these must be set
+      # explicitly once a real WhatsApp sender is provisioned.
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-twilio}
+      WHATSAPP_FALLBACK_ENABLED: ${WHATSAPP_FALLBACK_ENABLED:-false}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-+14155238886}
     tmpfs:
       - /tmp:size=64m
     security_opt:

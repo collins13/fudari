@@ -233,6 +233,7 @@ docker compose exec postgres psql -U postgres -d tufixit
 
 | Symptom | Cause |
 |---|---|
+| Backend exits with `Could not resolve placeholder 'X'` **even though `X` is in `.env`** | Compose only passes variables that are named in the service's `environment:` block. `.env` drives interpolation in `docker-compose.yml`; it is not injected into containers. Add `X: ${X}` to the backend service. |
 | Backend exits immediately with `Could not resolve placeholder` | A variable required by the prod profile is missing from `.env`. The message names it. |
 | `nginx: [emerg] cannot load certificate` | Certificates not issued yet — switch `NGINX_CONF` back to `nginx-bootstrap.conf` and redo §5. |
 | Frontend calls `localhost:8080` in the browser | `NEXT_PUBLIC_API_URL` was wrong at build time. Fix `.env` and rebuild with `--build`. |
