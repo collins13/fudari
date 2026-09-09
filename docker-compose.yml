@@ -194,9 +194,9 @@ services:
         max-file: "3"
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
       frontend:
-        condition: service_healthy
+        condition: service_started
     # Reload every 12h so renewed certificates are picked up without a restart.
     command: >-
       sh -c "while :; do sleep 12h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"

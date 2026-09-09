@@ -251,7 +251,9 @@ export default function HomePage() {
 
   return (
     <>
-      <Navbar transparent />
+      {/* Not `transparent`: the hero below is an inset rounded card (mt-3 mx-3),
+          so the navbar sits on the page background, not on the dark image. */}
+      <Navbar />
 
       {/* ===== HERO SECTION ===== */}
       <div
@@ -264,6 +266,7 @@ export default function HomePage() {
           alt="Verified artisans, cleaners, riders, barbers and other service pros in Nairobi and Kenya"
           fill
           priority
+          quality={60}
           sizes="100vw"
         />
         <div className="container overlay-content py-5">

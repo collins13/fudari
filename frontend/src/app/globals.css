@@ -198,3 +198,11 @@ html .text-span {
 [data-bs-theme="dark"] .text-span {
   background-image: url("data:image/svg+xml,%3Csvg width='262' height='17' viewBox='0 0 262 17' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.99931 12.9463C70.3926 7.14883 214.09 -1.29457 257.733 11.3115' stroke='%233FB6C0' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E%0A");
 }
+
+/* Image heroes render white copy over a photo that can take seconds to arrive.
+   Without a base colour that copy sits on white and is unreadable until then. */
+.hero-header.dark-overlay,
+.dark-overlay.hero,
+.dark-overlay.legal-hero {
+  background-color: #0a4a50;
+}

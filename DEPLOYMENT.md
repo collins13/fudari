@@ -131,15 +131,23 @@ CORS_ALLOWED_ORIGINS  APP_BASE_URL
 nginx will not start while referencing certificates that do not exist, and certbot's webroot challenge needs a running web server. Break the cycle with the bootstrap config.
 
 ```bash
-# 1. Start on the HTTP-only config
-echo "NGINX_CONF=nginx-bootstrap.conf" >> .env
+# 1. Start on the HTTP-only config. Set the key rather than appending it —
+#    .env.example already defines NGINX_CONF, so a blind append is a no-op.
+grep -q '^NGINX_CONF=' .env \
+  && sed -i 's|^NGINX_CONF=.*|NGINX_CONF=nginx-bootstrap.conf|' .env \
+  || echo 'NGINX_CONF=nginx-bootstrap.conf' >> .env
 docker compose up -d --build
 
-# 2. Confirm the challenge path is reachable over plain HTTP
-curl -I http://fudari.co        # expect 200
+# 2. nginx must actually be listening, or every challenge returns "connection
+#    refused" and burns a rate-limit slot.
+docker compose ps nginx                 # expect Up
+curl -I http://fudari.co                # expect 200
+curl -I http://api.fudari.co            # expect 200 — confirms the A record too
 
 # 3. Request the certificate (one cert covering all three names)
-docker compose run --rm certbot certonly \
+#    --entrypoint is required: the certbot service's entrypoint is a renewal
+#    loop, and `run` arguments are appended to the entrypoint, not the command.
+docker compose run --rm --entrypoint certbot certbot certonly \
   --webroot -w /var/www/certbot \
   -d fudari.co -d www.fudari.co -d api.fudari.co \
   --email you@fudari.co --agree-tos --no-eff-email
@@ -236,6 +244,9 @@ docker compose exec postgres psql -U postgres -d tufixit
 | Backend exits with `Could not resolve placeholder 'X'` **even though `X` is in `.env`** | Compose only passes variables that are named in the service's `environment:` block. `.env` drives interpolation in `docker-compose.yml`; it is not injected into containers. Add `X: ${X}` to the backend service. |
 | Backend exits immediately with `Could not resolve placeholder` | A variable required by the prod profile is missing from `.env`. The message names it. |
 | `nginx: [emerg] cannot load certificate` | Certificates not issued yet — switch `NGINX_CONF` back to `nginx-bootstrap.conf` and redo §5. |
+| `docker compose run certbot ...` hangs with no output | The `--entrypoint certbot` override was omitted, so the arguments were swallowed by the renewal-loop entrypoint. |
+| Certbot reports `Connection refused` on the challenge | nginx is not listening on :80. Usually `NGINX_CONF=nginx.conf` before certificates exist — check `docker compose logs nginx`. |
+| Certbot reports `NXDOMAIN` for a hostname | The A record is missing or has not propagated. Verify with `dig +short <host>` before retrying. |
 | Frontend calls `localhost:8080` in the browser | `NEXT_PUBLIC_API_URL` was wrong at build time. Fix `.env` and rebuild with `--build`. |
 | CORS errors in the browser console | `CORS_ALLOWED_ORIGINS` must list the exact scheme and host, e.g. `https://fudari.co`. |
 | Emails never arrive | Check `MAIL_ENABLED=true`, then `docker compose logs backend \| grep EMAIL`. Sends are async and failures are logged, not thrown. |
