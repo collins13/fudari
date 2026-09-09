@@ -87,6 +87,16 @@ public class EstateService {
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    public List<EstateDTO.EstateSummary> listPublicEstates() {
+        return estateRepository.findByIsActiveTrueOrderByNameAsc().stream()
+                .map(e -> EstateDTO.EstateSummary.builder()
+                        .slug(e.getSlug())
+                        .name(e.getName())
+                        .area(e.getArea())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public EstateDTO.EstateResponse updateEstate(Long id, EstateDTO.CreateEstateRequest req) {
         Estate estate = estateRepository.findById(id)

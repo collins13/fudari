@@ -396,7 +396,14 @@ function ArtisansContent() {
   };
 
   // Client-side page slice for providers
-  const pagedArtisans = filteredArtisans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const featuredArtisans = filteredArtisans.filter((a) => a.isFeatured).slice(0, 3);
+  const featuredIds = new Set(featuredArtisans.map((a) => a.id));
+  // Pros promoted into the Featured strip are removed from the list below so the
+  // same card does not appear twice on one page.
+  const listArtisans = featuredArtisans.length
+    ? filteredArtisans.filter((a) => !featuredIds.has(a.id))
+    : filteredArtisans;
+  const pagedArtisans = listArtisans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <>
@@ -614,7 +621,7 @@ function ArtisansContent() {
                   )}
                 </div>
                 {tab === 'providers' && (
-                  <div className="ms-auto d-flex gap-2 align-items-center">
+                  <div className="ms-auto d-flex flex-wrap gap-2 align-items-center">
                     <button
                       type="button"
                       className={`btn btn-sm rounded-5 px-3 ${availableOnly ? 'btn-success' : 'btn-outline-secondary'}`}
@@ -623,7 +630,9 @@ function ArtisansContent() {
                     >
                       <i className="fa-solid fa-bolt me-1" aria-hidden="true"></i>Available now
                     </button>
-                    <select className="form-select form-select-sm" style={{ width: 'auto' }}
+                    {/* `width: auto` sizes the select to its longest option, which overflows
+                        a 360px viewport. Cap it and let flex shrink it instead. */}
+                    <select className="form-select form-select-sm" style={{ width: 'auto', maxWidth: '100%', minWidth: 0 }}
                       value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                       {SORT_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value} disabled={o.value === 'distance' && !coords}>
@@ -678,14 +687,14 @@ function ArtisansContent() {
               )}
 
               {/* ── FEATURED ARTISANS (Pro tier) ─────────────────── */}
-              {!loading && tab === 'providers' && filteredArtisans.some(a => a.isFeatured) && (
+              {!loading && tab === 'providers' && featuredArtisans.length > 0 && (
                 <div className="mb-4">
                   <div className="d-flex align-items-center gap-2 mb-3">
                     <i className="fa-solid fa-crown text-warning fs-5"></i>
                     <h5 className="fw-bold mb-0">Featured Pros</h5>
                   </div>
                   <div className="row g-3">
-                    {filteredArtisans.filter(a => a.isFeatured).slice(0, 3).map((artisan) => (
+                    {featuredArtisans.map((artisan) => (
                       <div key={`feat-${artisan.id}`} className="col-md-4">
                         <div className="card border-2 border-warning shadow-sm h-100 rounded-4 overflow-hidden position-relative">
                           <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
@@ -1008,7 +1017,7 @@ function ArtisansContent() {
                   </ul>
                 </nav>
               )}
-              {!loading && tab === 'providers' && filteredArtisans.length > PAGE_SIZE && (
+              {!loading && tab === 'providers' && listArtisans.length > PAGE_SIZE && (
                 <nav className="mt-5" aria-label="Results pagination">
                   <ul className="pagination justify-content-center">
                     <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
@@ -1016,13 +1025,13 @@ function ArtisansContent() {
                         <i className="fa-solid fa-chevron-left"></i>
                       </button>
                     </li>
-                    {Array.from({ length: Math.ceil(filteredArtisans.length / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
+                    {Array.from({ length: Math.ceil(listArtisans.length / PAGE_SIZE) }, (_, i) => i + 1).map((p) => (
                       <li key={p} className={`page-item ${currentPage === p ? 'active' : ''}`}>
                         <button className="page-link" onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{p}</button>
                       </li>
                     ))}
-                    <li className={`page-item ${currentPage === Math.ceil(filteredArtisans.length / PAGE_SIZE) ? 'disabled' : ''}`}>
-                      <button className="page-link" onClick={() => { setCurrentPage(p => Math.min(Math.ceil(filteredArtisans.length / PAGE_SIZE), p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                    <li className={`page-item ${currentPage === Math.ceil(listArtisans.length / PAGE_SIZE) ? 'disabled' : ''}`}>
+                      <button className="page-link" onClick={() => { setCurrentPage(p => Math.min(Math.ceil(listArtisans.length / PAGE_SIZE), p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                         <i className="fa-solid fa-chevron-right"></i>
                       </button>
                     </li>

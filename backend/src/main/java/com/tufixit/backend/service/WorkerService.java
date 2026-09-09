@@ -171,11 +171,14 @@ public class WorkerService {
     }
 
     public AuthDTO.UserDTO getWorkerProfile(Long workerId) {
+        // IllegalArgumentException + "not found" maps to 404 in GlobalExceptionHandler.
+        // A client ID is reported as not-found so /artisans/{id} can serve a real 404
+        // rather than a soft 404 that Google will index.
         User worker = userRepository.findById(workerId)
-                .orElseThrow(() -> new RuntimeException("Worker not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Worker not found"));
 
         if (worker.getRole() != User.UserRole.WORKER) {
-            throw new RuntimeException("User is not a worker");
+            throw new IllegalArgumentException("Worker not found");
         }
 
         return mapToUserDTOWithSkills(worker);

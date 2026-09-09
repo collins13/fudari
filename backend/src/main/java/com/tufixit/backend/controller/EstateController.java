@@ -45,6 +45,12 @@ public class EstateController {
         return ResponseEntity.ok(estateService.getEstateBySlug(slug));
     }
 
+    /** Slug list for the sitemap. Slim projection — no manager contacts or commercial terms. */
+    @GetMapping("/public")
+    public ResponseEntity<List<EstateDTO.EstateSummary>> listPublicEstates() {
+        return ResponseEntity.ok(estateService.listPublicEstates());
+    }
+
     /**
      * Public: list approved artisan profiles for an estate (by slug).
      * Returns full UserDTO so the estate booking page can display artisan cards.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
@@ -64,6 +65,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: "Artisan Profile",
       description: "View provider profile on FUDARI — Kenya's services marketplace.",
+      // Without this the page inherits the parent canonical (/artisans) and Google
+      // indexes a soft 404 pointing at a different URL.
+      robots: { index: false, follow: false },
     };
   }
 }
@@ -151,6 +155,13 @@ export default async function ArtisanDetailLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Only a definitive 404 turns into notFound(); a 5xx or timeout must not
+  // deindex a real profile during an API outage.
+  const probe = await fetch(`${API_URL}/workers/${id}`, { next: { revalidate: 3600 } })
+    .catch(() => null);
+  if (probe?.status === 404) notFound();
+
   const jsonLd = await getArtisanJsonLd(id);
   return (
     <>

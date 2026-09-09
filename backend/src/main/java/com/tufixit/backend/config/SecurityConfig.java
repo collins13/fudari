@@ -140,6 +140,7 @@ public class SecurityConfig {
 
                         // PUBLIC: Estate slug / short-code resolution (branded booking pages)
                         .requestMatchers("/api/estates/resolve/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/estates/public").permitAll()
 
                         // PUBLIC: Health check
                         .requestMatchers("/api/health").permitAll()

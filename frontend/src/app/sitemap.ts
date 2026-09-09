@@ -1,93 +1,63 @@
 import { MetadataRoute } from 'next';
-import { SKILL_TYPES as ALL_SKILL_TYPES } from '@/lib/kenya';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
-const SKILL_TYPES = ALL_SKILL_TYPES
-  .filter((s) => s !== 'OTHER')
-  .map((s) => s.toLowerCase());
+// Built per request, not at build time: `docker compose build` runs before the API
+// is reachable, and a build-time fetch failure silently produced a sitemap with no
+// artisan or estate URLs at all.
+export const dynamic = 'force-dynamic';
 
-const MAJOR_LOCATIONS = [
-  'nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret',
-  'thika', 'nyeri', 'machakos', 'malindi', 'kitale',
-  'nanyuki', 'garissa', 'kakamega', 'embu', 'meru',
-];
+const BASE = 'https://fudari.co';
+
+type Worker = { id: number; updatedAt?: string; vettingLevel?: string };
+type Estate = { slug: string };
+
+async function getJson<T>(path: string): Promise<T[]> {
+  try {
+    const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data) ? data : data.content) || [];
+  } catch {
+    return [];
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://fudari.co';
   const now = new Date();
 
-  // Static indexable pages
+  // Filter URLs are deliberately excluded: /artisans?skill=… is client-side
+  // filtered, so every variant serves identical HTML and canonicalises to
+  // /artisans. Listing them was asking Google to index 104 duplicates.
   const staticPages: MetadataRoute.Sitemap = [
-    { url: baseUrl,                     lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
-    { url: `${baseUrl}/artisans`,       lastModified: now, changeFrequency: 'daily',   priority: 0.95 },
-    { url: `${baseUrl}/pricing`,        lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
-    { url: `${baseUrl}/terms`,          lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
-    { url: `${baseUrl}/privacy`,        lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
+    { url: BASE, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE}/artisans`, lastModified: now, changeFrequency: 'daily', priority: 0.95 },
+    { url: `${BASE}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+    { url: `${BASE}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  // Category landing pages — use clean query-param URLs (standard for filter-based SPAs)
-  const categoryPages: MetadataRoute.Sitemap = SKILL_TYPES.map((skill) => ({
-    url: `${baseUrl}/artisans?skill=${skill.toUpperCase()}`,
-    lastModified: now,
+  const [workers, estates] = await Promise.all([
+    getJson<Worker>('/workers/search?page=0&size=1000'),
+    getJson<Estate>('/estates/public'),
+  ]);
+
+  const artisanPages: MetadataRoute.Sitemap = workers.map((w) => ({
+    url: `${BASE}/artisans/${w.id}`,
+    lastModified: w.updatedAt ? new Date(w.updatedAt) : now,
     changeFrequency: 'weekly' as const,
-    priority: 0.85,
+    priority: w.vettingLevel === 'PRO' ? 0.8 : w.vettingLevel === 'VERIFIED' ? 0.7 : 0.6,
   }));
 
-  // Top skill × top city combos for local SEO
-  const topSkills = SKILL_TYPES.slice(0, 8);
-  const topCities = MAJOR_LOCATIONS.slice(0, 8);
-  const comboPages: MetadataRoute.Sitemap = topSkills.flatMap((skill) =>
-    topCities.map((city) => ({
-      url: `${baseUrl}/artisans?skill=${skill.toUpperCase()}&location=${city}`,
+  const estatePages: MetadataRoute.Sitemap = estates
+    .filter((e) => e.slug)
+    .map((e) => ({
+      url: `${BASE}/estate/${e.slug}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
-      priority: 0.75,
-    })),
-  );
+      priority: 0.7,
+    }));
 
-  // Dynamic artisan profile pages
-  let artisanPages: MetadataRoute.Sitemap = [];
-  try {
-    const res = await fetch(`${API_URL}/workers/search?page=0&size=1000`, {
-      next: { revalidate: 86400 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const workers: { id: number; updatedAt?: string; vettingLevel?: string }[] =
-        data.content || data || [];
-      artisanPages = workers.map((w) => ({
-        url: `${baseUrl}/artisans/${w.id}`,
-        lastModified: w.updatedAt ? new Date(w.updatedAt) : now,
-        changeFrequency: 'weekly' as const,
-        // PRO artisans updated more frequently / higher priority
-        priority: w.vettingLevel === 'PRO' ? 0.7 : w.vettingLevel === 'VERIFIED' ? 0.65 : 0.55,
-      }));
-    }
-  } catch {
-    // API unavailable at build time — skip
-  }
-
-  // Dynamic estate portal pages
-  let estatePages: MetadataRoute.Sitemap = [];
-  try {
-    const res = await fetch(`${API_URL}/estates?page=0&size=200`, {
-      next: { revalidate: 86400 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const estates: { slug: string; updatedAt?: string }[] =
-        data.content || data || [];
-      estatePages = estates.map((e) => ({
-        url: `${baseUrl}/estate/${e.slug}`,
-        lastModified: e.updatedAt ? new Date(e.updatedAt) : now,
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      }));
-    }
-  } catch {
-    // API unavailable at build time — skip
-  }
-
-  return [...staticPages, ...categoryPages, ...comboPages, ...artisanPages, ...estatePages];
+  return [...staticPages, ...artisanPages, ...estatePages];
 }

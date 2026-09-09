@@ -142,4 +142,15 @@ public class EstateDTO {
         private long completedJobs;
         private double avgRating;
     }
+
+    /**
+     * Public-safe projection for the sitemap and any unauthenticated listing.
+     * Deliberately omits manager contacts, monthlyFee and commissionRate.
+     */
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class EstateSummary {
+        private String slug;
+        private String name;
+        private String area;
+    }
 }

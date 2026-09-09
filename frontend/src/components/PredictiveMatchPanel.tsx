@@ -116,7 +116,7 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
                 href={`/artisans/${m.artisanId}`}
                 className="card border rounded-3 p-3 text-decoration-none text-dark d-block hover-shadow"
               >
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center gap-2 gap-sm-3">
                   {/* Rank badge */}
                   <div className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"
                     style={{
@@ -139,9 +139,11 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
                   )}
 
                   {/* Info */}
-                  <div className="flex-grow-1">
-                    <div className="fw-semibold">{m.name}</div>
-                    <div className="d-flex align-items-center gap-2 small text-muted">
+                  {/* minWidth 0 lets this shrink; without it the flex item refuses to go
+                      below its content width and squeezes the score column off-screen. */}
+                  <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                    <div className="fw-semibold text-truncate">{m.name}</div>
+                    <div className="d-flex flex-wrap align-items-center gap-2 small text-muted">
                       <span className="text-warning">
                         <i className="fa-solid fa-star me-1" style={{ fontSize: '0.7rem' }} />
                         {m.trustScore.toFixed(1)}
@@ -149,7 +151,7 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
                       {m.distanceKm != null && (
                         <span><i className="fa-solid fa-location-dot me-1" />{m.distanceKm} km</span>
                       )}
-                      {m.locationName && <span>{m.locationName}</span>}
+                      {m.locationName && <span className="text-truncate">{m.locationName}</span>}
                     </div>
                     <div className="text-muted" style={{ fontSize: '0.75rem' }}>{m.matchReason}</div>
                   </div>
@@ -160,7 +162,7 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
                       {m.matchScore}/100
                     </div>
                     {m.startingRate && (
-                      <div className="text-muted small">
+                      <div className="text-muted small text-nowrap">
                         KES {m.startingRate.toLocaleString()}/hr
                       </div>
                     )}
