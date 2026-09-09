@@ -5,7 +5,9 @@ import { authAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 interface DocState {
+  /** ID *number* — a short unique string, not a file. */
   nationalId: string;
+  idDocumentImage: string;
   certificateOfGoodConduct: string;
   tvetCertification: string;
 }
@@ -73,7 +75,7 @@ function DocCard({
 
 export default function VettingPage() {
   const { user } = useAuth();
-  const [docs, setDocs] = useState<DocState>({ nationalId: '', certificateOfGoodConduct: '', tvetCertification: '' });
+  const [docs, setDocs] = useState<DocState>({ nationalId: '', idDocumentImage: '', certificateOfGoodConduct: '', tvetCertification: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -86,6 +88,7 @@ export default function VettingPage() {
         const d = res.data;
         setDocs({
           nationalId: d.nationalId || '',
+          idDocumentImage: d.idDocumentImage || '',
           certificateOfGoodConduct: d.certificateOfGoodConduct || '',
           tvetCertification: d.tvetCertification || '',
         });
@@ -105,6 +108,7 @@ export default function VettingPage() {
     try {
       await authAPI.updateFullProfile({
         nationalId: docs.nationalId || undefined,
+        idDocumentImage: docs.idDocumentImage || undefined,
         certificateOfGoodConduct: docs.certificateOfGoodConduct || undefined,
         tvetCertification: docs.tvetCertification || undefined,
       });
@@ -123,8 +127,8 @@ export default function VettingPage() {
     return 'uploaded';
   };
 
-  const uploadedCount = [docs.nationalId, docs.certificateOfGoodConduct, docs.tvetCertification].filter(Boolean).length;
-  const progress = Math.round((uploadedCount / 3) * 100);
+  const uploadedCount = [docs.nationalId, docs.idDocumentImage, docs.certificateOfGoodConduct, docs.tvetCertification].filter(Boolean).length;
+  const progress = Math.round((uploadedCount / 4) * 100);
 
   if (loading) {
     return <div className="text-center py-5"><div className="spinner-border text-primary" /></div>;
@@ -156,7 +160,7 @@ export default function VettingPage() {
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <span className="fw-semibold">Verification Progress</span>
-            <span className="badge text-bg-primary">{uploadedCount}/3 documents</span>
+            <span className="badge text-bg-primary">{uploadedCount}/4 documents</span>
           </div>
           <div className="progress" style={{ height: 8 }}>
             <div className={`progress-bar ${progress === 100 ? 'bg-success' : 'bg-primary'}`}
@@ -168,16 +172,33 @@ export default function VettingPage() {
         </div>
       </div>
 
+      {/* ID number is a short unique string, so it is typed rather than uploaded. */}
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body">
+          <label htmlFor="nationalIdNumber" className="fw-semibold mb-1">National ID / Passport number</label>
+          <p className="text-muted small mb-2">Must match the document you upload below.</p>
+          <input
+            id="nationalIdNumber"
+            type="text"
+            className="form-control"
+            placeholder="e.g. 12345678"
+            maxLength={30}
+            value={docs.nationalId}
+            onChange={(e) => updateDoc('nationalId', e.target.value)}
+          />
+        </div>
+      </div>
+
       {/* Document Cards */}
       <div className="row g-3 mb-4">
         <div className="col-md-4">
           <DocCard
             label="National ID / Passport"
-            description="Kenyan National ID card or valid passport (front & back)"
+            description="Photo or scan of your Kenyan National ID (front & back) or passport"
             icon="fa-id-card"
-            value={docs.nationalId}
-            status={docStatus(docs.nationalId)}
-            onChange={(v) => updateDoc('nationalId', v)}
+            value={docs.idDocumentImage}
+            status={docStatus(docs.idDocumentImage)}
+            onChange={(v) => updateDoc('idDocumentImage', v)}
             onError={(msg) => setToast({ msg, type: 'danger' })}
             accept="image/*,.pdf"
           />

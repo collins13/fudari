@@ -61,7 +61,8 @@ public class User {
     @Column(name = "certificate_of_good_conduct", columnDefinition = "TEXT")
     private String certificateOfGoodConduct;
 
-    @Column
+    /** Base64-encoded TVET certificate (admin/self access only). */
+    @Column(columnDefinition = "TEXT")
     private String tvetCertification;
 
     @Column

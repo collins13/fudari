@@ -393,6 +393,7 @@ export const adminUsersAPI = {
     nationalId?: string;
     idDocumentImage?: string;
     certificateOfGoodConduct?: string;
+    tvetCertification?: string;
     autoApprove?: boolean;
     skillType?: string;
     bio?: string;

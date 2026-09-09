@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI, workersAPI, aiAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { squareImageDataUrl } from '@/lib/image';
 import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 export default function CompleteProfilePage() {
@@ -157,14 +158,19 @@ export default function CompleteProfilePage() {
     );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm((prev) => ({ ...prev, profileImage: ev.target?.result as string }));
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB');
+      return;
+    }
+    try {
+      const dataUrl = await squareImageDataUrl(file);
+      setForm((prev) => ({ ...prev, profileImage: dataUrl }));
+    } catch {
+      setError('Could not read that image. Try a JPG or PNG.');
+    }
   };
 
   const handleNext = () => {

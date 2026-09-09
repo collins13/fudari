@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { authAPI } from '@/lib/api';
+import { squareImageDataUrl } from '@/lib/image';
 import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
 
 interface ProfileForm {
@@ -77,18 +78,19 @@ export default function ProfilePage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image must be under 2MB');
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm((prev) => ({ ...prev, profileImage: ev.target?.result as string }));
-    };
-    reader.readAsDataURL(file);
+    try {
+      const dataUrl = await squareImageDataUrl(file);
+      setForm((prev) => ({ ...prev, profileImage: dataUrl }));
+    } catch {
+      setError('Could not read that image. Try a JPG or PNG.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

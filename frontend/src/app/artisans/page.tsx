@@ -691,7 +691,7 @@ function ArtisansContent() {
                           <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
                           <div style={{ position: 'relative', height: 180 }}>
                             {artisan.image ? (
-                              <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
+                              <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" />
                             ) : (
                               <div className="d-flex align-items-center justify-content-center w-100 h-100"
                                 style={{ background: 'linear-gradient(135deg, #f6d365, #fda085)' }}>
@@ -771,7 +771,7 @@ function ArtisansContent() {
                           <div className="col-lg-5 col-md-5 col-xl-4 position-relative">
                             <div className="card-image-hover dark-overlay h-100 overflow-hidden position-relative" style={{ minHeight: 200 }}>
                               {artisan.image ? (
-                                <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="object-fit-cover" />
+                                <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="tx-photo-cover" />
                               ) : (
                                 <div className="d-flex align-items-center justify-content-center h-100 w-100"
                                   style={{ minHeight: 200, background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
@@ -838,7 +838,7 @@ function ArtisansContent() {
                         <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
                         <div style={{ position: 'relative', height: 200 }}>
                           {artisan.image ? (
-                            <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" />
+                            <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" loading="lazy" />
                           ) : (
                             <div className="d-flex align-items-center justify-content-center w-100 h-100"
                               style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>

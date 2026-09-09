@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -308,6 +309,7 @@ public class AuthService {
         if (data.get("latitude") != null) user.setLatitude(Double.parseDouble(data.get("latitude").toString()));
         if (data.get("longitude") != null) user.setLongitude(Double.parseDouble(data.get("longitude").toString()));
         if (data.get("nationalId") != null) user.setNationalId((String) data.get("nationalId"));
+        if (data.get("idDocumentImage") != null) user.setIdDocumentImage((String) data.get("idDocumentImage"));
         if (data.get("certificateOfGoodConduct") != null) user.setCertificateOfGoodConduct((String) data.get("certificateOfGoodConduct"));
         if (data.get("tvetCertification") != null) user.setTvetCertification((String) data.get("tvetCertification"));
 
@@ -786,6 +788,7 @@ public class AuthService {
                 .nationalId(nationalId)
                 .idDocumentImage(request.getIdDocumentImage())
                 .certificateOfGoodConduct(request.getCertificateOfGoodConduct())
+                .tvetCertification(request.getTvetCertification())
                 .locationName(request.getLocationName())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
@@ -851,6 +854,21 @@ public class AuthService {
     public AuthDTO.UserDTO adminApproveArtisan(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Admin-onboarded artisans must supply these up front; self-registered ones
+        // upload them later, so enforce the same bar here or the two intakes diverge.
+        if (user.getRole() == User.UserRole.WORKER) {
+            List<String> missing = new ArrayList<>();
+            if (!StringUtils.hasText(user.getNationalId())) missing.add("National ID number");
+            if (!StringUtils.hasText(user.getIdDocumentImage())) missing.add("ID document scan");
+            if (!StringUtils.hasText(user.getCertificateOfGoodConduct())) missing.add("Certificate of Good Conduct");
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Cannot approve " + user.getFirstName() + ": missing " + String.join(", ", missing)
+                                + ". Ask them to upload it from Dashboard → Verification.");
+            }
+        }
+
         boolean wasAlreadyApproved = Boolean.TRUE.equals(user.getIsApproved());
         user.setIsApproved(true);
         user.setApprovalStatus(User.ApprovalStatus.APPROVED);

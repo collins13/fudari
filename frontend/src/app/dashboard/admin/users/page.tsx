@@ -122,6 +122,8 @@ export default function AdminUsersPage() {
     idDocumentName: '',
     certificateOfGoodConduct: '',
     certificateName: '',
+    tvetCertification: '',
+    tvetName: '',
     autoApprove: false,
     // Service profile (artisan-only)
     skillType: '',
@@ -280,8 +282,8 @@ export default function AdminUsersPage() {
   };
 
   const handleDocUpload = async (
-    field: 'idDocumentImage' | 'certificateOfGoodConduct',
-    nameField: 'idDocumentName' | 'certificateName',
+    field: 'idDocumentImage' | 'certificateOfGoodConduct' | 'tvetCertification',
+    nameField: 'idDocumentName' | 'certificateName' | 'tvetName',
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
@@ -360,7 +362,8 @@ export default function AdminUsersPage() {
       firstName: '', lastName: '', phoneNumber: '', email: '',
       password: '', confirmPassword: '', role: 'WORKER',
       nationalId: '', idDocumentImage: '', idDocumentName: '',
-      certificateOfGoodConduct: '', certificateName: '', autoApprove: false,
+      certificateOfGoodConduct: '', certificateName: '',
+      tvetCertification: '', tvetName: '', autoApprove: false,
       skillType: '', bio: '', experienceYears: '', hourlyRate: '',
       locationName: '', latitude: '', longitude: '', profileImage: '',
     });
@@ -392,6 +395,7 @@ export default function AdminUsersPage() {
           nationalId: createForm.nationalId.trim(),
           idDocumentImage: createForm.idDocumentImage,
           certificateOfGoodConduct: createForm.certificateOfGoodConduct,
+          tvetCertification: createForm.tvetCertification || undefined,
           autoApprove: createForm.autoApprove,
           skillType: createForm.skillType || undefined,
           bio: createForm.bio.trim() || undefined,
@@ -818,6 +822,22 @@ export default function AdminUsersPage() {
                           )}
                           {createErrors.certificateOfGoodConduct && (
                             <div className="text-danger small mt-1">{createErrors.certificateOfGoodConduct}</div>
+                          )}
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">TVET / Trade Certificate</label>
+                          <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf"
+                            className="form-control"
+                            onChange={(e) => handleDocUpload('tvetCertification', 'tvetName', e)} />
+                          <div className="form-text">Optional — not every trade issues one.</div>
+                          {createForm.tvetName && (
+                            <div className="form-text text-success">
+                              <i className="fa-solid fa-circle-check me-1" />{createForm.tvetName}
+                            </div>
+                          )}
+                          {createErrors.tvetCertification && (
+                            <div className="text-danger small mt-1">{createErrors.tvetCertification}</div>
                           )}
                         </div>
 

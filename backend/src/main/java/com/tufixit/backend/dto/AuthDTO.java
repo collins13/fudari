@@ -165,6 +165,9 @@ public class AuthDTO {
         /** Base64-encoded Certificate of Good Conduct image. */
         private String certificateOfGoodConduct;
 
+        /** Base64-encoded TVET certificate (optional — not every trade has one). */
+        private String tvetCertification;
+
         /** When true and role=WORKER, the artisan is auto-approved on creation. */
         private Boolean autoApprove;
 

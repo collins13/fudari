@@ -206,3 +206,10 @@ html .text-span {
 .dark-overlay.legal-hero {
   background-color: #0a4a50;
 }
+
+/* Provider photos are portrait phone shots dropped into landscape cards. A
+   centred crop cuts off heads, so bias the crop toward the upper third. */
+.tx-photo-cover {
+  object-fit: cover;
+  object-position: 50% 25%;
+}
