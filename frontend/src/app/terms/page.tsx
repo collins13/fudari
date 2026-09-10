@@ -401,7 +401,7 @@ export default function TermsPage() {
                 <i className="fa-solid fa-shield-halved"></i>
               </div>
               <div className="flex-grow-1 text-white">
-                <h5 className="fw-bold mb-1">Also read our Privacy Policy</h5>
+                <h2 className="h5 fw-bold mb-1">Also read our Privacy Policy</h2>
                 <p className="mb-0 opacity-75 small">
                   Understand how we collect, use, and protect your personal data under the Kenya Data Protection Act, 2019.
                 </p>

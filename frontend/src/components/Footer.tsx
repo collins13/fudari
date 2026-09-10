@@ -48,7 +48,7 @@ export default function Footer() {
 
             {/* Quick Links */}
             <div className="col-lg-2 col-md-3 col-sm-6">
-              <h5 className="fw-bold mb-4">Browse</h5>
+              <h2 className="h5 fw-bold mb-4">Browse</h2>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link href="/artisans" className="d-block">Browse All Services</Link></li>
                 <li className="mb-2"><Link href="/pricing" className="d-block">Pricing</Link></li>
@@ -65,7 +65,7 @@ export default function Footer() {
 
             {/* For Pros */}
             <div className="col-lg-2 col-md-3 col-sm-6">
-              <h5 className="fw-bold mb-4">For Pros</h5>
+              <h2 className="h5 fw-bold mb-4">For Pros</h2>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link href="/register" className="d-block">Register</Link></li>
                 <li className="mb-2"><Link href="/login" className="d-block">Login</Link></li>
@@ -78,7 +78,7 @@ export default function Footer() {
 
             {/* Contact */}
             <div className="col-lg-4 col-md-6">
-              <h5 className="fw-bold mb-4">Contact Us</h5>
+              <h2 className="h5 fw-bold mb-4">Contact Us</h2>
               <div className="mb-3">
                 <a className="d-flex gap-2 align-items-center fw-medium mb-2" href="tel:+254703954539">
                   <i className="fa-solid fa-phone text-primary"></i>
@@ -94,7 +94,7 @@ export default function Footer() {
                 </div>
               </div>
               {/* Newsletter */}
-              <h6 className="fw-bold mb-3">Stay Updated</h6>
+              <h3 className="h6 fw-bold mb-3">Stay Updated</h3>
               <div className="newsletter position-relative">
                 <input
                   type="email"
