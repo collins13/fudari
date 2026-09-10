@@ -10,6 +10,7 @@ const BASE = 'https://fudari.co';
 
 type Worker = { id: number; updatedAt?: string; vettingLevel?: string };
 type Estate = { slug: string };
+type Category = { slug?: string; isActive: boolean; indexable?: boolean; skillTypes?: string[]; artisanCount?: number; updatedAt?: string };
 
 async function getJson<T>(path: string): Promise<T[]> {
   try {
@@ -41,9 +42,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  const [workers, estates] = await Promise.all([
+  const [workers, estates, categories] = await Promise.all([
     getJson<Worker>('/workers/search?page=0&size=1000'),
     getJson<Estate>('/estates/public'),
+    getJson<Category>('/categories/stats'),
   ]);
 
   const artisanPages: MetadataRoute.Sitemap = workers.map((w) => ({
@@ -62,5 +64,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...staticPages, ...artisanPages, ...estatePages];
+  const categoryPages: MetadataRoute.Sitemap = categories
+    .filter((category) => category.slug && category.isActive && category.indexable !== false && category.skillTypes?.length && category.artisanCount)
+    .map((category) => ({
+      url: `${BASE}/services/${category.slug}`,
+      lastModified: category.updatedAt ? new Date(category.updatedAt) : now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }));
+
+  return [...staticPages, ...categoryPages, ...artisanPages, ...estatePages];
 }

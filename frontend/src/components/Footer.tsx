@@ -53,8 +53,8 @@ export default function Footer() {
                 <li className="mb-2"><Link href="/artisans" className="d-block">Browse All Services</Link></li>
                 <li className="mb-2"><Link href="/pricing" className="d-block">Pricing</Link></li>
                 <li className="mb-2"><Link href="/#how-it-works" className="d-block">How It Works</Link></li>
-                <li className="mb-2"><Link href="/artisans?category=electrical" className="d-block">Electricians</Link></li>
-                <li className="mb-2"><Link href="/artisans?category=plumbing" className="d-block">Plumbers</Link></li>
+                <li className="mb-2"><Link href="/services/electrical" className="d-block">Electricians</Link></li>
+                <li className="mb-2"><Link href="/services/plumbing" className="d-block">Plumbers</Link></li>
                 <li className="mb-2"><Link href="/artisans?skill=MAMA_FUA" className="d-block">Mama Fua</Link></li>
                 <li className="mb-2"><Link href="/artisans?skill=MOVER" className="d-block">Movers</Link></li>
                 <li className="mb-2"><Link href="/artisans?skill=BODA_BODA" className="d-block">Boda Boda</Link></li>
