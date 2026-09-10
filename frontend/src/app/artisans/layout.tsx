@@ -10,7 +10,7 @@ const SKILL_LABELS = [
 ];
 
 export const metadata: Metadata = {
-  title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya",
+  title: "Artisans, Cleaners, Riders, Barbers & More Near You",
   description:
     "Browse Kenya's directory of verified service pros — plumbers, electricians, cleaners, mama fua, movers, barbers and more. Compare reviews and book directly.",
   // "fundi" carries real search volume for the trade categories, so it stays a

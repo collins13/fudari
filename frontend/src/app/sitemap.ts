@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+import { serverApiUrl } from '@/lib/serverApi';
 
 // Built per request, not at build time: `docker compose build` runs before the API
 // is reachable, and a build-time fetch failure silently produced a sitemap with no
@@ -14,7 +13,11 @@ type Estate = { slug: string };
 
 async function getJson<T>(path: string): Promise<T[]> {
   try {
-    const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' });
+    // Googlebot drops the sitemap as "Couldn't fetch" if we hang waiting on the API.
+    const res = await fetch(`${serverApiUrl()}${path}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return [];
     const data = await res.json();
     return (Array.isArray(data) ? data : data.content) || [];

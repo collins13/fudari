@@ -6,7 +6,7 @@ import ContactForm from '@/components/ContactForm';
 import { PLATFORM_WHATSAPP_NUMBER, whatsappBotLink } from '@/lib/whatsapp';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | FUDARI',
+  title: 'Contact Us',
   description: 'Get in touch with the FUDARI team. We are here to help customers and artisans across Kenya.',
   alternates: { canonical: 'https://fudari.co/contact' },
 };
