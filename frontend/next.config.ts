@@ -44,6 +44,7 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  poweredByHeader: false,
   turbopack: {},
   async redirects() {
     return [
