@@ -42,7 +42,7 @@ public class Category {
     @Builder.Default
     private Integer sortOrder = 0;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default true")
     @Builder.Default
     private Boolean indexable = true;
 
