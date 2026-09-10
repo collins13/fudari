@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,7 +68,7 @@ public class CategorySeoBackfill implements CommandLineRunner {
             if (category.getSkillTypes().isEmpty()) {
                 WorkerSkill.SkillType skillType = LEGACY_SKILL_TYPES.get(category.getName());
                 if (skillType != null) {
-                    category.setSkillTypes(Set.of(skillType));
+                    category.setSkillTypes(new LinkedHashSet<>(Set.of(skillType)));
                     changed = true;
                 }
             }
