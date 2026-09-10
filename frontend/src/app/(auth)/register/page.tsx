@@ -118,13 +118,13 @@ export default function RegisterPage() {
                 <div className="d-inline-block font-caveat fs-1 fw-medium text-primary mb-2">
                   Join FUDARI
                 </div>
-                <h2 className="display-6 fw-semibold mb-2">
+                <h1 className="display-6 fw-semibold mb-2">
                   {step === 'phone' ? (
                     <>Enter Your <span className="font-caveat text-primary">Number</span></>
                   ) : (
                     <>Check Your <span className="font-caveat text-primary">SMS</span></>
                   )}
-                </h2>
+                </h1>
                 <p className="mb-0 text-muted">
                   {step === 'phone'
                     ? 'No password needed. We\u2019ll text you a 6-digit code.'

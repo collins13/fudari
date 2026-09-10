@@ -370,10 +370,16 @@ export const categoriesAPI = {
   // Admin
   getAllCategories: () => api.get('/categories/all'),
 
-  createCategory: (data: { name: string; icon?: string; description?: string; sortOrder?: number }) =>
+  createCategory: (data: {
+    name: string; icon?: string; description?: string; sortOrder?: number; slug?: string;
+    indexable?: boolean; seoTitle?: string; seoDescription?: string; skillTypes?: string[];
+  }) =>
     api.post('/categories', data),
 
-  updateCategory: (id: number, data: { name?: string; icon?: string; description?: string; isActive?: boolean; sortOrder?: number }) =>
+  updateCategory: (id: number, data: {
+    name?: string; icon?: string; description?: string; isActive?: boolean; sortOrder?: number; slug?: string;
+    indexable?: boolean; seoTitle?: string; seoDescription?: string; skillTypes?: string[];
+  }) =>
     api.put(`/categories/${id}`, data),
 
   deleteCategory: (id: number) => api.delete(`/categories/${id}`),

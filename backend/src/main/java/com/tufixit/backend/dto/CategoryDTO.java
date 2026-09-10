@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+
+import com.tufixit.backend.entity.WorkerSkill;
 
 public class CategoryDTO {
 
@@ -21,6 +24,11 @@ public class CategoryDTO {
         private String icon;
         private String description;
         private Integer sortOrder;
+        private String slug;
+        private Boolean indexable;
+        private String seoTitle;
+        private String seoDescription;
+        private Set<WorkerSkill.SkillType> skillTypes;
     }
 
     @Data
@@ -33,6 +41,11 @@ public class CategoryDTO {
         private String description;
         private Boolean isActive;
         private Integer sortOrder;
+        private String slug;
+        private Boolean indexable;
+        private String seoTitle;
+        private String seoDescription;
+        private Set<WorkerSkill.SkillType> skillTypes;
     }
 
     @Data
@@ -46,7 +59,13 @@ public class CategoryDTO {
         private String description;
         private Boolean isActive;
         private Integer sortOrder;
+        private String slug;
+        private Boolean indexable;
+        private String seoTitle;
+        private String seoDescription;
+        private Set<WorkerSkill.SkillType> skillTypes;
         private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
         /** Live count of active artisans in this category — populated by /api/categories/stats */
         private Integer artisanCount;
     }

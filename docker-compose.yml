@@ -149,6 +149,9 @@ services:
       # container ID — that leaves loopback unbound and the healthcheck failing.
       HOSTNAME: 0.0.0.0
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL must be set in .env}
+      # Server-side fetches (sitemap, SSR homepage) stay on the Docker network
+      # instead of hairpinning out through nginx via the public hostname.
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8080/api}
     security_opt:
       - no-new-privileges:true
     read_only: true

@@ -17,7 +17,4 @@ Disallow: /chat/
 Disallow: /track/
 Disallow: /api/
 
-# Keep crawl budget for valuable pages
-Crawl-delay: 1
-
 Sitemap: https://fudari.co/sitemap.xml

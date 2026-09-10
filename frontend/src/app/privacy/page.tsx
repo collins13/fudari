@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import LegalPageClient from '@/components/LegalPageClient';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | FUDARI',
+  title: 'Privacy Policy',
   description:
     'How FUDARI collects, uses, and protects personal data of customers, artisans, and estate partners under the Kenya Data Protection Act, 2019.',
   alternates: { canonical: 'https://fudari.co/privacy' },

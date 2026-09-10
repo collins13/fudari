@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { categoriesAPI } from '@/lib/api';
+import { SKILL_OPTIONS } from '@/lib/kenya';
 
 interface Category {
   id: number;
@@ -10,6 +11,11 @@ interface Category {
   description: string | null;
   isActive: boolean;
   sortOrder: number;
+  slug?: string | null;
+  indexable?: boolean;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  skillTypes?: string[];
   createdAt: string;
   artisanCount?: number;
 }
@@ -25,7 +31,10 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
-  const [form, setForm] = useState({ name: '', icon: '', description: '', sortOrder: '0' });
+  const [form, setForm] = useState({
+    name: '', icon: '', description: '', sortOrder: '0', slug: '', indexable: true,
+    seoTitle: '', seoDescription: '', skillTypes: [] as string[],
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -44,7 +53,7 @@ export default function AdminCategoriesPage() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: '', icon: 'fa-wrench', description: '', sortOrder: '0' });
+    setForm({ name: '', icon: 'fa-wrench', description: '', sortOrder: '0', slug: '', indexable: true, seoTitle: '', seoDescription: '', skillTypes: [] });
     setError('');
     setShowForm(true);
   };
@@ -56,6 +65,11 @@ export default function AdminCategoriesPage() {
       icon: cat.icon || '',
       description: cat.description || '',
       sortOrder: String(cat.sortOrder),
+      slug: cat.slug || '',
+      indexable: cat.indexable ?? true,
+      seoTitle: cat.seoTitle || '',
+      seoDescription: cat.seoDescription || '',
+      skillTypes: cat.skillTypes || [],
     });
     setError('');
     setShowForm(true);
@@ -72,6 +86,11 @@ export default function AdminCategoriesPage() {
           icon: form.icon || undefined,
           description: form.description || undefined,
           sortOrder: parseInt(form.sortOrder) || 0,
+          slug: form.slug || undefined,
+          indexable: form.indexable,
+          seoTitle: form.seoTitle || undefined,
+          seoDescription: form.seoDescription || undefined,
+          skillTypes: form.skillTypes,
         });
         setToast({ msg: 'Category updated', type: 'success' });
       } else {
@@ -80,6 +99,11 @@ export default function AdminCategoriesPage() {
           icon: form.icon || undefined,
           description: form.description || undefined,
           sortOrder: parseInt(form.sortOrder) || 0,
+          slug: form.slug || undefined,
+          indexable: form.indexable,
+          seoTitle: form.seoTitle || undefined,
+          seoDescription: form.seoDescription || undefined,
+          skillTypes: form.skillTypes,
         });
         setToast({ msg: 'Category created', type: 'success' });
       }
@@ -253,6 +277,33 @@ export default function AdminCategoriesPage() {
                   <label className="form-label fw-medium">Description</label>
                   <textarea className="form-control" rows={2} placeholder="Short description..."
                     value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-medium">Service Skills</label>
+                  <select className="form-select" multiple value={form.skillTypes}
+                    onChange={(e) => setForm({ ...form, skillTypes: Array.from(e.target.selectedOptions, (option) => option.value) })}>
+                    {SKILL_OPTIONS.map((skill) => <option key={skill.value} value={skill.value}>{skill.label}</option>)}
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-medium">URL Slug</label>
+                  <input type="text" className="form-control" placeholder="e.g. electrical-services"
+                    value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-medium">Search Title</label>
+                  <input type="text" className="form-control" maxLength={160}
+                    value={form.seoTitle} onChange={(e) => setForm({ ...form, seoTitle: e.target.value })} />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-medium">Search Description</label>
+                  <textarea className="form-control" rows={2} maxLength={320}
+                    value={form.seoDescription} onChange={(e) => setForm({ ...form, seoDescription: e.target.value })} />
+                </div>
+                <div className="form-check form-switch mb-3">
+                  <input className="form-check-input" type="checkbox" id="category-indexable" checked={form.indexable}
+                    onChange={(e) => setForm({ ...form, indexable: e.target.checked })} />
+                  <label className="form-check-label" htmlFor="category-indexable">Allow search indexing</label>
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-medium">Sort Order</label>

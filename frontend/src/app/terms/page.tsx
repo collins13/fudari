@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import LegalPageClient from '@/components/LegalPageClient';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | FUDARI',
+  title: 'Terms of Service',
   description:
     'Terms of Service governing the use of the FUDARI marketplace by customers, service providers, and estate partners in Kenya.',
   alternates: { canonical: 'https://fudari.co/terms' },

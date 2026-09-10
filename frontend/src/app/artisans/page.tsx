@@ -165,7 +165,7 @@ const ALL_CATEGORIES_SLUG = 'all';
 interface CategoryOption {
   name: string;
   slug: string;
-  skillType: string;
+  skillTypes: string[];
   count: number;
 }
 
@@ -258,11 +258,11 @@ function ArtisansContent() {
     categoriesAPI.getActiveCategoriesWithStats()
       .then((res) => {
         const cats: CategoryOption[] = (res.data || [])
-          .filter((c: any) => !!c.skillType)
+          .filter((c: any) => (c.skillTypes || []).length > 0)
           .map((c: any) => ({
             name: c.name,
             slug: c.slug || slugify(c.name),
-            skillType: c.skillType,
+            skillTypes: c.skillTypes || [],
             count: c.artisanCount ?? 0,
           }));
         setCategories(cats);
@@ -299,17 +299,19 @@ function ArtisansContent() {
     setLoadError(null);
     try {
       // An explicit skill from symptom search is more precise than the broad category filter.
-      const skillTypeParam = skillParam || activeCategory?.skillType || undefined;
-      const response = await workersAPI.searchWorkers({
-        skillType: skillTypeParam,
+      const skillTypes = skillParam ? [skillParam] : activeCategory?.skillTypes || [undefined];
+      const responses = await Promise.all(skillTypes.map((skillType) => workersAPI.searchWorkers({
+        skillType,
         name: debouncedSearch || undefined,
         location: debouncedLocation || undefined,
         maxHourlyRate: maxPrice < MAX_PRICE ? maxPrice : undefined,
         availableNow: availableOnly || undefined,
         latitude: coords?.lat,
         longitude: coords?.lng,
-      });
-      setArtisans((response.data || []).map(mapWorkerToArtisan));
+      })));
+      const uniqueWorkers = new Map<number, any>();
+      responses.flatMap((response) => response.data || []).forEach((worker) => uniqueWorkers.set(worker.id, worker));
+      setArtisans(Array.from(uniqueWorkers.values()).map(mapWorkerToArtisan));
     } catch (err: any) {
       console.error('Failed to fetch workers:', err?.response?.status, err?.message);
       setArtisans([]);
@@ -394,9 +396,10 @@ function ArtisansContent() {
     });
 
   // Filter listings
-  const skillTypeForCategory = skillParam || activeCategory?.skillType;
+  const skillTypesForCategory = skillParam ? [skillParam] : activeCategory?.skillTypes || [];
+  const predictiveSkillType = skillParam || (skillTypesForCategory.length === 1 ? skillTypesForCategory[0] : undefined);
   const filteredListings = listings.filter((l) => {
-    if (skillTypeForCategory && l.skillType !== skillTypeForCategory) return false;
+    if (skillTypesForCategory.length > 0 && !skillTypesForCategory.includes(l.skillType)) return false;
     if (searchInput && !l.title.toLowerCase().includes(searchInput.toLowerCase()) &&
         !l.description?.toLowerCase().includes(searchInput.toLowerCase())) return false;
     if (locationInput && !l.location?.toLowerCase().includes(locationInput.toLowerCase())) return false;
@@ -414,7 +417,7 @@ function ArtisansContent() {
     setTab('providers');
     setSearchInput(chip.query);
     setSkillParam(chip.skillType);
-    const matched = categories.find((c) => c.skillType === chip.skillType);
+    const matched = categories.find((c) => c.skillTypes.includes(chip.skillType));
     setCategorySlug(matched?.slug || ALL_CATEGORIES_SLUG);
     setCurrentPage(1);
   };
@@ -747,10 +750,10 @@ function ArtisansContent() {
               )}
 
               {/* Recommendations belong here — while the customer is still choosing. */}
-              {!loading && tab === 'providers' && skillTypeForCategory && (
+              {!loading && tab === 'providers' && predictiveSkillType && (
                 <div className="mb-4">
                   <PredictiveMatchPanel
-                    skillType={skillTypeForCategory}
+                    skillType={predictiveSkillType}
                     latitude={coords?.lat}
                     longitude={coords?.lng}
                   />

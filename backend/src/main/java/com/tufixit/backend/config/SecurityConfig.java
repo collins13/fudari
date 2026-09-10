@@ -79,9 +79,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/listings/{id:[0-9]+}/view").permitAll()
 
                         // PUBLIC: categories
-                        .requestMatchers("/api/categories").permitAll()
-                        .requestMatchers("/api/categories/stats").permitAll()
-                        .requestMatchers("/api/categories/platform-stats").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/stats").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/platform-stats").permitAll()
 
                         // PUBLIC: workers/artisan profiles — read-only. Writes stay authenticated.
                         .requestMatchers(HttpMethod.GET, "/api/workers/search").permitAll()
@@ -149,6 +149,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/jobs/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/categories/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories", "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories", "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories", "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers("/api/reports/admin/**").hasRole("ADMIN")
 
                         // ESTATE_MANAGER: estate-scoped management endpoints

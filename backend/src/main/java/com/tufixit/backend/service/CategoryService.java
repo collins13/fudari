@@ -3,19 +3,20 @@ package com.tufixit.backend.service;
 import com.tufixit.backend.dto.CategoryDTO;
 import com.tufixit.backend.entity.Category;
 import com.tufixit.backend.entity.User;
+import com.tufixit.backend.entity.WorkerSkill;
 import com.tufixit.backend.repository.CategoryRepository;
 import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.ListingRepository;
 import com.tufixit.backend.repository.UserRepository;
-import com.tufixit.backend.repository.WorkerSkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +28,6 @@ public class CategoryService {
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
     private final ListingRepository listingRepository;
-    private final WorkerSkillRepository workerSkillRepository;
 
     @Transactional
     public CategoryDTO.CategoryResponse createCategory(CategoryDTO.CreateCategoryRequest request) {
@@ -37,10 +37,15 @@ public class CategoryService {
 
         Category category = Category.builder()
                 .name(request.getName())
+            .slug(resolveSlug(request.getSlug(), request.getName(), null))
                 .icon(request.getIcon())
                 .description(request.getDescription())
                 .isActive(true)
                 .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
+            .indexable(request.getIndexable() != null ? request.getIndexable() : true)
+            .seoTitle(request.getSeoTitle())
+            .seoDescription(request.getSeoDescription())
+            .skillTypes(request.getSkillTypes() != null ? request.getSkillTypes() : Set.of())
                 .build();
 
         category = categoryRepository.save(category);
@@ -57,6 +62,11 @@ public class CategoryService {
         if (request.getDescription() != null) category.setDescription(request.getDescription());
         if (request.getIsActive() != null) category.setIsActive(request.getIsActive());
         if (request.getSortOrder() != null) category.setSortOrder(request.getSortOrder());
+        if (request.getSlug() != null) category.setSlug(resolveSlug(request.getSlug(), category.getName(), categoryId));
+        if (request.getIndexable() != null) category.setIndexable(request.getIndexable());
+        if (request.getSeoTitle() != null) category.setSeoTitle(request.getSeoTitle());
+        if (request.getSeoDescription() != null) category.setSeoDescription(request.getSeoDescription());
+        if (request.getSkillTypes() != null) category.setSkillTypes(request.getSkillTypes());
 
         category = categoryRepository.save(category);
         return mapToResponse(category);
@@ -94,7 +104,7 @@ public class CategoryService {
      */
     public List<CategoryDTO.CategoryResponse> getActiveCategoriesWithStats() {
         // Build a skill-type → artisan count map from worker_skills table
-        Map<String, Integer> skillCounts = new HashMap<>();
+        Map<String, Integer> skillCounts = new java.util.HashMap<>();
         try {
             listingRepository.countArtisansPerSkillType().forEach(row -> {
                 String skillType = String.valueOf(row[0]);
@@ -105,45 +115,15 @@ public class CategoryService {
             log.warn("Could not compute artisan counts per skill type: {}", e.getMessage());
         }
 
-        // Map category names to skill types (rough match — categories are named after skill groups)
-        Map<String, String> categoryToSkill = Map.ofEntries(
-            Map.entry("Electrical", "ELECTRICIAN"),
-            Map.entry("Plumbing", "PLUMBER"),
-            Map.entry("Mechanics", "MECHANIC"),
-            Map.entry("Painting", "PAINTER"),
-            Map.entry("Carpentry", "CARPENTER"),
-            Map.entry("HVAC", "HVAC_TECHNICIAN"),
-            Map.entry("Welding", "WELDER"),
-            Map.entry("Masonry", "MASON"),
-            Map.entry("Cleaning", "CLEANER"),
-            Map.entry("Gardening", "GARDENER"),
-            Map.entry("Roofing", "ROOFING"),
-            Map.entry("Tiling", "TILING"),
-            Map.entry("Security", "SECURITY"),
-            Map.entry("Appliance Repair", "APPLIANCE_REPAIR"),
-            Map.entry("Moving", "MOVER"),
-            Map.entry("Transport", "TRANSPORT_PROVIDER"),
-            Map.entry("Event Lighting", "EVENT_LIGHTING"),
-            Map.entry("Mama Fua", "MAMA_FUA"),
-            Map.entry("Boda Boda", "BODA_BODA"),
-            Map.entry("Tuk Tuk", "TUK_TUK"),
-            Map.entry("Courier & Delivery", "COURIER"),
-            Map.entry("Barber", "BARBER"),
-            Map.entry("Hair Salon", "HAIR_SALON"),
-            Map.entry("Makeup & Beauty", "MAKEUP_ARTIST"),
-            Map.entry("Car Wash", "CAR_WASH"),
-            Map.entry("Tyre Services", "TYRE_SERVICES"),
-            Map.entry("Photography", "PHOTOGRAPHER"),
-            Map.entry("Design", "GRAPHIC_DESIGNER"),
-            Map.entry("IT Support", "IT_TECHNICIAN")
-        );
-
         return categoryRepository.findByIsActiveTrueOrderBySortOrderAsc()
                 .stream()
                 .map(c -> {
                     CategoryDTO.CategoryResponse resp = mapToResponse(c);
-                    String skill = categoryToSkill.get(c.getName());
-                    resp.setArtisanCount(skill != null ? skillCounts.getOrDefault(skill, 0) : 0);
+                    int artisanCount = c.getSkillTypes().stream()
+                            .map(WorkerSkill.SkillType::name)
+                            .mapToInt(skill -> skillCounts.getOrDefault(skill, 0))
+                            .sum();
+                    resp.setArtisanCount(artisanCount);
                     return resp;
                 })
                 .collect(Collectors.toList());
@@ -174,11 +154,34 @@ public class CategoryService {
         return CategoryDTO.CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
+                .slug(category.getSlug())
                 .icon(category.getIcon())
                 .description(category.getDescription())
                 .isActive(category.getIsActive())
                 .sortOrder(category.getSortOrder())
+                .indexable(category.getIndexable())
+                .seoTitle(category.getSeoTitle())
+                .seoDescription(category.getSeoDescription())
+                .skillTypes(category.getSkillTypes())
                 .createdAt(category.getCreatedAt())
+                .updatedAt(category.getUpdatedAt())
                 .build();
+    }
+
+    private String resolveSlug(String requestedSlug, String fallbackName, Long categoryId) {
+        String source = requestedSlug != null && !requestedSlug.isBlank() ? requestedSlug : fallbackName;
+        String slug = source.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        if (slug.isBlank()) {
+            throw new IllegalArgumentException("Category slug must contain letters or numbers");
+        }
+        if (categoryRepository.existsBySlug(slug)) {
+            Category existing = categoryRepository.findBySlug(slug).orElse(null);
+            if (existing == null || !existing.getId().equals(categoryId)) {
+                throw new IllegalArgumentException("Category slug already exists");
+            }
+        }
+        return slug;
     }
 }
