@@ -12,9 +12,7 @@ const SKILL_LABELS = [
 export const metadata: Metadata = {
   title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya",
   description:
-    "Browse Kenya's largest directory of verified service pros — " +
-    SKILL_LABELS.join(", ") +
-    " and more. Compare trust scores, read real reviews, and book directly via phone or WhatsApp.",
+    "Browse Kenya's directory of verified service pros — plumbers, electricians, cleaners, mama fua, movers, barbers and more. Compare reviews and book directly.",
   // "fundi" carries real search volume for the trade categories, so it stays a
   // keyword target even though it is not the umbrella label for every provider.
   keywords: [

@@ -40,9 +40,9 @@ export default function PricingPage() {
               <div className="bg-primary d-inline-block fs-14 mb-3 px-4 py-2 rounded-5 text-uppercase">
                 Pricing
               </div>
-              <h2 className="display-4 fw-semibold mb-3">
+              <h1 className="display-4 fw-semibold mb-3">
                 Simple Plans for <span className="font-caveat">Every Pro</span>
-              </h2>
+              </h1>
               <p className="sub-title fs-16">
                 Start free. Upgrade when you&apos;re ready. Cancel anytime.
               </p>

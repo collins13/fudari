@@ -567,6 +567,15 @@ function ArtisansContent() {
       <div className="py-3 py-xl-5 bg-gradient">
         <div className="container">
 
+          <header className="mb-4">
+            <h1 className="fs-2 fw-bold mb-2">Verified Service Providers in Kenya</h1>
+            <p className="text-muted mb-0">
+              Browse plumbers, electricians, cleaners, mama fua, movers, boda boda riders,
+              barbers, car wash and IT pros near you. Compare ratings and book directly —
+              no account needed.
+            </p>
+          </header>
+
           {/* Tab switcher */}
           <div className="mb-4">
             <ul className="nav nav-pills gap-2">
@@ -1112,7 +1121,23 @@ function ArtisansContent() {
 
 export default function ArtisansPage() {
   return (
-    <Suspense fallback={<div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}><div className="spinner-border text-primary" /></div>}>
+    // The fallback repeats the page heading so the streamed shell crawlers receive
+    // is not an empty spinner.
+    <Suspense
+      fallback={
+        <div className="container py-5">
+          <h1 className="fs-2 fw-bold mb-2">Verified Service Providers in Kenya</h1>
+          <p className="text-muted">
+            Browse plumbers, electricians, cleaners, mama fua, movers, boda boda riders,
+            barbers, car wash and IT pros near you. Compare ratings and book directly —
+            no account needed.
+          </p>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading providers</span>
+          </div>
+        </div>
+      }
+    >
       <ArtisansContent />
     </Suspense>
   );

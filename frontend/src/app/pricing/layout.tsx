@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pro Subscription Plans & Pricing",
   description:
-    "Affordable FUDARI subscription plans for Kenyan service providers — Free (KES 0), Basic (KES 500/mo or KES 150/wk), Pro (KES 3,000/mo or KES 800/wk). Get more listings, analytics, featured badge, and priority search ranking.",
+    "FUDARI plans for Kenyan service providers: Free, Basic KES 500/mo and Pro KES 3,000/mo. More listings, analytics and priority search ranking.",
   keywords: [
     "fudari pricing", "fudari plans", "service provider subscription kenya",
     "artisan subscription kenya", "jua kali pricing plans", "electrician listing fee kenya",
