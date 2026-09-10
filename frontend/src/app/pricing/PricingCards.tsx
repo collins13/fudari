@@ -117,7 +117,7 @@ export default function PricingCards() {
                     </div>
                   )}
                   <div className="card-body p-4">
-                    <h5 className="fw-bold mb-3">{plan.name}</h5>
+                    <h2 className="h5 fw-bold mb-3">{plan.name}</h2>
                     <div className="mb-3">
                       {price === 0 ? (
                         <div className="display-5 fw-bold">Free</div>

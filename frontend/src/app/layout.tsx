@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: "%s | FUDARI Kenya",
   },
   description:
-    "Book verified local pros across Kenya — plumbers, electricians, cleaners, mama fua, movers, boda boda, barbers and IT techs. No login needed, pay on completion.",
+    "Book verified local pros across Kenya — plumbers, electricians, cleaners, mama fua, movers, barbers and IT techs. No login needed, pay on completion.",
   keywords: [
     // Brand
     "fudari", "fudari kenya", "fudari nairobi",

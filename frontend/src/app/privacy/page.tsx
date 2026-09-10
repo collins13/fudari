@@ -420,7 +420,7 @@ export default function PrivacyPage() {
                 <i className="fa-solid fa-file-contract"></i>
               </div>
               <div className="flex-grow-1 text-white">
-                <h5 className="fw-bold mb-1">Also read our Terms of Service</h5>
+                <h2 className="h5 fw-bold mb-1">Also read our Terms of Service</h2>
                 <p className="mb-0 opacity-75 small">
                   The contractual rules that govern your use of FUDARI — covering accounts, payments, and disputes.
                 </p>

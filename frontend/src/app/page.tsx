@@ -478,7 +478,7 @@ export default function HomePage() {
                     >
                       <i className={`fa-solid ${cat.icon} fs-4 text-primary`}></i>
                     </div>
-                    <h6 className="fw-semibold mb-1">{cat.name}</h6>
+                    <h3 className="h6 fw-semibold mb-1">{cat.name}</h3>
                     <small className="text-muted">{cat.count > 0 ? `${cat.count} available` : 'Available'}</small>
                   </Link>
                 </div>
@@ -513,7 +513,7 @@ export default function HomePage() {
                   <i className="fs-50 fa-solid fa-magnifying-glass text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h4 className="fs-20 fw-semibold">Search &amp; Find</h4>
+                  <h3 className="fs-20 fw-semibold">Search &amp; Find</h3>
                   <p>Browse ID-verified pros by skill and location. See real ratings, completed jobs, and starting prices.</p>
                 </div>
               </div>
@@ -525,7 +525,7 @@ export default function HomePage() {
                   <i className="fs-50 fa-solid fa-calendar-check text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h4 className="fs-20 fw-semibold">Book &amp; Connect</h4>
+                  <h3 className="fs-20 fw-semibold">Book &amp; Connect</h3>
                   <p>Call, WhatsApp, or book online — no account needed. They confirm within minutes via SMS.</p>
                 </div>
               </div>
@@ -537,7 +537,7 @@ export default function HomePage() {
                   <i className="fs-50 fa-solid fa-star text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h4 className="fs-20 fw-semibold">Track &amp; Rate</h4>
+                  <h3 className="fs-20 fw-semibold">Track &amp; Rate</h3>
                   <p>Track your job with a booking code. Pay on completion. Rate to help others find great pros.</p>
                 </div>
               </div>
@@ -622,7 +622,7 @@ export default function HomePage() {
                           <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
                         </div>
                       ); })()}
-                      <h4 className="fs-5 fw-semibold mb-1">{artisan.name}</h4>
+                      <h3 className="fs-5 fw-semibold mb-1">{artisan.name}</h3>
                       <p className="text-primary small mb-1">
                         <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
                         {skillLabelSwahili(artisan.skillType) && (
@@ -698,7 +698,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(40,167,69,0.1)' }}>
                   <i className="fa-solid fa-mobile-screen-button fs-4 text-success"></i>
                 </div>
-                <h5 className="fw-semibold mb-2">M-Pesa Payments</h5>
+                <h3 className="h5 fw-semibold mb-2">M-Pesa Payments</h3>
                 <p className="text-muted small mb-0">Pay securely via M-Pesa — no bank account needed. Track every transaction with Safaricom Daraja integration.</p>
               </div>
             </div>
@@ -707,7 +707,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'var(--tx-primary-soft)' }}>
                   <i className="fa-solid fa-comment-sms fs-4 text-primary"></i>
                 </div>
-                <h5 className="fw-semibold mb-2">SMS Notifications</h5>
+                <h3 className="h5 fw-semibold mb-2">SMS Notifications</h3>
                 <p className="text-muted small mb-0">Get instant SMS updates on booking status — works on any phone, no internet needed. Powered by Africa&apos;s Talking.</p>
               </div>
             </div>
@@ -716,7 +716,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(13,110,253,0.1)' }}>
                   <i className="fa-solid fa-shield-halved fs-4 text-info"></i>
                 </div>
-                <h5 className="fw-semibold mb-2">PIN Verification</h5>
+                <h3 className="h5 fw-semibold mb-2">PIN Verification</h3>
                 <p className="text-muted small mb-0">Unique START &amp; COMPLETION PINs ensure only the right person works on your job. Full accountability.</p>
               </div>
             </div>
@@ -725,7 +725,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(255,193,7,0.1)' }}>
                   <i className="fa-solid fa-star fs-4 text-warning"></i>
                 </div>
-                <h5 className="fw-semibold mb-2">No Login to Book</h5>
+                <h3 className="h5 fw-semibold mb-2">No Login to Book</h3>
                 <p className="text-muted small mb-0">Customers don&apos;t need an account. Just describe your problem, enter your phone, and book — simple as USSD.</p>
               </div>
             </div>
@@ -734,7 +734,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(111,66,193,0.1)' }}>
                   <i className="fa-solid fa-brain fs-4 text-purple" style={{ color: '#6f42c1' }}></i>
                 </div>
-                <h5 className="fw-semibold mb-2">AI Price Estimates</h5>
+                <h3 className="h5 fw-semibold mb-2">AI Price Estimates</h3>
                 <p className="text-muted small mb-0">Get instant KES price estimates based on real Nairobi job data — no guessing, fair pricing for everyone.</p>
               </div>
             </div>
@@ -743,7 +743,7 @@ export default function HomePage() {
                 <div className="d-inline-flex align-items-center justify-content-center rounded-circle mx-auto mb-3" style={{ width: 64, height: 64, background: 'rgba(220,53,69,0.1)' }}>
                   <i className="fa-brands fa-whatsapp fs-4 text-success"></i>
                 </div>
-                <h5 className="fw-semibold mb-2">WhatsApp & Call</h5>
+                <h3 className="h5 fw-semibold mb-2">WhatsApp & Call</h3>
                 <p className="text-muted small mb-0">Contact pros directly via WhatsApp or phone call — the way Kenyans prefer to communicate.</p>
               </div>
             </div>
@@ -812,6 +812,105 @@ export default function HomePage() {
         </div>
       </div>
       {/* ===== END CTA ===== */}
+
+      {/* ===== ABOUT / FAQ ===== */}
+      <section className="bg-white border-top py-5">
+        <div className="container py-4">
+          <div className="row g-5">
+            <div className="col-lg-7">
+              <h2 className="fw-semibold mb-3">How to Get It Fixed Today in Nairobi and Countrywide</h2>
+              <p className="text-muted">
+                FUDARI exists for the moment something breaks and you need it fixed today. Describe
+                the problem in plain English or Kiswahili &mdash; &ldquo;tap is leaking&rdquo;,
+                &ldquo;stima imekatika&rdquo;, &ldquo;fridge is not cooling&rdquo; &mdash; add where you
+                are, and the search matches your symptom to the right trade instead of asking you to
+                guess whether you need a plumber, an electrician or an appliance technician.
+              </p>
+              <p className="text-muted">
+                Every provider is ID-verified before their profile goes live. Before you contact
+                anyone you can see their verification tier, how many jobs they have completed, their
+                rating from real customers and their starting rate, so you are comparing people on
+                evidence rather than on who paid the most to appear first.
+              </p>
+              <p className="text-muted">
+                Nothing about the process assumes a smartphone or a bank account. You do not need an
+                account to book. You agree the price with the provider on WhatsApp or by phone before
+                any work starts, they confirm the booking by SMS, and you pay by M-Pesa once the job
+                is finished &mdash; never upfront.
+              </p>
+
+              <h3 className="h5 fw-semibold mt-4 mb-2">Services you can book</h3>
+              <p className="text-muted">
+                Home and property work covers plumbing, electrical, carpentry, masonry, tiling,
+                painting, welding, roofing, solar, HVAC, appliance repair, CCTV, locksmithing,
+                fumigation and gardening. Household and personal services cover cleaning, mama fua
+                and laundry, barbers, salons, braiding, makeup and nail technicians. Transport covers
+                boda boda, tuk tuk, courier and same-day delivery, house and office movers, and
+                pickups and trucks for hire. Vehicle services cover mobile mechanics, car wash,
+                detailing, tyre fitting and puncture repair. Digital services cover photography,
+                videography, graphic and logo design, and IT and laptop technicians.
+              </p>
+
+              <h3 className="h5 fw-semibold mt-4 mb-2">Where FUDARI operates</h3>
+              <p className="text-muted">
+                Coverage is countrywide across all 47 counties. Providers set their own service
+                areas, so availability is deepest in and around Nairobi and grows outward through
+                Mombasa, Kisumu, Nakuru, Eldoret, Thika, Nyeri, Machakos and the smaller towns as
+                more pros join. If nobody is listed for your area yet, message the{' '}
+                <a href={whatsappBotLink('Hi, I need a service provider.')} target="_blank" rel="noopener noreferrer">
+                  WhatsApp booking bot
+                </a>{' '}
+                and it will scope the job and route it for you.
+              </p>
+            </div>
+
+            <div className="col-lg-5">
+              <h2 className="fw-semibold mb-3">Common questions</h2>
+
+              <h3 className="h6 fw-semibold mb-1">Do I need an account to book?</h3>
+              <p className="text-muted">
+                No. Search, compare and book as a guest with just your phone number. Creating an
+                account only adds booking history and saved details.
+              </p>
+
+              <h3 className="h6 fw-semibold mb-1">When do I pay, and how?</h3>
+              <p className="text-muted">
+                After the work is done, by M-Pesa or cash. FUDARI charges customers no booking fee,
+                and the price is whatever you and the provider agreed before work started.
+              </p>
+
+              <h3 className="h6 fw-semibold mb-1">How do I know the right person turned up?</h3>
+              <p className="text-muted">
+                Each booking issues you a start PIN and a completion PIN. You give the start PIN when
+                the provider arrives and the completion PIN only when you are satisfied, so the job
+                cannot be marked done without you.
+              </p>
+
+              <h3 className="h6 fw-semibold mb-1">What if something goes wrong?</h3>
+              <p className="text-muted">
+                Raise a dispute from the booking and our team reviews it. Ratings and reviews are tied
+                to completed jobs, so poor work follows a provider and good work is rewarded.
+              </p>
+
+              <h3 className="h6 fw-semibold mb-1">Can I check a job I already booked?</h3>
+              <p className="text-muted">
+                Yes &mdash; use your booking code on the{' '}
+                <Link href="/track">job tracking page</Link> to see status without signing in.
+              </p>
+
+              <h3 className="h6 fw-semibold mb-1">I want to offer my services. What does it cost?</h3>
+              <p className="text-muted">
+                Listing is free to start. Paid tiers add more listings, better search placement and
+                analytics &mdash; see the{' '}
+                <Link href="/pricing">plans for providers</Link> or{' '}
+                <Link href="/contact">talk to our team</Link>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* ===== END ABOUT / FAQ ===== */}
+
       <WhatsAppWidget />
 
       <Footer />

@@ -35,7 +35,7 @@ export default function ContactPage() {
             <div className="col-lg-4">
               <div className="card border-0 shadow-sm rounded-4 h-100">
                 <div className="card-body p-4">
-                  <h5 className="fw-bold mb-4">Get in Touch</h5>
+                  <h2 className="h5 fw-bold mb-4">Get in Touch</h2>
 
                   <div className="d-flex align-items-start gap-3 mb-4">
                     <div className="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
@@ -81,7 +81,7 @@ export default function ContactPage() {
 
                   <hr className="my-4" />
 
-                  <h6 className="fw-bold mb-3">Follow Us</h6>
+                  <h3 className="h6 fw-bold mb-3">Follow Us</h3>
                   <div className="d-flex gap-2">
                     {[
                       { href: 'https://twitter.com/fudari_ke', icon: 'fa-x-twitter', label: 'X (Twitter)' },
@@ -109,7 +109,7 @@ export default function ContactPage() {
             <div className="col-lg-6">
               <div className="card border-0 shadow-sm rounded-4">
                 <div className="card-body p-4">
-                  <h5 className="fw-bold mb-4">Send a Message</h5>
+                  <h2 className="h5 fw-bold mb-4">Send a Message</h2>
                   <ContactForm />
 
                   <p className="text-muted small mt-3 mb-0">
@@ -134,7 +134,7 @@ export default function ContactPage() {
             <div className="col-lg-10">
               <div className="card border-0 bg-white rounded-4 shadow-sm">
                 <div className="card-body p-4">
-                  <h5 className="fw-bold mb-3">Quick Links</h5>
+                  <h2 className="h5 fw-bold mb-3">Quick Links</h2>
                   <div className="row g-2">
                     {[
                       { href: '/artisans', label: 'Find an Artisan', icon: 'fa-search' },
