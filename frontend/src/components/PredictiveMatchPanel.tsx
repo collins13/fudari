@@ -113,7 +113,7 @@ export default function PredictiveMatchPanel({ skillType, latitude, longitude }:
           {activeArtisans.map((m, i) => (
             <div key={m.artisanId} className="col-12">
               <Link
-                href={`/artisans/${m.artisanId}`}
+                href={`/artisan/${m.artisanId}`}
                 className="card border rounded-3 p-3 text-decoration-none text-dark d-block hover-shadow"
               >
                 <div className="d-flex align-items-center gap-2 gap-sm-3">

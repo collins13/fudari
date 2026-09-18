@@ -359,7 +359,7 @@ export default function CustomerChatPage() {
                     'Start Chatting'
                   )}
                 </button>
-                <Link href={`/artisans/${artisanId}`} className="btn btn-outline-secondary rounded-5">
+                <Link href={`/artisan/${artisanId}`} className="btn btn-outline-secondary rounded-5">
                   Cancel
                 </Link>
               </div>
@@ -381,7 +381,7 @@ export default function CustomerChatPage() {
       <div className="container py-4" style={{ maxWidth: 760 }}>
         {/* Header */}
         <div className="d-flex align-items-center gap-3 mb-4">
-          <Link href={`/artisans/${artisanId}`} className="btn btn-sm btn-outline-secondary rounded-5">
+          <Link href={`/artisan/${artisanId}`} className="btn btn-sm btn-outline-secondary rounded-5">
             <i className="fa-solid fa-arrow-left me-1" />Back
           </Link>
           {artisan && (
@@ -537,7 +537,7 @@ export default function CustomerChatPage() {
         <div className="mt-4 text-center">
           <p className="text-muted small mb-2">Ready to hire?</p>
           <Link
-            href={`/artisans/${artisanId}/book`}
+            href={`/artisan/${artisanId}/book`}
             className="btn btn-primary rounded-5"
           >
             <i className="fa-solid fa-calendar-check me-2" />Book {artisan?.firstName ?? 'this artisan'}

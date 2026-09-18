@@ -771,7 +771,7 @@ function ArtisansContent() {
                     {featuredArtisans.map((artisan) => (
                       <div key={`feat-${artisan.id}`} className="col-md-4">
                         <div className="card border-2 border-warning shadow-sm h-100 rounded-4 overflow-hidden position-relative">
-                          <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
+                          <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
                           <div style={{ position: 'relative', height: 180 }}>
                             {artisan.image ? (
                               <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" />
@@ -848,7 +848,7 @@ function ArtisansContent() {
                 <div>
                   {pagedArtisans.map((artisan) => (
                     <div key={artisan.id} className="card border-0 shadow-sm overflow-hidden rounded-4 mb-4 card-hover card-hover-bg position-relative">
-                      <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
+                      <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
                       <div className="card-body p-0">
                         <div className="g-0 row">
                           <div className="col-lg-5 col-md-5 col-xl-4 position-relative">
@@ -918,7 +918,7 @@ function ArtisansContent() {
                   {pagedArtisans.map((artisan) => (
                     <div key={artisan.id} className="col-md-6 col-lg-4">
                       <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden card-hover card-hover-bg position-relative">
-                        <Link href={`/artisans/${artisan.id}`} className="stretched-link"></Link>
+                        <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
                         <div style={{ position: 'relative', height: 200 }}>
                           {artisan.image ? (
                             <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" loading="lazy" />
@@ -1003,7 +1003,7 @@ function ArtisansContent() {
                     return (
                       <div key={l.id} className="col-md-6 col-lg-4">
                         {/* Listing card now navigates to artisan profile */}
-                        <Link href={`/artisans/${l.artisanId}`} className="text-decoration-none">
+                        <Link href={`/artisan/${l.artisanId}`} className="text-decoration-none">
                           <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden card-hover">
                             <div className="position-relative" style={{ height: 220 }}>
                               {firstImage ? (

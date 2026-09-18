@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { parseProviderSlug } from '@/lib/seoUrls';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
@@ -72,7 +73,7 @@ function skillLabel(st: string) {
 export default function BookArtisanPage() {
   const params = useParams();
   const router = useRouter();
-  const artisanId = Number(params.id);
+  const artisanId = parseProviderSlug(String(params.slug ?? '')) ?? 0;
 
   const [artisan, setArtisan] = useState<ArtisanBasic | null>(null);
   const [loadingArtisan, setLoadingArtisan] = useState(true);
@@ -239,7 +240,7 @@ export default function BookArtisanPage() {
       <Navbar />
       <div className="bg-light min-vh-100 py-5">
         <div className="container" style={{ maxWidth: 820 }}>
-          <Link href={`/artisans/${artisanId}`} className="btn btn-link text-muted ps-0 mb-3">
+          <Link href={`/artisan/${params.slug}`} className="btn btn-link text-muted ps-0 mb-3">
             <i className="fa-solid fa-arrow-left me-2" />Back to Profile
           </Link>
 

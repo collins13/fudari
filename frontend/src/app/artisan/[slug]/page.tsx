@@ -9,8 +9,9 @@ import Footer from '@/components/Footer';
 import { workersAPI, leadsAPI, publicReviewsAPI, reportsAPI, listingsAPI, apiErrorMessage } from '@/lib/api';
 import { whatsappBotLink } from '@/lib/whatsapp';
 import { skillLabelSwahili } from '@/lib/kenya';
-import { profileImageFor, isGeneratedAvatar } from '@/lib/avatar';
+import { profileImageFor, isGeneratedAvatar, resolveProfileImage } from '@/lib/avatar';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
+import { parseProviderSlug } from '@/lib/seoUrls';
 import TrustScoreCard from '@/components/TrustScoreCard';
 
 interface WorkerSkillInfo {
@@ -29,6 +30,7 @@ interface WorkerProfile {
   email?: string;
   phoneNumber: string;
   profileImage?: string;
+  portfolioImages?: string[];
   role: string;
   vettingLevel: string;
   trustScore: number;
@@ -79,7 +81,8 @@ const REPORT_REASONS = [
 
 export default function ArtisanProfilePage() {
   const params = useParams();
-  const workerId = Number(params.id);
+  const workerId = parseProviderSlug(String(params.slug ?? '')) ?? 0;
+  const bookHref = `/artisan/${params.slug}/book`;
 
   const [worker, setWorker] = useState<WorkerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,7 +113,12 @@ export default function ArtisanProfilePage() {
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Portfolio images from listings
-  const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
+  const [listingImages, setListingImages] = useState<string[]>([]);
+  // Photos the provider uploaded to their profile come first; listing photos fill the rest.
+  const portfolioImages = [
+    ...(worker?.portfolioImages || []).map((img) => resolveProfileImage(img)).filter(Boolean),
+    ...listingImages,
+  ];
 
   const formatLongDate = (value?: string) => {
     if (!value) return null;
@@ -169,7 +177,7 @@ export default function ArtisanProfilePage() {
             } catch { /* ignore */ }
           }
         });
-        setPortfolioImages(imgs);
+        setListingImages(imgs);
       })
       .catch(() => {});
 
@@ -352,7 +360,7 @@ export default function ArtisanProfilePage() {
             </div>
             <div className="col-auto d-flex gap-2 flex-wrap">
               <Link
-                href={`/artisans/${worker.id}/book`}
+                href={bookHref}
                 className="btn btn-accent rounded-5 fw-medium"
               >
                 <i className="fa-solid fa-calendar-check me-2"></i>Book Now
@@ -449,7 +457,7 @@ export default function ArtisanProfilePage() {
                     {portfolioImages.map((img, i) => (
                       <div key={i} className="col-6 col-md-4">
                         <a href={img} className="d-block rounded-3 overflow-hidden position-relative" style={{ height: 200 }}>
-                          <Image src={img} alt={`Portfolio ${i + 1}`} fill sizes="(max-width: 768px) 50vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" />
+                          <Image src={img} alt={`Portfolio ${i + 1}`} fill sizes="(max-width: 768px) 50vw, 33vw" style={{ objectFit: 'cover' }} loading="lazy" unoptimized={isGeneratedAvatar(img)} />
                         </a>
                       </div>
                     ))}
@@ -642,7 +650,7 @@ export default function ArtisanProfilePage() {
                   >
                     <i className="fa-brands fa-whatsapp me-2"></i>Book via WhatsApp
                   </a>
-                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent rounded-5">
+                  <Link href={bookHref} className="btn btn-accent rounded-5">
                     <i className="fa-solid fa-calendar-check me-2"></i>Book Now
                   </Link>
                 </div>
@@ -700,7 +708,7 @@ export default function ArtisanProfilePage() {
                   No account needed. You&apos;ll receive a booking code via SMS to track your job in real time.
                 </p>
                 <div className="d-flex flex-column gap-2">
-                  <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent rounded-5 fw-medium">
+                  <Link href={bookHref} className="btn btn-accent rounded-5 fw-medium">
                     <i className="fa-solid fa-calendar-check me-2"></i>Request a Booking
                   </Link>
                   <div className="text-center text-muted small">
@@ -821,7 +829,7 @@ export default function ArtisanProfilePage() {
             <i className="fa-brands fa-whatsapp me-1"></i>
             <span className="d-none d-sm-inline">WhatsApp</span>
           </a>
-          <Link href={`/artisans/${worker.id}/book`} className="btn btn-accent btn-sm rounded-5">
+          <Link href={bookHref} className="btn btn-accent btn-sm rounded-5">
             <i className="fa-solid fa-calendar-check me-1"></i>Book Now
           </Link>
         </div>

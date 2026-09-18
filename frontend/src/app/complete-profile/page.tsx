@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { authAPI, workersAPI, aiAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { squareImageDataUrl } from '@/lib/image';
-import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
+import { SKILL_OPTIONS as CATEGORIES, KENYA_COUNTIES, KENYA_MAJOR_TOWNS } from '@/lib/kenya';
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -18,6 +18,10 @@ export default function CompleteProfilePage() {
     experienceYears: '',
     hourlyRate: '',
     locationName: '',
+    county: '',
+    town: '',
+    area: '',
+    serviceRadiusKm: '15',
     latitude: null as number | null,
     longitude: null as number | null,
     bio: '',
@@ -65,6 +69,10 @@ export default function CompleteProfilePage() {
           hourlyRate:      firstSkill?.hourlyRate      || prev.hourlyRate,
           bio:             firstSkill?.description     || prev.bio,
           locationName:    data.locationName           || prev.locationName,
+          county:          data.county                 || prev.county,
+          town:            data.town                   || prev.town,
+          area:            data.area                   || prev.area,
+          serviceRadiusKm: data.serviceRadiusKm != null ? String(data.serviceRadiusKm) : prev.serviceRadiusKm,
           latitude:        data.latitude               ?? prev.latitude,
           longitude:       data.longitude              ?? prev.longitude,
           profileImage:    data.profileImage           || prev.profileImage,
@@ -198,6 +206,10 @@ export default function CompleteProfilePage() {
       // Save profile
       await authAPI.updateFullProfile({
         locationName: form.locationName || undefined,
+        county: form.county || undefined,
+        town: form.town || undefined,
+        area: form.area || undefined,
+        serviceRadiusKm: form.serviceRadiusKm ? Number(form.serviceRadiusKm) : undefined,
         latitude: form.latitude ?? undefined,
         longitude: form.longitude ?? undefined,
         profileImage: form.profileImage || undefined,
@@ -371,6 +383,36 @@ export default function CompleteProfilePage() {
                     onClick={handleDetectLocation} disabled={locating}>
                     use my current location
                   </button>
+                </div>
+              </div>
+              <div className="row g-3">
+                <div className="col-sm-6">
+                  <label className="form-label fw-medium">County</label>
+                  <select className="form-select" value={form.county}
+                    onChange={(e) => setForm({ ...form, county: e.target.value })}>
+                    <option value="">Select county...</option>
+                    {KENYA_COUNTIES.map((county) => <option key={county} value={county}>{county}</option>)}
+                  </select>
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label fw-medium">Town / City</label>
+                  <input type="text" className="form-control" list="ke-towns" placeholder="e.g. Thika"
+                    value={form.town} onChange={(e) => setForm({ ...form, town: e.target.value })} />
+                  <datalist id="ke-towns">
+                    {KENYA_MAJOR_TOWNS.map((town) => <option key={town} value={town} />)}
+                  </datalist>
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label fw-medium">Estate / Area</label>
+                  <input type="text" className="form-control" placeholder="e.g. Westlands"
+                    value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label fw-medium">Service radius (km)</label>
+                  <input type="number" className="form-control" min="1" max="200"
+                    value={form.serviceRadiusKm}
+                    onChange={(e) => setForm({ ...form, serviceRadiusKm: e.target.value })} />
+                  <div className="form-text">How far you will travel for a job.</div>
                 </div>
               </div>
             </>

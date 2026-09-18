@@ -9,6 +9,8 @@ import com.tufixit.backend.repository.SubscriptionRepository;
 import com.tufixit.backend.repository.UserRepository;
 import com.tufixit.backend.repository.WorkerSkillRepository;
 import com.tufixit.backend.security.JwtTokenProvider;
+import com.tufixit.backend.util.LocationNormalizer;
+import com.tufixit.backend.util.PortfolioImages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -218,6 +220,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .profileImage(user.getProfileImage())
+                .portfolioImages(PortfolioImages.parse(user.getPortfolioImages()))
                 .role(user.getRole())
                 .vettingLevel(user.getVettingLevel())
                 .trustScore(user.getTrustScore())
@@ -226,6 +229,10 @@ public class AuthService {
                 .latitude(user.getLatitude())
                 .longitude(user.getLongitude())
                 .locationName(user.getLocationName())
+                .county(user.getCounty())
+                .town(user.getTown())
+                .area(user.getArea())
+                .serviceRadiusKm(user.getServiceRadiusKm())
                 .isVerified(user.getIsVerified())
                 .isActive(user.getIsActive())
                 .accountStatus(user.getAccountStatus() != null ? user.getAccountStatus().name() : "ACTIVE")
@@ -274,10 +281,28 @@ public class AuthService {
         user.setLatitude(latitude);
         user.setLongitude(longitude);
         user.setLocationName(locationName);
-        
+        applyStructuredLocation(user, null, null, null);
+
         user = userRepository.save(user);
-        
+
         return mapToUserDTO(user);
+    }
+
+    /**
+     * Explicit county/town/area win; anything left blank is derived from the free-text
+     * locationName so search and landing pages still get structured values.
+     */
+    private void applyStructuredLocation(User user, String county, String town, String area) {
+        if (county != null && !county.isBlank()) user.setCounty(county.trim());
+        if (town != null && !town.isBlank()) user.setTown(town.trim());
+        if (area != null && !area.isBlank()) user.setArea(area.trim());
+
+        if (user.getCounty() != null && user.getTown() != null) return;
+
+        LocationNormalizer.Parsed parsed = LocationNormalizer.parse(user.getLocationName());
+        if (user.getCounty() == null) user.setCounty(parsed.county());
+        if (user.getTown() == null) user.setTown(parsed.town());
+        if (user.getArea() == null) user.setArea(parsed.area());
     }
 
     @Transactional
@@ -305,9 +330,15 @@ public class AuthService {
         if (data.get("firstName") != null) user.setFirstName((String) data.get("firstName"));
         if (data.get("lastName") != null) user.setLastName((String) data.get("lastName"));
         if (data.get("profileImage") != null) user.setProfileImage((String) data.get("profileImage"));
+        if (data.get("portfolioImages") != null) {
+            user.setPortfolioImages(PortfolioImages.serialize(PortfolioImages.sanitize(data.get("portfolioImages"))));
+        }
         if (data.get("locationName") != null) user.setLocationName((String) data.get("locationName"));
         if (data.get("latitude") != null) user.setLatitude(Double.parseDouble(data.get("latitude").toString()));
         if (data.get("longitude") != null) user.setLongitude(Double.parseDouble(data.get("longitude").toString()));
+        if (data.get("serviceRadiusKm") != null) user.setServiceRadiusKm(Integer.parseInt(data.get("serviceRadiusKm").toString()));
+        applyStructuredLocation(user,
+                (String) data.get("county"), (String) data.get("town"), (String) data.get("area"));
         if (data.get("nationalId") != null) user.setNationalId((String) data.get("nationalId"));
         if (data.get("idDocumentImage") != null) user.setIdDocumentImage((String) data.get("idDocumentImage"));
         if (data.get("certificateOfGoodConduct") != null) user.setCertificateOfGoodConduct((String) data.get("certificateOfGoodConduct"));
@@ -793,8 +824,13 @@ public class AuthService {
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .profileImage(request.getProfileImage())
+                .portfolioImages(request.getPortfolioImages() == null ? null
+                        : PortfolioImages.serialize(PortfolioImages.sanitize(request.getPortfolioImages())))
                 .referralCode(generateReferralCode())
                 .build();
+
+        applyStructuredLocation(user, request.getCounty(), request.getTown(), request.getArea());
+        if (request.getServiceRadiusKm() != null) user.setServiceRadiusKm(request.getServiceRadiusKm());
 
         User saved = userRepository.save(user);
 

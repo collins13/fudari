@@ -101,6 +101,9 @@ services:
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?SEED_ADMIN_PASSWORD must be set in .env}
       TWILIO_VALIDATE_SIGNATURE: ${TWILIO_VALIDATE_SIGNATURE:-true}
       SPRING_JPA_DDL_AUTO: ${SPRING_JPA_DDL_AUTO:-update}
+      # The V1+ scripts ALTER tables that Hibernate creates, so an empty database
+      # must be booted once with FLYWAY_ENABLED=false before migrations can apply.
+      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-true}
       # Defaults point at the Twilio sandbox number, so these must be set
       # explicitly once a real WhatsApp sender is provisioned.
       WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-twilio}

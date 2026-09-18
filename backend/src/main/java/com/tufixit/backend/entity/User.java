@@ -42,6 +42,10 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String profileImage;
 
+    /** JSON array of base64 work photos shown on the public profile. */
+    @Column(name = "portfolio_images", columnDefinition = "TEXT")
+    private String portfolioImages;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role; // CLIENT, WORKER, ADMIN
@@ -82,6 +86,24 @@ public class User {
 
     @Column
     private String locationName;
+
+    /**
+     * Structured location. `locationName` stays as the free-text display string;
+     * these are what search, SEO landing pages and matching filter on.
+     */
+    @Column(name = "county")
+    private String county;
+
+    @Column(name = "town")
+    private String town;
+
+    @Column(name = "area")
+    private String area;
+
+    /** How far the worker is willing to travel. Used as a real exclusion filter in search. */
+    @Column(name = "service_radius_km")
+    @Builder.Default
+    private Integer serviceRadiusKm = 15;
 
     /** Worker-controlled "I can take a job right now" flag, surfaced in search. */
     @Column(name = "available_now")
