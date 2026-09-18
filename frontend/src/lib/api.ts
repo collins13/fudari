@@ -178,13 +178,18 @@ export const jobsAPI = {
 export const workersAPI = {
   searchWorkers: (params: { 
     skillType?: string; 
+    serviceSlug?: string;
     name?: string;
     location?: string;
+    county?: string;
+    town?: string;
+    area?: string;
     maxHourlyRate?: number;
     availableNow?: boolean;
     latitude?: number; 
     longitude?: number; 
-    radiusKm?: number 
+    radiusKm?: number;
+    strictRadius?: boolean;
   }) => api.get('/workers/search', { params }),
   
   getWorkerProfile: (workerId: number) => api.get(`/workers/${workerId}`),
@@ -196,6 +201,7 @@ export const workersAPI = {
     description?: string;
     experienceYears?: number;
     hourlyRate?: string;
+    serviceSlugs?: string[];
   }) => api.post(`/workers/${workerId}/skills`, data),
   
   getWorkerRating: (workerId: number) => api.get(`/workers/${workerId}/rating`),
@@ -206,6 +212,7 @@ export const workersAPI = {
     description?: string;
     experienceYears?: number;
     hourlyRate?: string;
+    serviceSlugs?: string[];
   }) => api.put(`/workers/skills/${skillId}`, data),
 
   deleteSkill: (skillId: number) => api.delete(`/workers/skills/${skillId}`),
@@ -360,7 +367,6 @@ export const listingsAPI = {
 // Categories API
 export const categoriesAPI = {
   getActiveCategories: () => api.get('/categories'),
-
   /** Returns active categories WITH live artisan counts — use this on the homepage */
   getActiveCategoriesWithStats: () => api.get('/categories/stats'),
 
@@ -383,6 +389,37 @@ export const categoriesAPI = {
     api.put(`/categories/${id}`, data),
 
   deleteCategory: (id: number) => api.delete(`/categories/${id}`),
+};
+
+export interface ServiceOfferingPayload {
+  name: string;
+  slug?: string;
+  skillType: string;
+  description?: string;
+  synonyms?: string[];
+  priceFromKes?: number;
+  priceToKes?: number;
+  isEmergency?: boolean;
+  isActive?: boolean;
+  indexable?: boolean;
+  sortOrder?: number;
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export const serviceOfferingsAPI = {
+  list: (skillType?: string) => api.get('/service-offerings', { params: skillType ? { skillType } : {} }),
+
+  getBySlug: (slug: string) => api.get(`/service-offerings/${slug}`),
+
+  // Admin
+  listAll: () => api.get('/service-offerings/all'),
+
+  create: (data: ServiceOfferingPayload) => api.post('/service-offerings', data),
+
+  update: (id: number, data: Partial<ServiceOfferingPayload>) => api.put(`/service-offerings/${id}`, data),
+
+  remove: (id: number) => api.delete(`/service-offerings/${id}`),
 };
 
 // Admin Users API
@@ -409,6 +446,7 @@ export const adminUsersAPI = {
     latitude?: number;
     longitude?: number;
     profileImage?: string;
+    portfolioImages?: string[];
   }) => api.post('/admin/users', data),
 
   updateUserRole: (id: number, role: string) =>

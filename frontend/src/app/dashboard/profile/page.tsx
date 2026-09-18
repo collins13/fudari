@@ -1,8 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { authAPI } from '@/lib/api';
-import { squareImageDataUrl } from '@/lib/image';
-import { SKILL_OPTIONS as CATEGORIES } from '@/lib/kenya';
+import { squareImageDataUrl, galleryImageDataUrl } from '@/lib/image';
+import { SKILL_OPTIONS as CATEGORIES, KENYA_COUNTIES, KENYA_MAJOR_TOWNS } from '@/lib/kenya';
+
+/** Mirrors PortfolioImages.MAX_IMAGES on the backend. */
+const MAX_PORTFOLIO_PHOTOS = 8;
 
 interface ProfileForm {
   firstName: string;
@@ -13,6 +16,10 @@ interface ProfileForm {
   skillType: string;
   experienceYears: string;
   locationName: string;
+  county: string;
+  town: string;
+  area: string;
+  serviceRadiusKm: string;
   hourlyRate: string;
   profileImage: string;
 }
@@ -27,6 +34,10 @@ export default function ProfilePage() {
     skillType: '',
     experienceYears: '',
     locationName: '',
+    county: '',
+    town: '',
+    area: '',
+    serviceRadiusKm: '',
     hourlyRate: '',
     profileImage: '',
   });
@@ -34,6 +45,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [role, setRole] = useState('');
+  const [portfolio, setPortfolio] = useState<string[]>([]);
 
   useEffect(() => {
     authAPI.getCurrentUser()
@@ -41,6 +53,7 @@ export default function ProfilePage() {
         const u = res.data;
         const skill = u.skills?.[0];
         setRole(u.role || '');
+        setPortfolio(Array.isArray(u.portfolioImages) ? u.portfolioImages : []);
         setForm({
           firstName: u.firstName || '',
           lastName: u.lastName || '',
@@ -50,6 +63,10 @@ export default function ProfilePage() {
           skillType: skill?.skillType || '',
           experienceYears: skill?.experienceYears?.toString() || '',
           locationName: u.locationName || '',
+          county: u.county || '',
+          town: u.town || '',
+          area: u.area || '',
+          serviceRadiusKm: u.serviceRadiusKm ? String(u.serviceRadiusKm) : '',
           hourlyRate: skill?.hourlyRate || '',
           profileImage: u.profileImage || '',
         });
@@ -93,6 +110,33 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePortfolioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    const room = MAX_PORTFOLIO_PHOTOS - portfolio.length;
+    if (room <= 0) {
+      setError(`You can show up to ${MAX_PORTFOLIO_PHOTOS} work photos. Remove one first.`);
+      return;
+    }
+
+    setError('');
+    try {
+      const added = await Promise.all(files.slice(0, room).map((file) => galleryImageDataUrl(file)));
+      setPortfolio((prev) => [...prev, ...added]);
+      if (files.length > room) {
+        setError(`Only the first ${room} photo(s) were added — the limit is ${MAX_PORTFOLIO_PHOTOS}.`);
+      }
+    } catch {
+      setError('Could not read one of those images. Try JPG or PNG files.');
+    }
+  };
+
+  const removePortfolioPhoto = (index: number) => {
+    setPortfolio((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -102,8 +146,15 @@ export default function ProfilePage() {
         firstName: form.firstName,
         lastName: form.lastName,
         locationName: form.locationName || undefined,
+        county: form.county || undefined,
+        town: form.town || undefined,
+        area: form.area || undefined,
+        serviceRadiusKm: form.serviceRadiusKm ? Number(form.serviceRadiusKm) : undefined,
       };
       if (form.profileImage) payload.profileImage = form.profileImage;
+      if (role === 'WORKER') {
+        payload.portfolioImages = portfolio;
+      }
       if (role === 'WORKER' && form.skillType) {
         payload.skillType = form.skillType;
         if (form.bio) payload.bio = form.bio;
@@ -376,6 +427,72 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="col-md-6">
+                      <label htmlFor="county" className="form-label fw-medium">
+                        County
+                      </label>
+                      <select
+                        id="county"
+                        name="county"
+                        className="form-select"
+                        value={form.county}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select county...</option>
+                        {KENYA_COUNTIES.map((county) => (
+                          <option key={county} value={county}>{county}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label htmlFor="town" className="form-label fw-medium">
+                        Town / City
+                      </label>
+                      <input
+                        type="text"
+                        id="town"
+                        name="town"
+                        className="form-control"
+                        list="ke-towns"
+                        placeholder="e.g. Thika"
+                        value={form.town}
+                        onChange={handleChange}
+                      />
+                      <datalist id="ke-towns">
+                        {KENYA_MAJOR_TOWNS.map((town) => <option key={town} value={town} />)}
+                      </datalist>
+                    </div>
+                    <div className="col-md-6">
+                      <label htmlFor="area" className="form-label fw-medium">
+                        Estate / Area
+                      </label>
+                      <input
+                        type="text"
+                        id="area"
+                        name="area"
+                        className="form-control"
+                        placeholder="e.g. Westlands"
+                        value={form.area}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label htmlFor="serviceRadiusKm" className="form-label fw-medium">
+                        Service Radius (km)
+                      </label>
+                      <input
+                        type="number"
+                        id="serviceRadiusKm"
+                        name="serviceRadiusKm"
+                        className="form-control"
+                        min="1"
+                        max="200"
+                        placeholder="15"
+                        value={form.serviceRadiusKm}
+                        onChange={handleChange}
+                      />
+                      <div className="form-text">How far you will travel for a job.</div>
+                    </div>
+                    <div className="col-md-6">
                       <label htmlFor="hourlyRate" className="form-label fw-medium">
                         Starting Price (KES)
                       </label>
@@ -398,9 +515,75 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Location (Clients) */}
-            {role !== 'WORKER' && (
+            {/* Work Photos (Workers) */}
+            {role === 'WORKER' && (
               <div className="card border-0 shadow-sm mb-4">
+                <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                  <h6 className="mb-0 fw-semibold">
+                    <i className="fa-solid fa-images me-2 text-primary"></i>Work Photos
+                  </h6>
+                  <span className="text-muted small">{portfolio.length}/{MAX_PORTFOLIO_PHOTOS}</span>
+                </div>
+                <div className="card-body">
+                  <p className="text-muted small">
+                    Photos of jobs you have completed. These appear in the Portfolio section of your
+                    public profile and are the first thing customers look at.
+                  </p>
+
+                  {portfolio.length > 0 ? (
+                    <div className="row g-3 mb-3">
+                      {portfolio.map((src, i) => (
+                        <div key={i} className="col-6 col-md-4">
+                          <div className="position-relative rounded-3 overflow-hidden border">
+                            <img
+                              src={src}
+                              alt={`Work photo ${i + 1}`}
+                              className="w-100 object-fit-cover d-block"
+                              style={{ height: 120 }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center"
+                              style={{ width: 28, height: 28 }}
+                              aria-label={`Remove work photo ${i + 1}`}
+                              onClick={() => removePortfolioPhoto(i)}
+                            >
+                              <i className="fa-solid fa-xmark"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center border rounded-3 py-4 mb-3">
+                      <i className="fa-solid fa-camera text-muted fs-3 mb-2 d-block"></i>
+                      <p className="text-muted small mb-0">
+                        No work photos yet. Profiles with photos get noticeably more bookings.
+                      </p>
+                    </div>
+                  )}
+
+                  <label className={`btn btn-outline-primary btn-sm rounded-5 ${portfolio.length >= MAX_PORTFOLIO_PHOTOS ? 'disabled' : ''}`}>
+                    <i className="fa-solid fa-plus me-2"></i>Add Photos
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="d-none"
+                      disabled={portfolio.length >= MAX_PORTFOLIO_PHOTOS}
+                      onChange={handlePortfolioChange}
+                    />
+                  </label>
+                  <div className="form-text">
+                    Up to {MAX_PORTFOLIO_PHOTOS} photos. They are resized automatically, then saved when
+                    you press Save Changes.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Location (Clients) */}
+            {role !== 'WORKER' && (              <div className="card border-0 shadow-sm mb-4">
                 <div className="card-header bg-white border-bottom py-3">
                   <h6 className="mb-0 fw-semibold">
                     <i className="fa-solid fa-location-dot me-2 text-primary"></i>Location

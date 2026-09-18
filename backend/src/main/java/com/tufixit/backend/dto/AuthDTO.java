@@ -85,6 +85,8 @@ public class AuthDTO {
         private String firstName;
         private String lastName;
         private String profileImage;
+        /** Base64 data URLs for self/admin views; public paths on public profiles. */
+        private List<String> portfolioImages;
         private User.UserRole role;
         private User.VettingLevel vettingLevel;
         private Double trustScore;
@@ -93,6 +95,10 @@ public class AuthDTO {
         private Double latitude;
         private Double longitude;
         private String locationName;
+        private String county;
+        private String town;
+        private String area;
+        private Integer serviceRadiusKm;
         private Boolean availableNow;
         private Boolean isVerified;
         private Boolean isActive;
@@ -125,6 +131,18 @@ public class AuthDTO {
         private Integer experienceYears;
         private String hourlyRate;
         private Boolean isVerified;
+        private List<ServiceRef> services;
+    }
+
+    /** Slim reference to a sub-service so worker payloads stay small. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ServiceRef {
+        private Long id;
+        private String name;
+        private String slug;
     }
 
     /** Admin: create a user with pre-assigned role */
@@ -188,11 +206,25 @@ public class AuthDTO {
         @Size(max = 150)
         private String locationName;
 
+        @Size(max = 60)
+        private String county;
+
+        @Size(max = 60)
+        private String town;
+
+        @Size(max = 80)
+        private String area;
+
+        private Integer serviceRadiusKm;
+
         private Double latitude;
         private Double longitude;
 
         /** Base64-encoded profile photo (optional). */
         private String profileImage;
+
+        /** Base64-encoded work photos for the public portfolio (optional). */
+        private List<String> portfolioImages;
     }
 
     /** Admin: reject an artisan onboarding application */

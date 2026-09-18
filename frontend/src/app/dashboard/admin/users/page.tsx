@@ -1,12 +1,15 @@
 'use client';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { adminUsersAPI, authAPI } from '@/lib/api';
+import { squareImageDataUrl, galleryImageDataUrl } from '@/lib/image';
 import { SKILL_OPTIONS as SKILL_CATEGORIES } from '@/lib/kenya';
 
 const PHONE_REGEX = /^(?:\+254|0)[17]\d{8}$/;
 const NAME_REGEX = /^[A-Za-z\s'-]{2,50}$/;
 const NATIONAL_ID_REGEX = /^[A-Za-z0-9-]{5,30}$/;
 const MAX_DOC_BYTES = 2 * 1024 * 1024; // 2MB
+/** Mirrors PortfolioImages.MAX_IMAGES on the backend. */
+const MAX_PORTFOLIO_PHOTOS = 8;
 
 function getPasswordStrength(password: string) {
   let score = 0;
@@ -134,6 +137,7 @@ export default function AdminUsersPage() {
     latitude: '' as string | number,
     longitude: '' as string | number,
     profileImage: '',
+    portfolioImages: [] as string[],
   });
   const [locating, setLocating] = useState(false);
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
@@ -349,12 +353,44 @@ export default function AdminUsersPage() {
       return;
     }
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await squareImageDataUrl(file);
       setCreateForm((f) => ({ ...f, profileImage: dataUrl }));
       setCreateErrors((p) => { const n = { ...p }; delete n.profileImage; return n; });
     } catch {
       setCreateErrors((p) => ({ ...p, profileImage: 'Failed to read file.' }));
     }
+  };
+
+  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    const room = MAX_PORTFOLIO_PHOTOS - createForm.portfolioImages.length;
+    if (room <= 0) {
+      setCreateErrors((p) => ({ ...p, portfolioImages: `At most ${MAX_PORTFOLIO_PHOTOS} work photos.` }));
+      return;
+    }
+    if (files.some((f) => !/^image\/(png|jpeg|jpg|webp)$/.test(f.type))) {
+      setCreateErrors((p) => ({ ...p, portfolioImages: 'Only JPG, PNG, or WEBP allowed.' }));
+      return;
+    }
+    try {
+      const added = await Promise.all(files.slice(0, room).map((file) => galleryImageDataUrl(file)));
+      setCreateForm((f) => ({ ...f, portfolioImages: [...f.portfolioImages, ...added] }));
+      setCreateErrors((p) => {
+        const n = { ...p };
+        if (files.length > room) n.portfolioImages = `Only the first ${room} photo(s) were added.`;
+        else delete n.portfolioImages;
+        return n;
+      });
+    } catch {
+      setCreateErrors((p) => ({ ...p, portfolioImages: 'Failed to read one of those files.' }));
+    }
+  };
+
+  const removePortfolioPhoto = (index: number) => {
+    setCreateForm((f) => ({ ...f, portfolioImages: f.portfolioImages.filter((_, i) => i !== index) }));
   };
 
   const resetCreateForm = () => {
@@ -366,6 +402,7 @@ export default function AdminUsersPage() {
       tvetCertification: '', tvetName: '', autoApprove: false,
       skillType: '', bio: '', experienceYears: '', hourlyRate: '',
       locationName: '', latitude: '', longitude: '', profileImage: '',
+      portfolioImages: [],
     });
     setCreateErrors({});
     setCreateTouched({});
@@ -405,6 +442,7 @@ export default function AdminUsersPage() {
           latitude: createForm.latitude !== '' ? Number(createForm.latitude) : undefined,
           longitude: createForm.longitude !== '' ? Number(createForm.longitude) : undefined,
           profileImage: createForm.profileImage || undefined,
+          portfolioImages: createForm.portfolioImages.length ? createForm.portfolioImages : undefined,
         }),
       });
       const isPending = createForm.role === 'WORKER' && !createForm.autoApprove;
@@ -940,6 +978,42 @@ export default function AdminUsersPage() {
                           </div>
                           {createErrors.profileImage && (
                             <div className="text-danger small mt-1">{createErrors.profileImage}</div>
+                          )}
+                        </div>
+
+                        <div className="col-12">
+                          <label className="form-label small fw-medium">
+                            Work Photos (optional)
+                            <span className="text-muted ms-2">{createForm.portfolioImages.length}/{MAX_PORTFOLIO_PHOTOS}</span>
+                          </label>
+                          {createForm.portfolioImages.length > 0 && (
+                            <div className="row g-2 mb-2">
+                              {createForm.portfolioImages.map((src, i) => (
+                                <div key={i} className="col-4 col-md-3">
+                                  <div className="position-relative rounded-3 overflow-hidden border">
+                                    <img src={src} alt={`Work photo ${i + 1}`}
+                                      className="w-100 d-block" style={{ height: 80, objectFit: 'cover' }} />
+                                    <button type="button"
+                                      className="btn btn-sm btn-danger rounded-circle position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center"
+                                      style={{ width: 24, height: 24 }}
+                                      aria-label={`Remove work photo ${i + 1}`}
+                                      onClick={() => removePortfolioPhoto(i)}>
+                                      <i className="fa-solid fa-xmark" style={{ fontSize: 11 }} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <input type="file" accept="image/png,image/jpeg,image/webp" multiple
+                            className="form-control"
+                            disabled={createForm.portfolioImages.length >= MAX_PORTFOLIO_PHOTOS}
+                            onChange={handlePortfolioUpload} />
+                          <div className="form-text">
+                            Photos of past jobs. They show in the Portfolio section of the public profile.
+                          </div>
+                          {createErrors.portfolioImages && (
+                            <div className="text-danger small mt-1">{createErrors.portfolioImages}</div>
                           )}
                         </div>
 

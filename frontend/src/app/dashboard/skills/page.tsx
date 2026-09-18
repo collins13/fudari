@@ -1,9 +1,22 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { workersAPI } from '@/lib/api';
+import { workersAPI, serviceOfferingsAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { SKILL_OPTIONS as SKILL_TYPES } from '@/lib/kenya';
+
+interface ServiceRef {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface Offering extends ServiceRef {
+  skillType: string;
+  priceFromKes?: number;
+  priceToKes?: number;
+  isEmergency?: boolean;
+}
 
 interface Skill {
   id: number;
@@ -12,6 +25,7 @@ interface Skill {
   experienceYears: number | null;
   hourlyRate: string | null;
   isVerified: boolean;
+  services?: ServiceRef[];
 }
 
 function skillLabel(type: string): string {
@@ -25,6 +39,8 @@ export default function SkillsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [form, setForm] = useState({ skillType: '', description: '', experienceYears: '', hourlyRate: '' });
+  const [offerings, setOfferings] = useState<Offering[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -45,9 +61,16 @@ export default function SkillsPage() {
 
   useEffect(() => { fetchSkills(); }, [fetchSkills]);
 
+  useEffect(() => {
+    serviceOfferingsAPI.list()
+      .then((res) => setOfferings(res.data || []))
+      .catch(() => setOfferings([]));
+  }, []);
+
   const openAdd = () => {
     setEditingSkill(null);
     setForm({ skillType: '', description: '', experienceYears: '', hourlyRate: '' });
+    setSelectedServices([]);
     setError('');
     setShowForm(true);
   };
@@ -60,9 +83,18 @@ export default function SkillsPage() {
       experienceYears: skill.experienceYears ? String(skill.experienceYears) : '',
       hourlyRate: skill.hourlyRate || '',
     });
+    setSelectedServices((skill.services || []).map((s) => s.slug));
     setError('');
     setShowForm(true);
   };
+
+  const toggleService = (slug: string) => {
+    setSelectedServices((current) =>
+      current.includes(slug) ? current.filter((s) => s !== slug) : [...current, slug],
+    );
+  };
+
+  const availableServices = offerings.filter((o) => o.skillType === form.skillType);
 
   const handleSave = async () => {
     if (!user?.userId) return;
@@ -75,6 +107,7 @@ export default function SkillsPage() {
           description: form.description || undefined,
           experienceYears: form.experienceYears ? parseInt(form.experienceYears) : undefined,
           hourlyRate: form.hourlyRate || undefined,
+          serviceSlugs: selectedServices,
         });
         setToast({ msg: 'Skill updated', type: 'success' });
       } else {
@@ -83,6 +116,7 @@ export default function SkillsPage() {
           description: form.description || undefined,
           experienceYears: form.experienceYears ? parseInt(form.experienceYears) : undefined,
           hourlyRate: form.hourlyRate || undefined,
+          serviceSlugs: selectedServices,
         });
         setToast({ msg: 'Skill added', type: 'success' });
       }
@@ -163,6 +197,13 @@ export default function SkillsPage() {
                     </div>
                   </div>
                   {skill.description && <p className="text-muted small mb-2">{skill.description}</p>}
+                  {skill.services && skill.services.length > 0 && (
+                    <div className="d-flex flex-wrap gap-1 mb-2">
+                      {skill.services.map((service) => (
+                        <span key={service.slug} className="badge text-bg-light border">{service.name}</span>
+                      ))}
+                    </div>
+                  )}
                   <div className="d-flex gap-3 text-muted small">
                     {skill.experienceYears && (
                       <span><i className="fa-solid fa-clock me-1"></i>{skill.experienceYears} yrs</span>
@@ -219,6 +260,32 @@ export default function SkillsPage() {
                         <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {availableServices.length > 0 && (
+                  <div className="mb-3">
+                    <label className="form-label fw-medium">Services you offer</label>
+                    <p className="text-muted small mb-2">
+                      Customers search for these directly. Picking them puts you on the matching service pages.
+                    </p>
+                    <div className="d-flex flex-wrap gap-2">
+                      {availableServices.map((service) => {
+                        const checked = selectedServices.includes(service.slug);
+                        return (
+                          <button
+                            type="button"
+                            key={service.slug}
+                            className={`btn btn-sm rounded-5 ${checked ? 'btn-primary' : 'btn-outline-secondary'}`}
+                            onClick={() => toggleService(service.slug)}
+                            aria-pressed={checked}
+                          >
+                            {service.name}
+                            {service.isEmergency && <i className="fa-solid fa-bolt ms-1"></i>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

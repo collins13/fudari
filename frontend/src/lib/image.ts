@@ -35,3 +35,33 @@ export async function squareImageDataUrl(
 
   return canvas.toDataURL('image/jpeg', quality);
 }
+
+/**
+ * Downscale a work photo to a JPEG data URL, keeping its aspect ratio — a
+ * square crop would cut the work out of wide "before/after" shots.
+ */
+export async function galleryImageDataUrl(
+  file: File,
+  maxSide = 1280,
+  quality = 0.78,
+): Promise<string> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    bitmap.close();
+    throw new Error('Your browser cannot process images. Try a different browser.');
+  }
+
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  return canvas.toDataURL('image/jpeg', quality);
+}

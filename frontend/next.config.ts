@@ -54,6 +54,12 @@ const nextConfig: NextConfig = {
         destination: 'https://fudari.co/:path*',
         permanent: true,
       },
+      // Legacy provider URLs. The numeric case is handled in the route so the
+      // canonical keyword slug can be built from live data; this only catches
+      // the /book sub-path, which has no SEO value of its own.
+      { source: '/artisans/:id(\\d+)/book', destination: '/artisan/:id/book', permanent: true },
+      // The service tree briefly lived three levels deep under a category slug.
+      { source: '/services/:category/:service/:location', destination: '/services/:service/:location', permanent: true },
     ];
   },
   async headers() {

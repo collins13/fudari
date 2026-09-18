@@ -51,15 +51,16 @@ export default function Footer() {
               <h2 className="h5 fw-bold mb-4">Browse</h2>
               <ul className="list-unstyled">
                 <li className="mb-2"><Link href="/artisans" className="d-block">Browse All Services</Link></li>
+                <li className="mb-2"><Link href="/services" className="d-block">Services by Category</Link></li>
+                <li className="mb-2"><Link href="/locations" className="d-block">Find Fundis by County</Link></li>
+                <li className="mb-2"><Link href="/artisans/plumbers" className="d-block">Plumbers</Link></li>
+                <li className="mb-2"><Link href="/artisans/electricians" className="d-block">Electricians</Link></li>
+                <li className="mb-2"><Link href="/artisans/carpenters" className="d-block">Carpenters</Link></li>
+                <li className="mb-2"><Link href="/artisans/mechanics" className="d-block">Mechanics</Link></li>
                 <li className="mb-2"><Link href="/pricing" className="d-block">Pricing</Link></li>
                 <li className="mb-2"><Link href="/#how-it-works" className="d-block">How It Works</Link></li>
-                <li className="mb-2"><Link href="/services/electrical" className="d-block">Electricians</Link></li>
-                <li className="mb-2"><Link href="/services/plumbing" className="d-block">Plumbers</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=MAMA_FUA" className="d-block">Mama Fua</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=MOVER" className="d-block">Movers</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=BODA_BODA" className="d-block">Boda Boda</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=BARBER" className="d-block">Barbers &amp; Salons</Link></li>
-                <li className="mb-2"><Link href="/artisans?skill=IT_TECHNICIAN" className="d-block">IT &amp; Digital</Link></li>
+                <li className="mb-2"><Link href="/track" className="d-block">Track a Job</Link></li>
+                <li className="mb-2"><Link href="/contact" className="d-block">Contact Us</Link></li>
               </ul>
             </div>
 

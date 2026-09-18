@@ -3,7 +3,10 @@ package com.tufixit.backend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tufixit.backend.dto.AiDTO;
+import com.tufixit.backend.entity.ServiceOffering;
 import com.tufixit.backend.entity.WorkerSkill;
+import com.tufixit.backend.repository.ServiceOfferingRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,9 +35,12 @@ import java.util.*;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JobScopingService {
 
     private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+    private final ServiceOfferingRepository serviceOfferingRepository;
 
     @Value("${openai.api-key:}")
     private String apiKey;
@@ -242,6 +248,9 @@ public class JobScopingService {
     }
 
     private String detectSkill(String text) {
+        String fromCatalog = matchServiceSynonym(text);
+        if (fromCatalog != null) return fromCatalog;
+
         if (text.matches(".*\\b(sink|pipe|tap|drain|toilet|leak|plumb|water|shower|faucet)\\b.*")) return "PLUMBER";
         if (text.matches(".*\\b(wir|electric|socket|switch|power|light|bulb|fuse|circuit)\\b.*")) return "ELECTRICIAN";
         if (text.matches(".*\\b(car|vehicle|engine|tyre|brake|mechanic|oil)\\b.*")) return "MECHANIC";
@@ -260,6 +269,29 @@ public class JobScopingService {
         if (text.matches(".*\\b(pest|fumigate|cockroach|termite|bug)\\b.*")) return "FUMIGATION";
         if (text.matches(".*\\b(garden|lawn|tree|hedge)\\b.*")) return "GARDENER";
         return "OTHER";
+    }
+
+    /**
+     * Admin-managed service synonyms win over the generic keyword regexes below:
+     * "blocked drain" is a better signal than the bare word "water".
+     */
+    private String matchServiceSynonym(String text) {
+        try {
+            String best = null;
+            int bestLength = 0;
+            for (ServiceOffering offering : serviceOfferingRepository.findByIsActiveTrueOrderBySortOrderAscNameAsc()) {
+                for (String synonym : offering.getSynonyms()) {
+                    if (synonym.length() > bestLength && text.contains(synonym)) {
+                        best = offering.getSkillType().name();
+                        bestLength = synonym.length();
+                    }
+                }
+            }
+            return best;
+        } catch (Exception e) {
+            log.warn("Service synonym matching unavailable: {}", e.getMessage());
+            return null;
+        }
     }
 
     private String detectSkillFromHistory(List<AiDTO.ScopingMessage> history, String currentMessage) {

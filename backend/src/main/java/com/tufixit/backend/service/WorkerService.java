@@ -1,11 +1,14 @@
 package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.AuthDTO;
+import com.tufixit.backend.entity.ServiceOffering;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
 import com.tufixit.backend.repository.ReviewRepository;
+import com.tufixit.backend.repository.ServiceOfferingRepository;
 import com.tufixit.backend.repository.UserRepository;
 import com.tufixit.backend.repository.WorkerSkillRepository;
+import com.tufixit.backend.util.PortfolioImages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +30,7 @@ public class WorkerService {
 
     private final UserRepository userRepository;
     private final WorkerSkillRepository workerSkillRepository;
+    private final ServiceOfferingRepository serviceOfferingRepository;
     private final ReviewRepository reviewRepository;
     private final RankingService rankingService;
 
@@ -57,11 +63,19 @@ public class WorkerService {
     }
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm) {
-        return searchWorkers(skillType, latitude, longitude, radiusKm, null, null, null, null);
+        return searchWorkers(skillType, latitude, longitude, radiusKm, null, null, null, null, null, null, null, null, false);
     }
 
     public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm,
                                                String name, String location, Double maxHourlyRate, Boolean availableNow) {
+        return searchWorkers(skillType, latitude, longitude, radiusKm, name, location, maxHourlyRate, availableNow,
+                null, null, null, null, false);
+    }
+
+    public List<AuthDTO.UserDTO> searchWorkers(String skillType, Double latitude, Double longitude, Double radiusKm,
+                                               String name, String location, Double maxHourlyRate, Boolean availableNow,
+                                               String serviceSlug, String county, String town, String area,
+                                               boolean strictRadius) {
         List<User> workers;
 
         if (latitude != null && longitude != null) {
@@ -71,24 +85,28 @@ public class WorkerService {
             List<User> nearby = userRepository.findApprovedNearbyWorkers(latitude, longitude, radius);
             Set<Long> nearbyIds = nearby.stream().map(User::getId).collect(Collectors.toSet());
 
-            // 2. All remaining artisans (outside radius), ranked by score
-            List<User> allWorkers = userRepository.findApprovedActiveWorkers();
-            List<User> rest = allWorkers.stream()
-                    .filter(w -> !nearbyIds.contains(w.getId()))
-                    .collect(Collectors.toList());
-
-            // Sort each group independently by ranking score
             nearby.sort((a, b) -> Double.compare(
                     rankingService.computeArtisanScore(b),
                     rankingService.computeArtisanScore(a)));
-            rest.sort((a, b) -> Double.compare(
-                    rankingService.computeArtisanScore(b),
-                    rankingService.computeArtisanScore(a)));
 
-            // Combine: nearby first, then the rest
-            workers = new ArrayList<>(nearby.size() + rest.size());
-            workers.addAll(nearby);
-            workers.addAll(rest);
+            if (strictRadius) {
+                // Radius is an exclusion filter, not a sort key.
+                workers = new ArrayList<>(nearby);
+            } else {
+                // 2. All remaining artisans (outside radius), ranked by score
+                List<User> allWorkers = userRepository.findApprovedActiveWorkers();
+                List<User> rest = allWorkers.stream()
+                        .filter(w -> !nearbyIds.contains(w.getId()))
+                        .collect(Collectors.toList());
+                rest.sort((a, b) -> Double.compare(
+                        rankingService.computeArtisanScore(b),
+                        rankingService.computeArtisanScore(a)));
+
+                // Combine: nearby first, then the rest
+                workers = new ArrayList<>(nearby.size() + rest.size());
+                workers.addAll(nearby);
+                workers.addAll(rest);
+            }
         } else {
             workers = userRepository.findApprovedActiveWorkers();
             // Sort by composite ranking score (subscription-weighted algorithm)
@@ -110,6 +128,14 @@ public class WorkerService {
             }
         }
 
+        if (serviceSlug != null && !serviceSlug.isBlank()) {
+            Set<Long> idsOfferingService =
+                    new HashSet<>(workerSkillRepository.findWorkerIdsByServiceSlug(serviceSlug.trim().toLowerCase()));
+            workers = workers.stream()
+                    .filter(w -> idsOfferingService.contains(w.getId()))
+                    .collect(Collectors.toList());
+        }
+
         if (name != null && !name.isBlank()) {
             String needle = name.trim().toLowerCase();
             // Free-text search covers the artisan's name and their trade, so "plumber" works like "John".
@@ -127,8 +153,33 @@ public class WorkerService {
 
         if (location != null && !location.isBlank()) {
             String needle = location.trim().toLowerCase();
+            // Structured fields first; locationName is the legacy free-text fallback.
             workers = workers.stream()
-                    .filter(w -> containsIgnoreCase(w.getLocationName(), needle))
+                    .filter(w -> containsIgnoreCase(w.getLocationName(), needle)
+                            || containsIgnoreCase(w.getCounty(), needle)
+                            || containsIgnoreCase(w.getTown(), needle)
+                            || containsIgnoreCase(w.getArea(), needle))
+                    .collect(Collectors.toList());
+        }
+
+        if (county != null && !county.isBlank()) {
+            String needle = county.trim().toLowerCase();
+            workers = workers.stream()
+                    .filter(w -> equalsIgnoreCase(w.getCounty(), needle))
+                    .collect(Collectors.toList());
+        }
+
+        if (town != null && !town.isBlank()) {
+            String needle = town.trim().toLowerCase();
+            workers = workers.stream()
+                    .filter(w -> equalsIgnoreCase(w.getTown(), needle))
+                    .collect(Collectors.toList());
+        }
+
+        if (area != null && !area.isBlank()) {
+            String needle = area.trim().toLowerCase();
+            workers = workers.stream()
+                    .filter(w -> containsIgnoreCase(w.getArea(), needle))
                     .collect(Collectors.toList());
         }
 
@@ -151,6 +202,10 @@ public class WorkerService {
 
     private static boolean containsIgnoreCase(String haystack, String lowercaseNeedle) {
         return haystack != null && haystack.toLowerCase().contains(lowercaseNeedle);
+    }
+
+    private static boolean equalsIgnoreCase(String value, String lowercaseNeedle) {
+        return value != null && value.trim().toLowerCase().equals(lowercaseNeedle);
     }
 
     /** Artisans with no published rate are treated as free so a price cap never hides them. */
@@ -181,7 +236,21 @@ public class WorkerService {
             throw new IllegalArgumentException("Worker not found");
         }
 
-        return mapToUserDTOWithSkills(worker);
+        AuthDTO.UserDTO dto = mapToUserDTOWithSkills(worker);
+        dto.setPortfolioImages(PortfolioImages.paths(workerId, PortfolioImages.parse(worker.getPortfolioImages()).size()));
+        return dto;
+    }
+
+    /** Single work photo, served as bytes so galleries stay out of profile payloads. */
+    public PortfolioImages.Decoded getPortfolioImage(Long workerId, int index) {
+        User worker = userRepository.findById(workerId)
+                .orElseThrow(() -> new IllegalArgumentException("Portfolio image not found"));
+
+        List<String> images = PortfolioImages.parse(worker.getPortfolioImages());
+        if (worker.getRole() != User.UserRole.WORKER || index < 0 || index >= images.size()) {
+            throw new IllegalArgumentException("Portfolio image not found");
+        }
+        return PortfolioImages.decode(images.get(index));
     }
 
     public List<WorkerSkill> getWorkerSkills(Long workerId) {
@@ -189,7 +258,14 @@ public class WorkerService {
     }
 
     @Transactional
-    public WorkerSkill addSkill(Long workerId, WorkerSkill.SkillType skillType, String description, Integer experienceYears, String hourlyRate) {
+    public WorkerSkill addSkill(Long workerId, WorkerSkill.SkillType skillType, String description,
+                                Integer experienceYears, String hourlyRate) {
+        return addSkill(workerId, skillType, description, experienceYears, hourlyRate, null);
+    }
+
+    @Transactional
+    public WorkerSkill addSkill(Long workerId, WorkerSkill.SkillType skillType, String description,
+                                Integer experienceYears, String hourlyRate, List<String> serviceSlugs) {
         User worker = userRepository.findById(workerId)
                 .orElseThrow(() -> new RuntimeException("Worker not found"));
 
@@ -208,6 +284,7 @@ public class WorkerService {
                 .experienceYears(experienceYears)
                 .hourlyRate(hourlyRate)
                 .isVerified(false)
+                .services(resolveServices(skillType, serviceSlugs))
                 .build();
 
         return workerSkillRepository.save(skill);
@@ -215,14 +292,31 @@ public class WorkerService {
 
     @Transactional
     public WorkerSkill updateSkill(Long skillId, String description, Integer experienceYears, String hourlyRate) {
+        return updateSkill(skillId, description, experienceYears, hourlyRate, null);
+    }
+
+    @Transactional
+    public WorkerSkill updateSkill(Long skillId, String description, Integer experienceYears, String hourlyRate,
+                                   List<String> serviceSlugs) {
         WorkerSkill skill = workerSkillRepository.findById(skillId)
                 .orElseThrow(() -> new RuntimeException("Skill not found"));
 
         if (description != null) skill.setDescription(description);
         if (experienceYears != null) skill.setExperienceYears(experienceYears);
         if (hourlyRate != null) skill.setHourlyRate(hourlyRate);
+        if (serviceSlugs != null) skill.setServices(resolveServices(skill.getSkillType(), serviceSlugs));
 
         return workerSkillRepository.save(skill);
+    }
+
+    /** Silently drops slugs that belong to a different trade — the UI only offers matching ones. */
+    private Set<ServiceOffering> resolveServices(WorkerSkill.SkillType skillType, List<String> serviceSlugs) {
+        if (serviceSlugs == null || serviceSlugs.isEmpty()) return new LinkedHashSet<>();
+        return serviceSlugs.stream()
+                .filter(slug -> slug != null && !slug.isBlank())
+                .map(slug -> serviceOfferingRepository.findBySlug(slug.trim().toLowerCase()).orElse(null))
+                .filter(offering -> offering != null && offering.getSkillType() == skillType)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Transactional
@@ -283,7 +377,7 @@ public class WorkerService {
     }
 
     private AuthDTO.UserDTO mapToUserDTOWithSkills(User user) {
-        List<AuthDTO.WorkerSkillInfo> skillInfos = workerSkillRepository.findByWorkerId(user.getId())
+        List<AuthDTO.WorkerSkillInfo> skillInfos = workerSkillRepository.findByWorkerIdWithServices(user.getId())
                 .stream()
                 .map(s -> AuthDTO.WorkerSkillInfo.builder()
                         .id(s.getId())
@@ -292,6 +386,13 @@ public class WorkerService {
                         .experienceYears(s.getExperienceYears())
                         .hourlyRate(s.getHourlyRate())
                         .isVerified(s.getIsVerified())
+                        .services(s.getServices().stream()
+                                .map(offering -> AuthDTO.ServiceRef.builder()
+                                        .id(offering.getId())
+                                        .name(offering.getName())
+                                        .slug(offering.getSlug())
+                                        .build())
+                                .collect(Collectors.toList()))
                         .build())
                 .collect(Collectors.toList());
 
@@ -313,6 +414,10 @@ public class WorkerService {
                 .latitude(user.getLatitude())
                 .longitude(user.getLongitude())
                 .locationName(user.getLocationName())
+                .county(user.getCounty())
+                .town(user.getTown())
+                .area(user.getArea())
+                .serviceRadiusKm(user.getServiceRadiusKm())
                 .availableNow(isAvailableNow(user))
                 .isVerified(user.getIsVerified())
                 .skills(skillInfos)

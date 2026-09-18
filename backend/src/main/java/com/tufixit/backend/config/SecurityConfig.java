@@ -83,12 +83,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/stats").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/platform-stats").permitAll()
 
+                        // PUBLIC: service taxonomy — read-only
+                        .requestMatchers(HttpMethod.GET, "/api/service-offerings").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/service-offerings/*").permitAll()
+
+                        // PUBLIC: skill + location taxonomy powering the SEO landing pages
+                        .requestMatchers(HttpMethod.GET, "/api/taxonomy/**").permitAll()
+
                         // PUBLIC: workers/artisan profiles — read-only. Writes stay authenticated.
                         .requestMatchers(HttpMethod.GET, "/api/workers/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/workers/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/workers/*/rating").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/workers/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/workers/*/skills").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/workers/*/portfolio/*").permitAll()
 
                         // PUBLIC: jobs browsing
                         .requestMatchers("/api/jobs/open").permitAll()
@@ -152,6 +160,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/categories", "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories", "/api/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/categories", "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/service-offerings/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/service-offerings", "/api/service-offerings/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/service-offerings", "/api/service-offerings/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/service-offerings", "/api/service-offerings/**").hasRole("ADMIN")
                         .requestMatchers("/api/reports/admin/**").hasRole("ADMIN")
 
                         // ESTATE_MANAGER: estate-scoped management endpoints

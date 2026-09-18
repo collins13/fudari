@@ -3,6 +3,9 @@ package com.tufixit.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "worker_skills")
 @Data
@@ -21,6 +24,17 @@ public class WorkerSkill {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SkillType skillType;
+
+    /** Specific services offered under this trade. Empty means "the whole trade". */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "worker_skill_services",
+            joinColumns = @JoinColumn(name = "worker_skill_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_offering_id"))
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
+    private Set<ServiceOffering> services = new LinkedHashSet<>();
 
     @Column(columnDefinition = "TEXT")
     private String description;

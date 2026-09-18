@@ -604,7 +604,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                           >
                             <i className="fa-brands fa-whatsapp"></i>
                           </a>
-                          <Link href={`/artisans/${artisan.id}`} className="btn btn-primary btn-sm rounded-5">
+                          <Link href={`/artisan/${artisan.id}`} className="btn btn-primary btn-sm rounded-5">
                             View Profile
                           </Link>
                         </div>

@@ -7,10 +7,14 @@ import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
 import com.tufixit.backend.repository.ReviewRepository;
 import com.tufixit.backend.service.WorkerService;
+import com.tufixit.backend.util.PortfolioImages;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,15 +30,21 @@ public class WorkerController {
     @GetMapping("/search")
     public ResponseEntity<List<AuthDTO.UserDTO>> searchWorkers(
             @RequestParam(required = false) String skillType,
+            @RequestParam(required = false) String serviceSlug,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String location,
+            @RequestParam(required = false) String county,
+            @RequestParam(required = false) String town,
+            @RequestParam(required = false) String area,
             @RequestParam(required = false) Double maxHourlyRate,
             @RequestParam(required = false) Boolean availableNow,
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude,
-            @RequestParam(defaultValue = "25") Double radiusKm) {
+            @RequestParam(defaultValue = "25") Double radiusKm,
+            @RequestParam(defaultValue = "false") boolean strictRadius) {
         return ResponseEntity.ok(workerService.searchWorkers(
-                skillType, latitude, longitude, radiusKm, name, location, maxHourlyRate, availableNow));
+                skillType, latitude, longitude, radiusKm, name, location, maxHourlyRate, availableNow,
+                serviceSlug, county, town, area, strictRadius));
     }
 
     @GetMapping("/{workerId}")
@@ -45,6 +55,15 @@ public class WorkerController {
     @GetMapping("/{workerId}/skills")
     public ResponseEntity<List<WorkerSkill>> getWorkerSkills(@PathVariable Long workerId) {
         return ResponseEntity.ok(workerService.getWorkerSkills(workerId));
+    }
+
+    @GetMapping("/{workerId}/portfolio/{index}")
+    public ResponseEntity<byte[]> getPortfolioImage(@PathVariable Long workerId, @PathVariable int index) {
+        PortfolioImages.Decoded image = workerService.getPortfolioImage(workerId, index);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.contentType()))
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePublic())
+                .body(image.bytes());
     }
 
     /** Worker toggles whether they can take a job right now. */
@@ -64,7 +83,8 @@ public class WorkerController {
                 Integer.parseInt(skillData.get("experienceYears").toString()) : null;
         String hourlyRate = (String) skillData.get("hourlyRate");
 
-        return ResponseEntity.ok(workerService.addSkill(workerId, skillType, description, experienceYears, hourlyRate));
+        return ResponseEntity.ok(workerService.addSkill(
+                workerId, skillType, description, experienceYears, hourlyRate, serviceSlugs(skillData)));
     }
 
     @PutMapping("/skills/{skillId}")
@@ -76,7 +96,14 @@ public class WorkerController {
                 Integer.parseInt(skillData.get("experienceYears").toString()) : null;
         String hourlyRate = (String) skillData.get("hourlyRate");
 
-        return ResponseEntity.ok(workerService.updateSkill(skillId, description, experienceYears, hourlyRate));
+        return ResponseEntity.ok(workerService.updateSkill(
+                skillId, description, experienceYears, hourlyRate, serviceSlugs(skillData)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> serviceSlugs(Map<String, Object> skillData) {
+        Object raw = skillData.get("serviceSlugs");
+        return raw instanceof List<?> list ? (List<String>) list : null;
     }
 
     @DeleteMapping("/skills/{skillId}")

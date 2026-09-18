@@ -142,6 +142,133 @@ export function skillLabel(skillType: string): string {
   return SKILL_LABELS_KE[skillType]?.en || skillType;
 }
 
+/**
+ * Trades whose plural is not a simple suffix rule, or whose singular label is an
+ * activity rather than a person. Keyed across both the current SkillType enum and
+ * the broader taxonomy, so unused keys are inert until the enum grows.
+ */
+const SKILL_PLURALS: Record<string, string> = {
+
+  // 🏠 HOME & CONSTRUCTION
+  PLUMBING: 'Plumbers',
+  ELECTRICAL: 'Electricians',
+  CARPENTRY: 'Carpenters',
+  MASONRY: 'Masons',
+  PAINTING: 'Painters',
+  ROOFING: 'Roofing Contractors',
+  TILING: 'Tilers',
+  CEILING_BOARD: 'Ceiling Board Fitters',
+  WELDING: 'Welders',
+  FABRICATION: 'Fabricators',
+  ALUMINIUM_WORK: 'Aluminium Fabricators',
+  GLASS_WORK: 'Glaziers',
+  JOINERY: 'Joiners',
+  WATERPROOFING: 'Waterproofing Specialists',
+  STEEL_FIXING: 'Steel Fixers',
+  PLASTERING: 'Plasterers',
+  FLOORING: 'Flooring Specialists',
+  INTERIOR_DECORATION: 'Interior Decorators',
+
+  // 🚗 AUTOMOTIVE & MOTORCYCLES
+  CAR_MECHANIC: 'Car Mechanics',
+  MOTORCYCLE_MECHANIC: 'Motorcycle Mechanics',
+  AUTO_ELECTRICIAN: 'Auto Electricians',
+  MOTOR_VEHICLE_WIRING: 'Motor Vehicle Wiring Technicians',
+  PANEL_BEATING: 'Panel Beaters',
+  SPRAY_PAINTING: 'Spray Painters',
+  CAR_WASH: 'Car Wash Services',
+  TYRE_SERVICES: 'Tyre Specialists',
+  BATTERY_SERVICES: 'Battery Services',
+
+  // 🔧 REPAIR & TECHNICAL
+  APPLIANCE_REPAIR: 'Appliance Repair Technicians',
+  REFRIGERATION: 'Refrigeration Technicians',
+  AIR_CONDITIONING: 'AC Technicians',
+  PHONE_REPAIR: 'Phone Repair Technicians',
+  COMPUTER_REPAIR: 'Computer Repair Technicians',
+  ELECTRONICS_REPAIR: 'Electronics Repair Technicians',
+  MACHINE_REPAIR: 'Machine Repair Technicians',
+  LOCKSMITH: 'Locksmiths',
+
+  // 🧹 HOME SERVICES
+  CLEANING: 'Cleaning Services',
+  MAMA_FUA: 'Mama Fua',
+  FUMIGATION: 'Fumigation Services',
+  PEST_CONTROL: 'Pest Control Services',
+  WATER_TANK_CLEANING: 'Water Tank Cleaners',
+  GARDENING: 'Gardeners',
+  LANDSCAPING: 'Landscapers',
+  MOVING: 'Moving Services',
+  HOUSE_HELP: 'Domestic Helpers',
+
+  // 🚰 WATER & INFRASTRUCTURE
+  BOREHOLE_DRILLING: 'Borehole Drilling Contractors',
+  BOREHOLE_REPAIR: 'Borehole Technicians',
+  WATER_PUMP_REPAIR: 'Water Pump Technicians',
+  SEPTIC_SERVICES: 'Septic Tank Services',
+  DRAINAGE: 'Drainage Specialists',
+
+  // 👗 FASHION & PERSONAL SERVICES
+  TAILORING: 'Tailors',
+  DRESSMAKING: 'Dressmakers',
+  SHOE_REPAIR: 'Shoe Repairers',
+  LEATHER_WORK: 'Leather Workers',
+  UPHOLSTERY: 'Upholsterers',
+  BARBERS: 'Barbers',
+  HAIRDRESSING: 'Hairdressers',
+  BEAUTY: 'Beauty Service Providers',
+
+  // 🎉 EVENTS
+  EVENT_DECORATION: 'Event Decorators',
+  EVENT_LIGHTING: 'Event Lighting Providers',
+  TENT_HIRE: 'Tent Hire Services',
+  SOUND_SYSTEM: 'Sound System Providers',
+  DJ: 'DJs',
+  PHOTOGRAPHY: 'Photographers',
+  VIDEOGRAPHY: 'Videographers',
+  CATERING: 'Caterers',
+  CAKE_BAKING: 'Cake Bakers',
+
+  // 🚚 DELIVERY & TRANSPORT
+  COURIER: 'Couriers',
+  RIDERS: 'Delivery Riders',
+  MOVERS: 'Movers',
+  LIGHT_TRANSPORT: 'Light Transporters',
+  TUK_TUK_SERVICES: 'Tuk Tuk Services',
+
+  // 🛡️ SECURITY
+  SECURITY_SYSTEMS: 'Security System Installers',
+  CCTV: 'CCTV Installers',
+  ALARM_SYSTEMS: 'Alarm System Installers',
+  ACCESS_CONTROL: 'Access Control Installers',
+  ELECTRIC_FENCE: 'Electric Fence Installers',
+
+  // 💻 DIGITAL
+  IT_SUPPORT: 'IT Technicians',
+  NETWORKING: 'Network Technicians',
+  WEBSITE_DEVELOPMENT: 'Website Developers',
+  GRAPHIC_DESIGN: 'Graphic Designers',
+  PHONE_SOFTWARE: 'Mobile Software Technicians',
+
+  // 🌾 AGRICULTURE
+  FARM_SERVICES: 'Farm Service Providers',
+  LIVESTOCK_SERVICES: 'Livestock Service Providers',
+  IRRIGATION: 'Irrigation Technicians',
+  AGRICULTURAL_MECHANICS: 'Agricultural Mechanics',
+
+  OTHER: 'Other Service Providers',
+};
+
+/** Plural trade noun for headings — "Electricians in Nairobi", not "Electrical Services in Kenya". */
+export function skillLabelPlural(skillType: string): string {
+  const override = SKILL_PLURALS[skillType];
+  if (override) return override;
+  const label = skillLabel(skillType);
+  if (/s$/i.test(label)) return label;
+  if (/(sh|ch|x|z)$/i.test(label)) return `${label}es`;
+  return `${label}s`;
+}
+
 // Bilingual skill label (e.g. "Electrician (Fundi Stima)")
 export function skillLabelBilingual(skillType: string): string {
   const entry = SKILL_LABELS_KE[skillType];

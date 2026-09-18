@@ -93,6 +93,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard/admin/jobs', label: 'Jobs Oversight', icon: 'fa-briefcase' },
       { href: '/dashboard/admin/payments', label: 'Payments', icon: 'fa-money-bill-transfer' },
       { href: '/dashboard/admin/categories', label: 'Categories', icon: 'fa-layer-group' },
+      { href: '/dashboard/admin/services', label: 'Services', icon: 'fa-list-check' },
       { href: '/dashboard/admin/users', label: 'Manage Users', icon: 'fa-users' },
       { href: '/dashboard/admin/reports', label: 'Reports', icon: 'fa-flag' },
       { href: '/dashboard/admin/disputes', label: 'Disputes', icon: 'fa-gavel' },
