@@ -62,6 +62,11 @@ public class TaxonomyDTO {
         private String locationSlug;
         private String locationName;
         private Location.LocationType locationType;
+        private String parentSlug;
+        private String countySlug;
+        private String townSlug;
+        private String areaSlug;
+        private Integer uniqueProviderCount;
         private Integer providerCount;
     }
 }

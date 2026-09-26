@@ -63,9 +63,11 @@ public final class LocationNormalizer {
         }
         if (remaining.size() == 1) {
             // A single segment is the town when there is no county to anchor it.
-            return county != null
-                    ? new Parsed(county, county, remaining.get(0))
-                    : new Parsed(null, remaining.get(0), null);
+            if (county != null) {
+                String area = freeText.matches(".*[,/|].*") ? remaining.get(0) : clean(freeText, null);
+                return new Parsed(county, county, area);
+            }
+            return new Parsed(null, remaining.get(0), null);
         }
         String area = remaining.get(0);
         String town = county != null ? county : remaining.get(remaining.size() - 1);
@@ -117,6 +119,6 @@ public final class LocationNormalizer {
             out.append(atWordStart ? Character.toUpperCase(c) : Character.toLowerCase(c));
             atWordStart = c == ' ' || c == '\'';
         }
-        return out.toString();
+        return out.toString().replaceAll("(?i)\\bCbd\\b", "CBD");
     }
 }

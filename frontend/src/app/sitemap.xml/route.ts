@@ -6,7 +6,7 @@ import { SITE_URL } from '@/lib/seoUrls';
  */
 export const dynamic = 'force-dynamic';
 
-const SECTIONS = ['static', 'skills', 'locations', 'services', 'providers', 'estates'];
+const SECTIONS = ['static', 'skills', 'locations', 'services', 'service-locations', 'providers', 'estates'];
 
 export async function GET() {
   const now = new Date().toISOString();

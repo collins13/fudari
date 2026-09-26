@@ -689,7 +689,7 @@ function ArtisansContent() {
               <div className="d-flex flex-wrap align-items-center mb-3 gap-2">
                 <div className="col fs-18 text-nowrap">
                   {loading ? 'Loading...' : (
-                    <>All <span className="fw-bold text-dark">
+                    <><span className="fw-bold text-dark">
                       {tab === 'providers' ? filteredArtisans.length : filteredListings.length}
                     </span> {tab === 'providers' ? 'Pros' : 'Listings'} found</>
                   )}

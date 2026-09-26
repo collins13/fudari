@@ -5,6 +5,7 @@ import {
   locationEntries,
   providerEntries,
   serviceEntries,
+  serviceLocationEntries,
   skillEntries,
   staticEntries,
 } from '@/lib/sitemapSources';
@@ -16,6 +17,7 @@ const SECTIONS: Record<string, () => Promise<MetadataRoute.Sitemap>> = {
   skills: skillEntries,
   locations: locationEntries,
   services: serviceEntries,
+  'service-locations': serviceLocationEntries,
   providers: providerEntries,
   estates: estateEntries,
 };

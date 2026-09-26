@@ -74,7 +74,11 @@ export default async function SkillPage({ params }: PageProps) {
   const [counts, allSkills] = await Promise.all([getSkillLocationCounts(), getSkills()]);
 
   const relatedLocations: LinkRef[] = counts
-    .filter((entry) => entry.skillSlug === skill.slug && entry.providerCount >= MIN_PROVIDERS_FOR_INDEX)
+    .filter((entry) =>
+      entry.skillSlug === skill.slug &&
+      entry.locationType !== 'AREA' &&
+      entry.providerCount >= MIN_PROVIDERS_FOR_INDEX,
+    )
     .sort((a, b) => b.providerCount - a.providerCount)
     .slice(0, 12)
     .map((entry) => ({

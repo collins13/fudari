@@ -34,8 +34,30 @@ async function load(countySlug: string) {
     .map((skill) => ({ skill, count: bySkill.get(skill.slug) || 0 }))
     .sort((a, b) => b.count - a.count);
 
-  const totalProviders = available.reduce((sum, entry) => sum + entry.count, 0);
-  return { location, available, children, totalProviders };
+  const skillBySlug = new Map(skills.map((skill) => [skill.slug, skill]));
+  const childLinks = children.map((child) => {
+    if (child.type === 'TOWN') return { child, href: locationPath(child.slug) };
+
+    const bestAreaCount = counts
+      .filter((entry) =>
+        entry.locationType === 'AREA' &&
+        entry.locationSlug === child.slug &&
+        entry.providerCount >= MIN_PROVIDERS_FOR_INDEX,
+      )
+      .sort((a, b) => b.providerCount - a.providerCount)[0];
+    const areaSkill = bestAreaCount ? skillBySlug.get(bestAreaCount.skillSlug) : null;
+    const parentSlug = bestAreaCount?.parentSlug || child.parentSlug;
+
+    return {
+      child,
+      href: areaSkill && parentSlug
+        ? skillLocationPath(areaSkill.slug, parentSlug, child.slug)
+        : null,
+    };
+  });
+
+  const totalProviders = location.providerCount || 0;
+  return { location, available, childLinks, totalProviders };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -75,7 +97,7 @@ export default async function LocationHubPage({ params }: PageProps) {
   const data = await load(countySlug);
   if (!data) notFound();
 
-  const { location, available, children, totalProviders } = data;
+  const { location, available, childLinks, totalProviders } = data;
   const canonical = absolute(locationPath(location.slug));
 
   const jsonLd = JSON.stringify({
@@ -172,16 +194,14 @@ export default async function LocationHubPage({ params }: PageProps) {
           </div>
         </section>
 
-        {children.length > 0 && (
+        {childLinks.length > 0 && (
           <section className="py-5 bg-light">
             <div className="container">
-              <h2 className="h4 fw-bold mb-3">Areas in {location.name}</h2>
+              <h2 className="h4 fw-bold mb-3">Towns and areas in {location.name}</h2>
               <ul className="list-inline mb-0">
-                {children.map((child) => (
+                {childLinks.map(({ child, href }) => (
                   <li className="list-inline-item me-3 mb-2" key={child.slug}>
-                    <Link href={child.type === 'TOWN' ? locationPath(child.slug) : `#${child.slug}`}>
-                      {child.name}
-                    </Link>
+                    {href ? <Link href={href}>{child.name}</Link> : <span>{child.name}</span>}
                   </li>
                 ))}
               </ul>

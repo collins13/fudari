@@ -43,6 +43,11 @@ export type SkillLocationCount = {
   locationSlug: string;
   locationName: string;
   locationType: 'COUNTY' | 'TOWN' | 'AREA';
+  parentSlug?: string;
+  countySlug?: string;
+  townSlug?: string;
+  areaSlug?: string;
+  uniqueProviderCount?: number;
   providerCount: number;
 };
 

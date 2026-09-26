@@ -294,13 +294,13 @@ export default function BookArtisanPage() {
             <p className="text-muted mb-4">No account needed. You&apos;ll get a booking code to track your job.</p>
 
             {error && (
-              <div className="alert alert-danger small rounded-3 mb-4">
+              <div className="alert alert-danger small rounded-3 mb-4" role="alert">
                 <i className="fa-solid fa-circle-exclamation me-2" />{error}
               </div>
             )}
 
             {queued && (
-              <div className="alert alert-warning small rounded-3 mb-4">
+              <div className="alert alert-warning small rounded-3 mb-4" role="status">
                 <i className="fa-solid fa-cloud-arrow-up me-2" />
                 <strong>Saved &mdash; waiting for network.</strong> Your booking will be sent automatically
                 as soon as you&apos;re back online. You can keep this page open or come back later.
@@ -331,19 +331,20 @@ export default function BookArtisanPage() {
               <h6 className="fw-semibold text-muted text-uppercase small mb-3 mt-2">Your Details</h6>
               <div className="row g-3 mb-4">
                 <div className="col-md-6">
-                  <label className="form-label small fw-medium">Full Name <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" required
+                  <label htmlFor="customer-name" className="form-label small fw-medium">Full Name <span className="text-danger">*</span></label>
+                  <input id="customer-name" name="name" type="text" className="form-control rounded-3" required autoComplete="name"
                     placeholder="e.g. John Kamau"
                     value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-medium">
+                  <label htmlFor="customer-phone" className="form-label small fw-medium">
                     Phone Number <span className="text-danger">*</span>
                     <span className="text-muted ms-1">(for SMS updates)</span>
                   </label>
                   <div className="input-group">
                     <span className="input-group-text bg-light">+254</span>
-                    <input type="tel" className="form-control rounded-end-3" required
+                    <input id="customer-phone" name="tel" type="tel" className="form-control rounded-end-3" required
+                      autoComplete="tel" inputMode="tel" aria-describedby="customer-phone-help"
                       placeholder="7XX XXX XXX"
                       value={customerPhone.replace(/^\+254/, '').replace(/^254/, '')}
                       onChange={(e) => {
@@ -351,11 +352,11 @@ export default function BookArtisanPage() {
                         setCustomerPhone(raw ? `+254${raw}` : '');
                       }} />
                   </div>
-                  <small className="text-muted">We&apos;ll send your booking code via SMS.</small>
+                  <small id="customer-phone-help" className="text-muted">We&apos;ll send your booking code via SMS.</small>
                 </div>
                 <div className="col-12">
-                  <label className="form-label small fw-medium">Your Location / Address <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" required
+                  <label htmlFor="customer-location" className="form-label small fw-medium">Your Location / Address <span className="text-danger">*</span></label>
+                  <input id="customer-location" name="street-address" type="text" className="form-control rounded-3" required autoComplete="street-address"
                     placeholder="e.g. Westlands, Nairobi — near Sarit Centre"
                     value={customerLocation} onChange={(e) => setCustomerLocation(e.target.value)} />
                 </div>
@@ -365,7 +366,7 @@ export default function BookArtisanPage() {
               <h6 className="fw-semibold text-muted text-uppercase small mb-3">Job Details</h6>
               <div className="mb-2">
                 <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label small fw-medium mb-0">
+                  <label htmlFor="job-description" className="form-label small fw-medium mb-0">
                     Describe the Job <span className="text-danger">*</span>
                   </label>
                   {/* AI enhance button */}
@@ -393,7 +394,7 @@ export default function BookArtisanPage() {
                     </button>
                   )}
                   {aiEnhancing && (
-                    <span className="text-muted small">
+                    <span className="text-muted small" role="status">
                       <span className="spinner-border spinner-border-sm me-1" />AI analysing…
                     </span>
                   )}
@@ -405,13 +406,16 @@ export default function BookArtisanPage() {
                 </div>
 
                 <textarea
+                  id="job-description"
+                  name="job-description"
                   className="form-control rounded-3"
                   rows={4} required minLength={10}
+                  aria-describedby="job-description-help"
                   placeholder="e.g. My kitchen sink is leaking and needs a new pipe fitting."
                   value={jobDescription}
                   onChange={(e) => { setJobDescription(e.target.value); setAiApplied(false); }}
                 />
-                <small className="text-muted">The more detail you give, the better they can prepare.</small>
+                  <small id="job-description-help" className="text-muted">The more detail you give, the better they can prepare.</small>
               </div>
 
               {/* AI suggestion card — Feature 1 */}
@@ -478,10 +482,10 @@ export default function BookArtisanPage() {
               )}
 
               <div className="mb-4">
-                <label className="form-label small fw-medium">Budget (Optional)</label>
+                <label htmlFor="job-budget" className="form-label small fw-medium">Budget (Optional)</label>
                 <div className="input-group" style={{ maxWidth: 240 }}>
                   <span className="input-group-text bg-light">KES</span>
-                  <input type="number" min="0" className="form-control rounded-end-3"
+                  <input id="job-budget" name="budget" type="number" min="0" inputMode="numeric" className="form-control rounded-end-3"
                     placeholder="e.g. 2000"
                     value={budget} onChange={(e) => setBudget(e.target.value)} />
                 </div>
@@ -514,8 +518,8 @@ export default function BookArtisanPage() {
 
               {urgency === 'SCHEDULED' && (
                 <div className="mb-4">
-                  <label className="form-label small fw-medium">Date &amp; Time <span className="text-danger">*</span></label>
-                  <input type="datetime-local" className="form-control rounded-3" required
+                  <label htmlFor="scheduled-time" className="form-label small fw-medium">Date &amp; Time <span className="text-danger">*</span></label>
+                  <input id="scheduled-time" name="scheduled-time" type="datetime-local" className="form-control rounded-3" required
                     min={new Date().toISOString().slice(0, 16)}
                     value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} />
                 </div>

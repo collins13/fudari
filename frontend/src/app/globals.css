@@ -1,6 +1,14 @@
 /* `html:root` outranks the `:root` block in bootstrap.min.css, which loads after
    this file and would otherwise reset --bs-primary back to Bootstrap blue. */
 html:root {
+  --font-ui: var(--font-wix-madefor), "Segoe UI", sans-serif;
+  --font-display: var(--font-wix-madefor), "Segoe UI", sans-serif;
+  --font-accent: var(--font-caveat), cursive;
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.5;
+  --type-label-size: 0.875rem;
+  --type-caption-size: 0.75rem;
+
   /* Deep teal reads as trust/utility and clears WCAG AA on white (7.8:1),
      unlike the previous #F84525 which sat at 3.6:1. */
   --primary: #0D5C63;
@@ -59,11 +67,33 @@ html[data-bs-theme="dark"]:root {
 }
 
 body {
-  font-family: var(--font-wix-madefor, 'Wix Madefor Display', sans-serif);
+  font-family: var(--font-ui);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
+}
+
+button,
+input,
+select,
+textarea,
+.form-control,
+.form-select,
+.btn,
+.dropdown-menu {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }
 
 .font-caveat {
-  font-family: var(--font-caveat, 'Caveat', cursive);
+  font-family: var(--font-accent) !important;
 }
 
 /* Ensure next/link styled like anchor tags */

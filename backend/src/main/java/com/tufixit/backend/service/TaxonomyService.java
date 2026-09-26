@@ -15,14 +15,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Comparator;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Read model behind the SEO landing pages.
@@ -115,21 +117,20 @@ public class TaxonomyService {
      * Every skill x location pair that has at least one provider. Drives the
      * sitemap and the internal-linking blocks without an N x M query storm.
      */
+    @Transactional(readOnly = true)
     public List<TaxonomyDTO.SkillLocationCount> skillLocationCounts() {
         Map<WorkerSkill.SkillType, String> slugBySkill =
                 skillMetadataRepository.findByIsActiveTrueOrderBySortOrderAscPluralNameAsc().stream()
                         .filter(SkillMetadata::getIsActive)
                         .collect(Collectors.toMap(SkillMetadata::getSkillType, SkillMetadata::getSlug));
 
-        Map<String, Location> locationByName = new HashMap<>();
-        for (Location location : locationRepository.findActiveCountiesAndTowns()) {
-            locationByName.put(location.getName().toLowerCase(Locale.ROOT), location);
-        }
+        List<Location> locations = locationRepository.findByIsActiveTrueOrderByNameAsc();
 
         Map<Long, User> workers = userRepository.findApprovedActiveWorkers().stream()
                 .collect(Collectors.toMap(User::getId, worker -> worker, (a, b) -> a));
 
-        Map<String, TaxonomyDTO.SkillLocationCount> tally = new HashMap<>();
+        Map<String, Set<Long>> providerIdsBySkillAndLocation = new HashMap<>();
+        Map<String, Location> locationByTallyKey = new HashMap<>();
         for (WorkerSkill skill : workerSkillRepository.findAll()) {
             String skillSlug = slugBySkill.get(skill.getSkillType());
             if (skillSlug == null) continue;
@@ -137,28 +138,32 @@ public class TaxonomyService {
             User worker = workers.get(skill.getWorker().getId());
             if (worker == null) continue;
 
-            for (String candidate : List.of(
-                    nullToEmpty(worker.getCounty()), nullToEmpty(worker.getTown()))) {
-                if (candidate.isEmpty()) continue;
-                Location location = locationByName.get(candidate.toLowerCase(Locale.ROOT));
-                if (location == null) continue;
+                Set<Location> workerLocations = new HashSet<>();
+                findLocation(locations, LocationType.COUNTY, worker.getCounty(), null, null)
+                    .ifPresent(workerLocations::add);
+                findLocation(locations, LocationType.TOWN, worker.getTown(), worker.getCounty(), null)
+                    .ifPresent(workerLocations::add);
+                findLocation(locations, LocationType.AREA, worker.getArea(), worker.getCounty(), worker.getTown())
+                    .ifPresent(workerLocations::add);
 
-                String key = skillSlug + "|" + location.getSlug();
-                TaxonomyDTO.SkillLocationCount entry = tally.get(key);
-                if (entry == null) {
-                    tally.put(key, TaxonomyDTO.SkillLocationCount.builder()
-                            .skillSlug(skillSlug)
-                            .locationSlug(location.getSlug())
-                            .locationName(location.getName())
-                            .locationType(location.getType())
-                            .providerCount(1)
-                            .build());
-                } else {
-                    entry.setProviderCount(entry.getProviderCount() + 1);
-                }
+                for (Location location : workerLocations) {
+                String key = skillSlug + "|" + location.getId();
+                providerIdsBySkillAndLocation
+                    .computeIfAbsent(key, ignored -> new HashSet<>())
+                    .add(worker.getId());
+                locationByTallyKey.put(key, location);
             }
         }
-        return new ArrayList<>(tally.values());
+
+            return providerIdsBySkillAndLocation.entrySet().stream()
+                .map(entry -> mapSkillLocationCount(
+                    entry.getKey().substring(0, entry.getKey().indexOf('|')),
+                    locationByTallyKey.get(entry.getKey()),
+                    entry.getValue().size()))
+                .sorted(Comparator.comparing(TaxonomyDTO.SkillLocationCount::getSkillSlug)
+                    .thenComparing(count -> count.getLocationType().ordinal())
+                    .thenComparing(TaxonomyDTO.SkillLocationCount::getLocationName))
+                .collect(Collectors.toList());
     }
 
     // ── Internals ───────────────────────────────────────────────────────────
@@ -195,9 +200,51 @@ public class TaxonomyService {
         return values != null && values.stream().anyMatch(value -> value.equalsIgnoreCase(needle));
     }
 
-    private static String nullToEmpty(String value) {
-        return value == null ? "" : value.trim();
-    }
+        private static Optional<Location> findLocation(List<Location> locations,
+                               LocationType type,
+                               String name,
+                               String countyName,
+                               String parentName) {
+        if (name == null || name.isBlank()) return Optional.empty();
+
+        return locations.stream()
+            .filter(location -> location.getType() == type)
+            .filter(location -> location.getName().equalsIgnoreCase(name.trim())
+                || type == LocationType.AREA && location.getName().toLowerCase(Locale.ROOT)
+                    .endsWith(" " + name.trim().toLowerCase(Locale.ROOT)))
+            .filter(location -> countyName == null || countyName.isBlank()
+                || location.getCounty() == null
+                || location.getCounty().getName().equalsIgnoreCase(countyName.trim()))
+            .filter(location -> parentName == null || parentName.isBlank()
+                || location.getParent() == null
+                || location.getParent().getName().equalsIgnoreCase(parentName.trim()))
+            .findFirst();
+        }
+
+        private static TaxonomyDTO.SkillLocationCount mapSkillLocationCount(String skillSlug,
+                                         Location location,
+                                         int providerCount) {
+        Location parent = location.getParent();
+        Location county = location.getType() == LocationType.COUNTY ? location : location.getCounty();
+        String townSlug = location.getType() == LocationType.TOWN
+            ? location.getSlug()
+            : location.getType() == LocationType.AREA && parent != null && parent.getType() == LocationType.TOWN
+                ? parent.getSlug()
+                : null;
+
+        return TaxonomyDTO.SkillLocationCount.builder()
+            .skillSlug(skillSlug)
+            .locationSlug(location.getSlug())
+            .locationName(location.getName())
+            .locationType(location.getType())
+            .parentSlug(parent != null ? parent.getSlug() : null)
+            .countySlug(county != null ? county.getSlug() : null)
+            .townSlug(townSlug)
+            .areaSlug(location.getType() == LocationType.AREA ? location.getSlug() : null)
+                .uniqueProviderCount(providerCount)
+            .providerCount(providerCount)
+            .build();
+        }
 
     private TaxonomyDTO.SkillResponse mapSkill(SkillMetadata skill, int providerCount) {
         return TaxonomyDTO.SkillResponse.builder()

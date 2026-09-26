@@ -102,7 +102,9 @@ class SeoIndexationTest {
     @Test
     @DisplayName("County name embedded in a longer phrase still resolves")
     void parsesEmbeddedCounty() {
-        assertEquals("Nairobi", LocationNormalizer.parse("Nairobi CBD").county());
+        var nairobiCbd = LocationNormalizer.parse("Nairobi CBD");
+        assertEquals("Nairobi", nairobiCbd.county());
+        assertEquals("Nairobi CBD", nairobiCbd.area());
         assertEquals("Mombasa", LocationNormalizer.parse("Nyali, Mombasa").county());
     }
 

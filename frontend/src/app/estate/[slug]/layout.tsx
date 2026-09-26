@@ -63,6 +63,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: "Estate Services",
       description:
         "Book verified local service providers for your estate through FUDARI, Kenya's trusted services marketplace.",
+      alternates: { canonical: `https://fudari.co/estate/${slug}` },
+      robots: { index: false, follow: true },
     };
   }
 }

@@ -123,9 +123,10 @@ export const metadata: Metadata = {
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: true, address: true },
   verification: {
-    // Replace these with real tokens once Search Console / Bing Webmaster are set up
-    google: "REPLACE_WITH_GOOGLE_SEARCH_CONSOLE_TOKEN",
-    other: { "msvalidate.01": "REPLACE_WITH_BING_WEBMASTER_TOKEN" },
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: process.env.BING_SITE_VERIFICATION
+      ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION }
+      : undefined,
   },
 };
 
@@ -161,14 +162,6 @@ export default function RootLayout({
               url: "https://fudari.co",
               description: "Kenya's local services marketplace connecting customers with verified service providers",
               inLanguage: "en-KE",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate: "https://fudari.co/artisans?category={search_term_string}",
-                },
-                "query-input": "required name=search_term_string",
-              },
             }),
           }}
         />

@@ -32,10 +32,6 @@
     - Style Guide Page
     - Footer
 -------------------------------------------------- */
-/* Google fonts --------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;600;700;800&amp;display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&amp;display=swap');
-
 /* ----------------------------------------------------------------
     - General Styles
 ----------------------------------------------------------------- */
@@ -50,8 +46,8 @@
     --bs-dark-rgb: 25, 30, 37;
     --bs-warning: #ffb14f;
     --bs-warning-rgb: 255, 177, 79;
-    --bs-font-caveat: 'Caveat', cursive;
-    --bs-font-sans-serif: "Wix Madefor Display", sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --bs-font-caveat: var(--font-accent);
+    --bs-font-sans-serif: var(--font-ui);
     --bs-gradient: linear-gradient(#f8f4f3, #fff);
 }
 

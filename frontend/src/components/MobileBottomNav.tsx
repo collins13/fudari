@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { whatsappBotLink } from '@/lib/whatsapp';
 
 // Dashboard and estate routes have their own chrome, so the customer bar stays out of them.
-const HIDDEN_PREFIXES = ['/dashboard', '/estate', '/login', '/register', '/complete-profile', '/forgot-password'];
+const HIDDEN_PREFIXES = ['/dashboard', '/estate', '/artisan/', '/login', '/register', '/complete-profile', '/forgot-password'];
 
 export default function MobileBottomNav() {
   const pathname = usePathname() || '/';
@@ -41,7 +41,7 @@ export default function MobileBottomNav() {
           <span className="tx-bottom-nav__cta">
             <i className="fa-brands fa-whatsapp" aria-hidden="true"></i>
           </span>
-          <span>Book</span>
+          <span>WhatsApp</span>
         </a>
 
         <Link href="/track" className={`tx-bottom-nav__item${isActive('/track') ? ' is-active' : ''}`}>

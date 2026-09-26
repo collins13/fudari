@@ -74,9 +74,11 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const [selectedSkill, setSelectedSkill] = useState('');
   const [problemSuggestions, setProblemSuggestions] = useState<{ skillType: string; label: string }[]>([]);
   const [showProblemSuggestions, setShowProblemSuggestions] = useState(false);
+  const [activeProblemIndex, setActiveProblemIndex] = useState(0);
   const [searchLocation, setSearchLocation] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeLocationIndex, setActiveLocationIndex] = useState(0);
   // Seeded from the server render so the markup crawlers get is not an empty spinner.
   const [featuredArtisans, setFeaturedArtisans] = useState<FeaturedArtisan[]>(initial.artisans);
   const [loadingArtisans, setLoadingArtisans] = useState(initial.artisans.length === 0);
@@ -96,6 +98,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
 
   const handleLocationChange = useCallback((value: string) => {
     setSearchLocation(value);
+    setActiveLocationIndex(0);
     if (value.length >= 2) {
       const filtered = KENYA_MAJOR_TOWNS.filter(t =>
         t.toLowerCase().includes(value.toLowerCase())
@@ -182,6 +185,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   const handleProblemChange = useCallback((value: string) => {
     setProblemInput(value);
     setSelectedSkill('');
+    setActiveProblemIndex(0);
     const q = value.toLowerCase().trim();
     if (q.length < 2) {
       setShowProblemSuggestions(false);
@@ -284,15 +288,38 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                     onChange={(e) => handleProblemChange(e.target.value)}
                     onFocus={() => setShowProblemSuggestions(problemSuggestions.length > 0)}
                     onBlur={() => setTimeout(() => setShowProblemSuggestions(false), 200)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') setShowProblemSuggestions(false);
+                      if (!showProblemSuggestions || problemSuggestions.length === 0) return;
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setActiveProblemIndex((index) => (index + 1) % problemSuggestions.length);
+                      } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setActiveProblemIndex((index) => (index - 1 + problemSuggestions.length) % problemSuggestions.length);
+                      } else if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const suggestion = problemSuggestions[activeProblemIndex];
+                        selectSkill(suggestion.skillType, suggestion.label);
+                      }
+                    }}
                     autoComplete="off"
                     aria-label="What service do you need?"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={showProblemSuggestions}
+                    aria-controls="problem-suggestions"
+                    aria-activedescendant={showProblemSuggestions ? `problem-suggestion-${activeProblemIndex}` : undefined}
                   />
                   {showProblemSuggestions && (
-                    <ul className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 9999 }}>
-                      {problemSuggestions.map((s) => (
+                    <ul id="problem-suggestions" role="listbox" className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 9999 }}>
+                      {problemSuggestions.map((s, index) => (
                         <li
                           key={s.skillType}
-                          className="list-group-item list-group-item-action py-2 px-3"
+                          id={`problem-suggestion-${index}`}
+                          role="option"
+                          aria-selected={index === activeProblemIndex}
+                          className={`list-group-item list-group-item-action py-2 px-3${index === activeProblemIndex ? ' active' : ''}`}
                           style={{ cursor: 'pointer' }}
                           onMouseDown={() => selectSkill(s.skillType, s.label)}
                         >
@@ -315,14 +342,38 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                     onChange={(e) => handleLocationChange(e.target.value)}
                     onFocus={() => searchLocation.length >= 2 && setShowSuggestions(locationSuggestions.length > 0)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') setShowSuggestions(false);
+                      if (!showSuggestions || locationSuggestions.length === 0) return;
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setActiveLocationIndex((index) => (index + 1) % locationSuggestions.length);
+                      } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setActiveLocationIndex((index) => (index - 1 + locationSuggestions.length) % locationSuggestions.length);
+                      } else if (event.key === 'Enter') {
+                        event.preventDefault();
+                        setSearchLocation(locationSuggestions[activeLocationIndex]);
+                        setShowSuggestions(false);
+                      }
+                    }}
                     autoComplete="off"
+                    aria-label="Where do you need help?"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={showSuggestions}
+                    aria-controls="location-suggestions"
+                    aria-activedescendant={showSuggestions ? `location-suggestion-${activeLocationIndex}` : undefined}
                   />
                   {showSuggestions && (
-                    <ul className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 9999 }}>
-                      {locationSuggestions.map((town) => (
+                    <ul id="location-suggestions" role="listbox" className="list-group position-absolute top-100 start-0 end-0 shadow-lg rounded-3 mt-1" style={{ zIndex: 9999 }}>
+                      {locationSuggestions.map((town, index) => (
                         <li
                           key={town}
-                          className="list-group-item list-group-item-action py-2 px-3 cursor-pointer"
+                          id={`location-suggestion-${index}`}
+                          role="option"
+                          aria-selected={index === activeLocationIndex}
+                          className={`list-group-item list-group-item-action py-2 px-3 cursor-pointer${index === activeLocationIndex ? ' active' : ''}`}
                           style={{ cursor: 'pointer' }}
                           onMouseDown={() => { setSearchLocation(town); setShowSuggestions(false); }}
                         >

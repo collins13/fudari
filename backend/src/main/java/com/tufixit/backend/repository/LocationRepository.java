@@ -18,6 +18,8 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     List<Location> findByTypeAndIsActiveTrueOrderByNameAsc(Location.LocationType type);
 
+    List<Location> findByIsActiveTrueOrderByNameAsc();
+
     List<Location> findByParentIdAndIsActiveTrueOrderByNameAsc(Long parentId);
 
     boolean existsBySlugAndType(String slug, Location.LocationType type);

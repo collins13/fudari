@@ -84,6 +84,7 @@ export default async function SkillLocationPage({ params }: PageProps) {
     .filter(
       (entry) =>
         entry.skillSlug === skill.slug &&
+        entry.locationType !== 'AREA' &&
         entry.locationSlug !== location.slug &&
         entry.providerCount >= MIN_PROVIDERS_FOR_INDEX,
     )

@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { getSkillLocationCounts, getSkills, getCounties, MIN_PROVIDERS_FOR_INDEX } from '@/lib/taxonomy';
 import { getServiceOfferings } from '@/lib/services';
+import { groupByLocation, MIN_INDEXABLE_PROVIDERS } from '@/lib/locations';
 import { serverApiUrl } from '@/lib/serverApi';
-import { providerPath, SITE_URL } from '@/lib/seoUrls';
+import { providerPath, servicePath, skillLocationPath, SITE_URL } from '@/lib/seoUrls';
 
 // Built per request, not at build time: `docker compose build` runs before the API
 // is reachable, and a build-time fetch failure silently produced a sitemap with no
@@ -83,7 +84,11 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
     }));
 
   const pairs: MetadataRoute.Sitemap = counts
-    .filter((entry) => slugs.has(entry.skillSlug) && entry.providerCount >= MIN_PROVIDERS_FOR_INDEX)
+    .filter((entry) =>
+      entry.locationType !== 'AREA' &&
+      slugs.has(entry.skillSlug) &&
+      entry.providerCount >= MIN_PROVIDERS_FOR_INDEX,
+    )
     .map((entry) => ({
       url: `${SITE_URL}/artisans/${entry.skillSlug}/${entry.locationSlug}`,
       lastModified: now,
@@ -91,7 +96,25 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
       priority: 0.95,
     }));
 
-  return [...hubs, ...pairs];
+  const areas: MetadataRoute.Sitemap = counts.flatMap((entry) => {
+    if (
+      entry.locationType !== 'AREA' ||
+      !entry.parentSlug ||
+      !slugs.has(entry.skillSlug) ||
+      entry.providerCount < MIN_PROVIDERS_FOR_INDEX
+    ) {
+      return [];
+    }
+
+    return [{
+      url: `${SITE_URL}${skillLocationPath(entry.skillSlug, entry.parentSlug, entry.locationSlug)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    }];
+  });
+
+  return [...hubs, ...pairs, ...areas];
 }
 
 export async function locationEntries(): Promise<MetadataRoute.Sitemap> {
@@ -128,6 +151,32 @@ export async function serviceEntries(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.85,
     }));
+}
+
+/** Service x location pages backed by enough live supply to remain indexable. */
+export async function serviceLocationEntries(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+  const [offerings, workers] = await Promise.all([
+    getServiceOfferings(),
+    fetchJson<SitemapWorker>('/workers/search'),
+  ]);
+
+  return offerings
+    .filter((offering) => offering.isActive !== false && offering.indexable !== false)
+    .flatMap((offering) => {
+      const matchingWorkers = workers.filter((worker) =>
+        worker.skills?.some((skill) => skill.services?.some((service) => service.slug === offering.slug)),
+      );
+
+      return groupByLocation(matchingWorkers)
+        .filter((location) => location.providerCount >= MIN_INDEXABLE_PROVIDERS)
+        .map((location) => ({
+          url: `${SITE_URL}${servicePath(offering.slug, location.slug)}`,
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.9,
+        }));
+    });
 }
 
 export async function providerEntries(): Promise<MetadataRoute.Sitemap> {
