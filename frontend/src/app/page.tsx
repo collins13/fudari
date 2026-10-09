@@ -14,10 +14,10 @@ export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'FUDARI | local service professionals kenya | hire a fundi nairobi | plumbers in kenya',
+    absolute: 'Find Fundis & Service Professionals in Kenya | Fudari',
   },
   description:
-    'local service professionals kenya. hire a fundi nairobi and plumbers in kenya for repairs. ID-verified pros, clear prices, pay on completion across Kenya today.',
+    'Find fundis and service professionals across Kenya with Fudari. Explore available services, compare providers, and contact professionals directly to find the right help for your needs.',
 };
 
 const FAQ = [

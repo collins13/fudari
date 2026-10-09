@@ -53,7 +53,7 @@ public class TaxonomyService {
     }
 
     public Optional<TaxonomyDTO.SkillResponse> getSkillBySlug(String slug) {
-        return skillMetadataRepository.findBySlug(slug.toLowerCase(Locale.ROOT))
+        return skillMetadataRepository.findBySlugAndIsActiveTrue(slug.toLowerCase(Locale.ROOT))
                 .map(skill -> mapSkill(skill, providerCountsBySkill().getOrDefault(skill.getSkillType(), 0)));
     }
 
@@ -99,8 +99,8 @@ public class TaxonomyService {
     }
 
     public Optional<Location> findLocation(String slug) {
-        return locationRepository.findBySlugAndType(slug, LocationType.COUNTY)
-                .or(() -> locationRepository.findBySlugAndType(slug, LocationType.TOWN));
+        return locationRepository.findBySlugAndTypeAndIsActiveTrue(slug, LocationType.COUNTY)
+            .or(() -> locationRepository.findBySlugAndTypeAndIsActiveTrue(slug, LocationType.TOWN));
     }
 
     /** Single-query slug resolve for the landing pages. */
@@ -112,7 +112,7 @@ public class TaxonomyService {
     public Optional<TaxonomyDTO.LocationResponse> getAreaBySlug(String parentSlug, String areaSlug) {
         Map<String, Integer> counts = providerCountsByLocationName();
         return findLocation(parentSlug)
-                .flatMap(parent -> locationRepository.findBySlugAndParentId(areaSlug, parent.getId()))
+            .flatMap(parent -> locationRepository.findBySlugAndParentIdAndIsActiveTrue(areaSlug, parent.getId()))
                 .map(area -> mapLocation(area, counts));
     }
 
@@ -126,10 +126,10 @@ public class TaxonomyService {
      */
     @Transactional(readOnly = true)
     public List<TaxonomyDTO.SkillLocationCount> skillLocationCounts() {
-        Map<WorkerSkill.SkillType, String> slugBySkill =
+        Map<WorkerSkill.SkillType, SkillMetadata> metadataBySkill =
                 skillMetadataRepository.findByIsActiveTrueOrderBySortOrderAscPluralNameAsc().stream()
                         .filter(SkillMetadata::getIsActive)
-                        .collect(Collectors.toMap(SkillMetadata::getSkillType, SkillMetadata::getSlug));
+                .collect(Collectors.toMap(SkillMetadata::getSkillType, skill -> skill));
 
         List<Location> locations = locationRepository.findByIsActiveTrueOrderByNameAsc();
 
@@ -138,9 +138,11 @@ public class TaxonomyService {
 
         Map<String, Set<Long>> providerIdsBySkillAndLocation = new HashMap<>();
         Map<String, Location> locationByTallyKey = new HashMap<>();
+        Map<String, SkillMetadata> skillByTallyKey = new HashMap<>();
         for (WorkerSkill skill : workerSkillRepository.findAll()) {
-            String skillSlug = slugBySkill.get(skill.getSkillType());
-            if (skillSlug == null) continue;
+            SkillMetadata skillMetadata = metadataBySkill.get(skill.getSkillType());
+            if (skillMetadata == null) continue;
+            String skillSlug = skillMetadata.getSlug();
 
             User worker = workers.get(skill.getWorker().getId());
             if (worker == null) continue;
@@ -159,6 +161,7 @@ public class TaxonomyService {
                     .computeIfAbsent(key, ignored -> new HashSet<>())
                     .add(worker.getId());
                 locationByTallyKey.put(key, location);
+                skillByTallyKey.put(key, skillMetadata);
             }
         }
 
@@ -166,6 +169,7 @@ public class TaxonomyService {
                 .map(entry -> mapSkillLocationCount(
                     entry.getKey().substring(0, entry.getKey().indexOf('|')),
                     locationByTallyKey.get(entry.getKey()),
+                    skillByTallyKey.get(entry.getKey()),
                     entry.getValue().size()))
                 .sorted(Comparator.comparing(TaxonomyDTO.SkillLocationCount::getSkillSlug)
                     .thenComparing(count -> count.getLocationType().ordinal())
@@ -232,6 +236,7 @@ public class TaxonomyService {
 
         private static TaxonomyDTO.SkillLocationCount mapSkillLocationCount(String skillSlug,
                                          Location location,
+                                         SkillMetadata skill,
                                          int providerCount) {
         Location parent = location.getParent();
         Location county = location.getType() == LocationType.COUNTY ? location : location.getCounty();
@@ -252,6 +257,7 @@ public class TaxonomyService {
             .areaSlug(location.getType() == LocationType.AREA ? location.getSlug() : null)
                 .uniqueProviderCount(providerCount)
             .providerCount(providerCount)
+            .indexable(Boolean.TRUE.equals(skill.getIndexable()) && Boolean.TRUE.equals(location.getIndexable()))
             .build();
         }
 

@@ -68,5 +68,6 @@ public class TaxonomyDTO {
         private String areaSlug;
         private Integer uniqueProviderCount;
         private Integer providerCount;
+        private Boolean indexable;
     }
 }

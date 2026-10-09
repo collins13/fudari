@@ -13,6 +13,8 @@ public interface SkillMetadataRepository extends JpaRepository<SkillMetadata, Lo
 
     Optional<SkillMetadata> findBySlug(String slug);
 
+    Optional<SkillMetadata> findBySlugAndIsActiveTrue(String slug);
+
     Optional<SkillMetadata> findBySkillType(WorkerSkill.SkillType skillType);
 
     boolean existsBySkillType(WorkerSkill.SkillType skillType);

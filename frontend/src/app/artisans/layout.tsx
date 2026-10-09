@@ -1,18 +1,9 @@
 import type { Metadata } from "next";
 
-const SKILL_LABELS = [
-  "electricians", "plumbers", "mechanics", "painters", "carpenters",
-  "welders", "HVAC technicians", "solar technicians", "tilers", "roofers",
-  "masons", "gardeners", "cleaners", "mama fua", "CCTV installers", "locksmiths",
-  "movers", "transport providers", "boda boda riders", "tuk tuk operators", "couriers",
-  "barbers", "hair salons", "makeup artists", "car wash services", "tyre services",
-  "photographers", "graphic designers", "IT technicians", "event lighting providers",
-];
-
 export const metadata: Metadata = {
   title: "Artisans, Cleaners, Riders, Barbers & More Near You",
   description:
-    "Browse Kenya's directory of verified service pros — plumbers, electricians, cleaners, mama fua, movers, barbers and more. Compare reviews and book directly.",
+    "Browse service professionals across Kenya. Compare available profiles, verification status and customer reviews, then contact providers directly.",
   // "fundi" carries real search volume for the trade categories, so it stays a
   // keyword target even though it is not the umbrella label for every provider.
   keywords: [
@@ -33,7 +24,7 @@ export const metadata: Metadata = {
     type: "website",
     title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya | FUDARI",
     description:
-      "Kenya's largest directory of verified service pros. Compare trust scores, read reviews and book directly.",
+      "Browse available service professionals across Kenya. Compare profiles, trust scores and customer reviews, then contact providers directly.",
     url: "https://fudari.co/artisans",
     images: [
       {
@@ -47,7 +38,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Artisans, Cleaners, Riders, Barbers & More Near You in Kenya | FUDARI",
-    description: "Kenya's largest directory of verified service pros. Book directly.",
+    description: "Browse available service professionals across Kenya and contact providers directly.",
     images: ["/liston/images/header/lg-01.jpg"],
   },
   alternates: {
@@ -62,7 +53,7 @@ const artisansJsonLd = JSON.stringify({
   "@id": "https://fudari.co/artisans#page",
   name: "Find Verified Service Providers Near You in Kenya",
   description:
-    "Browse Kenya's largest directory of verified service providers across every category.",
+    "Browse available service professionals across Kenya and compare their public profile information.",
   url: "https://fudari.co/artisans",
   breadcrumb: {
     "@type": "BreadcrumbList",

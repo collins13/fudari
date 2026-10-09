@@ -48,7 +48,7 @@ public class ServiceOfferingService {
     }
 
     public ServiceOfferingDTO.ServiceOfferingResponse getBySlug(String slug) {
-        ServiceOffering offering = serviceOfferingRepository.findBySlug(slug)
+        ServiceOffering offering = serviceOfferingRepository.findBySlugAndIsActiveTrue(slug)
                 // "not found" in the message maps to 404 in GlobalExceptionHandler.
                 .orElseThrow(() -> new IllegalArgumentException("Service not found: " + slug));
         return mapToResponse(offering, artisanCounts());

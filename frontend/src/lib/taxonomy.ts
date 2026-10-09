@@ -49,6 +49,7 @@ export type SkillLocationCount = {
   areaSlug?: string;
   uniqueProviderCount?: number;
   providerCount: number;
+  indexable?: boolean;
 };
 
 /**

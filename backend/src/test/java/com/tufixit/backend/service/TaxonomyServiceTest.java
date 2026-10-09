@@ -12,6 +12,7 @@ import com.tufixit.backend.repository.WorkerSkillRepository;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,6 +20,26 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class TaxonomyServiceTest {
+
+    @Test
+    void publicLocationResolutionExcludesInactiveRecords() {
+        LocationRepository locationRepository = mock(LocationRepository.class);
+        SkillMetadataRepository skillMetadataRepository = mock(SkillMetadataRepository.class);
+        WorkerSkillRepository workerSkillRepository = mock(WorkerSkillRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        TaxonomyService service = new TaxonomyService(
+                locationRepository,
+                skillMetadataRepository,
+                workerSkillRepository,
+                userRepository);
+
+        when(locationRepository.findBySlugAndTypeAndIsActiveTrue("nairobi", Location.LocationType.COUNTY))
+                .thenReturn(Optional.empty());
+        when(locationRepository.findBySlugAndTypeAndIsActiveTrue("nairobi", Location.LocationType.TOWN))
+                .thenReturn(Optional.empty());
+
+        assertEquals(Optional.empty(), service.getLocationBySlug("nairobi"));
+    }
 
     @Test
     void activeLocationsDoNotDoubleCountSameNameCountyAndTown() {
@@ -82,6 +103,7 @@ class TaxonomyServiceTest {
                 .parent(nairobi)
                 .county(nairobi)
                 .isActive(true)
+                .indexable(false)
                 .build();
 
         User worker = User.builder()
@@ -132,6 +154,7 @@ class TaxonomyServiceTest {
         assertEquals("nairobi", area.getParentSlug());
         assertEquals("nairobi", area.getCountySlug());
         assertEquals("nairobi-cbd", area.getAreaSlug());
+        assertEquals(false, area.getIndexable());
         assertNotNull(area.getLocationSlug());
     }
 }

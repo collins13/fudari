@@ -83,6 +83,7 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
   const pairs: MetadataRoute.Sitemap = counts
     .filter((entry) =>
       entry.locationType !== 'AREA' &&
+      entry.indexable !== false &&
       slugs.has(entry.skillSlug) &&
       entry.providerCount >= MIN_PROVIDERS_FOR_INDEX,
     )
@@ -96,6 +97,7 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
     if (
       entry.locationType !== 'AREA' ||
       !entry.parentSlug ||
+      entry.indexable === false ||
       !slugs.has(entry.skillSlug) ||
       entry.providerCount < MIN_PROVIDERS_FOR_INDEX
     ) {

@@ -14,7 +14,7 @@ These are properties of the current codebase, not opinions. Plan around them.
 
 | Constraint | Impact |
 |---|---|
-| **No Flyway or Liquibase.** The `backend/src/main/resources/db/migrations/V*.sql` files are *not applied by anything* — they are historical notes. | Hibernate `ddl-auto=update` owns the schema. Never hand-edit production tables, and review entity changes carefully before deploying. |
+| **Flyway is enabled from `classpath:db/migration`.** Versioned scripts under `backend/src/main/resources/db/migration/` run at startup; production also currently defaults Hibernate to `ddl-auto=update`. | Review every migration before deployment, back up PostgreSQL first, and move production to `ddl-auto=validate` once the migration history is confirmed complete. Do not use the similarly named `db/migrations` path. |
 | **`DataSeeder` runs on any empty database** and inserts demo artisans, jobs and reviews. | You chose to keep this. On first boot production will contain demo content. See §8 to remove it later. |
 | **Booking codes use the `TUF-` prefix** and the Java package is still `com.tufixit`. | Cosmetic only. Do not rename — the prefix is persisted in existing rows. |
 | **Secrets were previously committed to git.** | The Twilio SID/token, JWT secret and DB password in git history are burned. Rotate all of them before launch (§1). |

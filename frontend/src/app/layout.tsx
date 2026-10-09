@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     siteName: "FUDARI",
     title: "FUDARI – Book Verified Local Service Providers in Kenya",
     description:
-      "Kenya's local services marketplace. Book verified artisans, cleaners, mama fua, boda boda, movers, barbers, salons, car wash, photographers, designers and IT pros in Nairobi, Mombasa & beyond.",
+      "Explore available services, compare provider profiles, and contact service professionals across Kenya.",
     images: [
       {
         url: "https://fudari.co/liston/images/header/lg-01.jpg",
@@ -103,8 +103,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@fudari_ke",
     creator: "@fudari_ke",
-    title: "FUDARI – Verified Service Providers Near You in Kenya",
-    description: "Book verified local pros in seconds. Artisans, cleaners, mama fua, boda boda, movers, barbers, salons, car wash, photographers & IT across Kenya.",
+    title: "Find Fundis & Service Professionals in Kenya | Fudari",
+    description: "Explore available services, compare provider profiles, and contact service professionals across Kenya.",
     images: ["https://fudari.co/liston/images/header/lg-01.jpg"],
   },
   robots: {
@@ -155,7 +155,7 @@ export default function RootLayout({
               name: "FUDARI",
               alternateName: "Fudari Kenya",
               url: "https://fudari.co",
-              description: "Kenya's local services marketplace connecting customers with verified service providers",
+              description: "Kenya's local services marketplace connecting customers with service professionals",
               inLanguage: "en-KE",
             }),
           }}
@@ -176,7 +176,7 @@ export default function RootLayout({
                 width: 512,
                 height: 512,
               },
-              description: "Kenya's leading digital marketplace for verified local service providers — artisans, cleaning, transport, beauty, automotive and digital services.",
+              description: "A Kenyan digital marketplace connecting customers with local service professionals.",
               foundingDate: "2024",
               foundingLocation: "Nairobi, Kenya",
               areaServed: { "@type": "Country", name: "Kenya" },

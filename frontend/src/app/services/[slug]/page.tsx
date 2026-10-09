@@ -51,13 +51,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : '';
   const description =
     offering.seoDescription ||
-    `${workers.length} verified providers offer ${offering.name.toLowerCase()} on Fudari.${price} Compare ratings and availability, then book directly.`;
+    `${workers.length} providers offer ${offering.name.toLowerCase()} on Fudari.${price} Compare profiles, ratings and availability, then contact a provider directly.`;
 
   return {
     title,
     description,
     alternates: { canonical: absolute(servicePath(offering.slug)) },
-    openGraph: { title, description, url: absolute(servicePath(offering.slug)), type: 'website' },
+    openGraph: {
+      title,
+      description,
+      url: absolute(servicePath(offering.slug)),
+      type: 'website',
+      images: ['/liston/images/header/lg-01.jpg'],
+    },
     ...(workers.length >= MIN_INDEXABLE_PROVIDERS && offering.indexable !== false
       ? {}
       : { robots: { index: false, follow: true } }),

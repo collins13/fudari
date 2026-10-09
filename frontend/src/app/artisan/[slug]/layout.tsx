@@ -22,6 +22,7 @@ type Worker = {
   totalReviews?: number;
   totalJobsCompleted?: number;
   vettingLevel?: string;
+  isVerified?: boolean;
   phoneNumber?: string;
   skills?: Skill[];
 };
@@ -86,7 +87,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? ` Rated ${(worker.averageRating ?? 0).toFixed(1)}/5 from ${worker.totalReviews} reviews.`
     : "";
   const jobsStr = worker.totalJobsCompleted ? ` ${worker.totalJobsCompleted} jobs completed.` : "";
-  const description = `Hire ${name}, a verified ${primarySkill.toLowerCase()} in ${location}.${ratingStr}${jobsStr} Book on FUDARI Kenya.`;
+  const verification = worker.isVerified ? "verified " : "";
+  const description = `View ${name}, a ${verification}${primarySkill.toLowerCase()} in ${location}.${ratingStr}${jobsStr} Contact this provider through FUDARI Kenya.`;
   const canonical = absolute(providerPath(worker));
   // Must resolve against the public API origin: serverApiUrl() is the in-cluster host.
   const photo = resolveProfileImage(worker.profileImage);
@@ -102,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${primarySkill.toLowerCase()} kenya`,
       `hire ${primarySkill.toLowerCase()} ${location.toLowerCase()}`,
       `${name.toLowerCase()} fudari`,
-      `verified ${primarySkill.toLowerCase()} kenya`,
+      ...(worker.isVerified ? [`verified ${primarySkill.toLowerCase()} kenya`] : []),
     ],
     openGraph: {
       type: "profile",
@@ -145,7 +147,7 @@ function artisanJsonLd(worker: Worker): string {
         "@type": "ProfessionalService",
         "@id": `${profileUrl}#business`,
         name,
-        description: `Verified ${primarySkill.toLowerCase()} serving ${location}, bookable on Fudari.`,
+        description: `${worker.isVerified ? "Verified " : ""}${primarySkill.toLowerCase()} serving ${location}, available through Fudari.`,
         url: profileUrl,
         image: photo || undefined,
         currenciesAccepted: "KES",

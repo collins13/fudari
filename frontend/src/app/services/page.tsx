@@ -15,9 +15,14 @@ const CANONICAL = absolute('/services');
 export const metadata: Metadata = {
   title: 'All Services in Kenya',
   description:
-    'Every service bookable on Fudari — from drain unblocking and house wiring to fridge repair, mama fua, car wash and IT support. Verified providers across Kenya.',
+    'Explore services available on Fudari, compare public provider profiles, and contact professionals across Kenya.',
   alternates: { canonical: CANONICAL },
-  openGraph: { title: 'All Services in Kenya | Fudari', url: CANONICAL, type: 'website' },
+  openGraph: {
+    title: 'All Services in Kenya | Fudari',
+    url: CANONICAL,
+    type: 'website',
+    images: ['/liston/images/header/lg-01.jpg'],
+  },
 };
 
 export default async function ServicesIndexPage() {

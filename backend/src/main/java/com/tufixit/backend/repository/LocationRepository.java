@@ -14,7 +14,11 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     Optional<Location> findBySlugAndType(String slug, Location.LocationType type);
 
+    Optional<Location> findBySlugAndTypeAndIsActiveTrue(String slug, Location.LocationType type);
+
     Optional<Location> findBySlugAndParentId(String slug, Long parentId);
+
+    Optional<Location> findBySlugAndParentIdAndIsActiveTrue(String slug, Long parentId);
 
     List<Location> findByTypeAndIsActiveTrueOrderByNameAsc(Location.LocationType type);
 

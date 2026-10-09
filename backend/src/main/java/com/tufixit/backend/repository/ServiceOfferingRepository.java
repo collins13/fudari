@@ -14,6 +14,8 @@ public interface ServiceOfferingRepository extends JpaRepository<ServiceOffering
 
     Optional<ServiceOffering> findBySlug(String slug);
 
+    Optional<ServiceOffering> findBySlugAndIsActiveTrue(String slug);
+
     boolean existsBySlug(String slug);
 
     List<ServiceOffering> findByIsActiveTrueOrderBySortOrderAscNameAsc();

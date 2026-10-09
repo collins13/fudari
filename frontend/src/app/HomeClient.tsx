@@ -131,14 +131,20 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
   }, [loadCategories]);
 
   useEffect(() => {
+    if (initial.categories.length > 0) return;
     loadCategories();
-  }, [loadCategories]);
+  }, [initial.categories.length, loadCategories]);
 
   useEffect(() => {
-    // Fetch platform stats for the stats banner
-    categoriesAPI.getPlatformStats()
-      .then((res) => setPlatformStats(res.data))
-      .catch(() => setPlatformStats(null));
+    if (!initial.stats) {
+      categoriesAPI.getPlatformStats()
+        .then((res) => setPlatformStats(res.data))
+        .catch(() => setPlatformStats(null));
+    }
+
+    if (initial.artisans.length > 0) {
+      return;
+    }
 
     // Fetch featured artisans — with geolocation if available
     const fetchArtisans = (params: { latitude?: number; longitude?: number }) => {
@@ -170,7 +176,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
     } else {
       fetchArtisans({});
     }
-  }, []);
+  }, [initial.artisans.length, initial.stats]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -237,7 +243,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <Image
           className="bg-image"
           src="/liston/images/header/lg-01.jpg"
-          alt="Verified artisans, cleaners, riders, barbers and other service pros in Nairobi and Kenya"
+          alt="Service professionals available through Fudari in Kenya"
           fill
           priority
           quality={60}
@@ -245,20 +251,19 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         />
         <div className="container overlay-content py-5">
           <div className="hero-header-subtitle text-center text-white text-uppercase mb-3">
-            Verified Service Providers Across Kenya
+            Local Service Marketplace Across Kenya
           </div>
           <h1 className="display-1 fw-bold hero-header_title text-white text-center mb-4">
-            Find trusted local service professionals kenya
+            Find Fundis &amp; Service Professionals Across Kenya
           </h1>
           <p className="lead mb-2 mb-md-3 text-center text-white col-lg-10 mx-auto">
-            Fudari helps you connect with ID-verified service professionals for home repairs and more. Search by
-            skill and location, review ratings and starting prices, then contact a professional by phone or
-            WhatsApp. No account is required.
+            Explore available services, compare provider profiles, ratings and starting prices, then contact a
+            professional by phone or WhatsApp. No account is required.
           </p>
           {/* Trust indicators — only factual platform guarantees, plus live rating when we have one */}
           <div className="tx-hero-trust d-flex justify-content-center gap-3 gap-md-4 flex-wrap mb-3 mb-md-5">
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
-              <i className="fa-solid fa-shield-halved text-success"></i>ID-Verified Pros
+              <i className="fa-solid fa-shield-halved text-success"></i>Verification Status Shown
             </span>
             <span className="d-flex align-items-center gap-2 text-white opacity-90 small">
               <i className="fa-solid fa-wallet text-warning"></i>No booking fee
@@ -772,7 +777,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             <div className="row justify-content-center text-center g-4">
               <div className="col-sm-6 col-lg-3" data-aos="fade-up">
                 <div className="display-4 fw-bold">{platformStats.totalArtisans}</div>
-                <div className="fs-5 mt-1 opacity-75">ID-Verified Pros</div>
+                <div className="fs-5 mt-1 opacity-75">Active Pros</div>
               </div>
               <div className="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
                 <div className="display-4 fw-bold">{platformStats.totalCompletedJobs}</div>
@@ -846,10 +851,9 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                 guess whether you need a plumber, an electrician or an appliance technician.
               </p>
               <p className="text-muted">
-                Every provider is ID-verified before their profile goes live. Before you contact
-                anyone you can see their verification tier, how many jobs they have completed, their
-                rating from real customers and their starting rate, so you are comparing people on
-                evidence rather than on who paid the most to appear first.
+                Provider profiles show their verification tier, completed jobs, customer ratings and
+                starting rate where that information is available. Verified badges appear only on
+                profiles that have completed FUDARI&apos;s verification process.
               </p>
               <p className="text-muted">
                 Nothing about the process assumes a smartphone or a bank account. You do not need an
