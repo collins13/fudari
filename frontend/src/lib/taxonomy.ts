@@ -82,6 +82,10 @@ export async function getCounties(): Promise<LocationTaxonomy[]> {
   return (await serverGet<LocationTaxonomy[]>('/taxonomy/counties', { revalidate: TAXONOMY_REVALIDATE })) || [];
 }
 
+export async function getLocations(): Promise<LocationTaxonomy[]> {
+  return (await serverGet<LocationTaxonomy[]>('/taxonomy/locations', { revalidate: TAXONOMY_REVALIDATE })) || [];
+}
+
 /** Single request; resolves a county or town slug. */
 export async function getLocation(slug: string): Promise<LocationTaxonomy | null> {
   return serverGet<LocationTaxonomy>(`/taxonomy/locations/${encodeURIComponent(slug)}`, {

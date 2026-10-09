@@ -117,7 +117,9 @@ export default async function SkillLocationPage({ params }: PageProps) {
     .slice(0, 12)
     .map((child) => ({
       label: `${skill.pluralName} in ${child.name}`,
-      href: skillLocationPath(skill.slug, location.slug, child.slug),
+      href: child.type === 'TOWN'
+        ? skillLocationPath(skill.slug, child.slug)
+        : skillLocationPath(skill.slug, location.slug, child.slug),
     }));
 
   const rates = workers

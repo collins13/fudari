@@ -21,6 +21,40 @@ import static org.mockito.Mockito.when;
 class TaxonomyServiceTest {
 
     @Test
+    void activeLocationsDoNotDoubleCountSameNameCountyAndTown() {
+        LocationRepository locationRepository = mock(LocationRepository.class);
+        SkillMetadataRepository skillMetadataRepository = mock(SkillMetadataRepository.class);
+        WorkerSkillRepository workerSkillRepository = mock(WorkerSkillRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        TaxonomyService service = new TaxonomyService(
+                locationRepository,
+                skillMetadataRepository,
+                workerSkillRepository,
+                userRepository);
+
+        Location nairobi = Location.builder()
+                .id(1L)
+                .name("Nairobi")
+                .slug("nairobi")
+                .type(Location.LocationType.COUNTY)
+                .isActive(true)
+                .build();
+        User worker = User.builder()
+                .id(10L)
+                .county("Nairobi")
+                .town("Nairobi")
+                .build();
+
+        when(locationRepository.findActiveCountiesAndTowns()).thenReturn(List.of(nairobi));
+        when(userRepository.findApprovedActiveWorkers()).thenReturn(List.of(worker));
+
+        List<TaxonomyDTO.LocationResponse> locations = service.getActiveCountiesAndTowns();
+
+        assertEquals(1, locations.size());
+        assertEquals(1, locations.getFirst().getProviderCount());
+    }
+
+    @Test
     void skillLocationCountsIncludeAreaHierarchyAndUniqueProviders() {
         LocationRepository locationRepository = mock(LocationRepository.class);
         SkillMetadataRepository skillMetadataRepository = mock(SkillMetadataRepository.class);

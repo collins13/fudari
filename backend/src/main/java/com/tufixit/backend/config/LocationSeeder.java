@@ -150,7 +150,19 @@ public class LocationSeeder implements CommandLineRunner {
                     "Kawangware", "Upper Hill"),
             "Mombasa", List.of(
                     "Mvita", "Nyali", "Bamburi", "Shanzu", "Kisauni", "Bombolulu",
-                    "Tudor", "Likoni", "Mtongwe", "Changamwe", "Port Reitz"));
+                    "Tudor", "Likoni", "Mtongwe", "Changamwe", "Port Reitz"),
+                "Kisumu", List.of("Milimani", "Mamboleo", "Nyalenda", "Manyatta", "Kondele"),
+                "Nakuru", List.of("Milimani", "Lanet", "Section 58", "Shabab", "London"),
+                "Eldoret", List.of("Elgon View", "Kapsoya", "Langas", "Pioneer", "Annex"),
+                "Thika", List.of("Section 9", "Makongeni", "Landless", "Ngoigwa"),
+                "Ruiru", List.of("Membley", "Kamakis", "Gwa Kairu", "Murera"),
+                "Kitengela", List.of("Acacia", "Milimani", "New Valley", "Noonkopir"));
+
+            private static final Map<String, double[]> TOWN_COORDINATES = Map.of(
+                "Eldoret", new double[]{0.5143, 35.2698},
+                "Thika", new double[]{-1.0332, 37.0693},
+                "Ruiru", new double[]{-1.1466, 36.9607},
+                "Kitengela", new double[]{-1.4694, 36.9614});
 
     @Override
     @Transactional
@@ -204,8 +216,10 @@ public class LocationSeeder implements CommandLineRunner {
                             .type(LocationType.TOWN)
                             .parent(county)
                             .county(county)
-                            .latitude(county.getLatitude())
-                            .longitude(county.getLongitude())
+                            .latitude(TOWN_COORDINATES.containsKey(townName)
+                                ? TOWN_COORDINATES.get(townName)[0] : null)
+                            .longitude(TOWN_COORDINATES.containsKey(townName)
+                                ? TOWN_COORDINATES.get(townName)[1] : null)
                             .isActive(true)
                             .indexable(true)
                             .build();

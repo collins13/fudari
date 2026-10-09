@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { absolute, locationPath } from '@/lib/seoUrls';
-import { getCounties, MIN_PROVIDERS_FOR_INDEX } from '@/lib/taxonomy';
+import { getLocations, MIN_PROVIDERS_FOR_INDEX } from '@/lib/taxonomy';
 
 // Must be a literal: Next rejects imported constants in segment config.
 export const revalidate = 600;
@@ -19,7 +19,11 @@ export const metadata: Metadata = {
 };
 
 export default async function LocationsIndexPage() {
-  const counties = await getCounties();
+  const locations = await getLocations();
+  const counties = locations.filter((location) => location.type === 'COUNTY');
+  const towns = locations.filter(
+    (location) => location.type === 'TOWN' && (location.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX,
+  );
   const withSupply = counties.filter((county) => (county.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX);
   const rest = counties.filter((county) => (county.providerCount || 0) < MIN_PROVIDERS_FOR_INDEX);
 
@@ -92,6 +96,19 @@ export default async function LocationsIndexPage() {
                 </li>
               ))}
             </ul>
+
+            {towns.length > 0 && (
+              <>
+                <h2 className="h4 fw-bold mt-5 mb-3">Cities and towns with active providers</h2>
+                <ul className="list-inline mb-0">
+                  {towns.map((town) => (
+                    <li className="list-inline-item me-3 mb-2" key={town.slug}>
+                      <Link href={locationPath(town.slug)}>{town.name}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         </section>
       </main>

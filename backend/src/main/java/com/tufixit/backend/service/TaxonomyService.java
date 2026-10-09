@@ -81,6 +81,13 @@ public class TaxonomyService {
                 .collect(Collectors.toList());
     }
 
+    public List<TaxonomyDTO.LocationResponse> getActiveCountiesAndTowns() {
+        Map<String, Integer> counts = providerCountsByLocationName();
+        return locationRepository.findActiveCountiesAndTowns().stream()
+                .map(location -> mapLocation(location, counts))
+                .collect(Collectors.toList());
+    }
+
     public List<TaxonomyDTO.LocationResponse> getChildren(String parentSlug) {
         Map<String, Integer> counts = providerCountsByLocationName();
         return locationRepository.findBySlugAndType(parentSlug, LocationType.COUNTY)
@@ -184,16 +191,18 @@ public class TaxonomyService {
     private Map<String, Integer> providerCountsByLocationName() {
         Map<String, Integer> counts = new HashMap<>();
         for (User worker : userRepository.findApprovedActiveWorkers()) {
-            bump(counts, worker.getCounty());
-            bump(counts, worker.getTown());
-            bump(counts, worker.getArea());
+            Set<String> workerLocations = new HashSet<>();
+            addLocationName(workerLocations, worker.getCounty());
+            addLocationName(workerLocations, worker.getTown());
+            addLocationName(workerLocations, worker.getArea());
+            workerLocations.forEach(location -> counts.put(location, counts.getOrDefault(location, 0) + 1));
         }
         return counts;
     }
 
-    private static void bump(Map<String, Integer> counts, String value) {
+    private static void addLocationName(Set<String> locations, String value) {
         if (value == null || value.isBlank()) return;
-        counts.merge(value.trim().toLowerCase(Locale.ROOT), 1, Integer::sum);
+        locations.add(value.trim().toLowerCase(Locale.ROOT));
     }
 
     private static boolean matches(Set<String> values, String needle) {

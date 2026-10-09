@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getSkillLocationCounts, getSkills, getCounties, MIN_PROVIDERS_FOR_INDEX } from '@/lib/taxonomy';
+import { getSkillLocationCounts, getSkills, getLocations, MIN_PROVIDERS_FOR_INDEX } from '@/lib/taxonomy';
 import { getServiceOfferings } from '@/lib/services';
 import { groupByLocation, MIN_INDEXABLE_PROVIDERS } from '@/lib/locations';
 import { serverApiUrl } from '@/lib/serverApi';
@@ -113,13 +113,13 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export async function locationEntries(): Promise<MetadataRoute.Sitemap> {
-  const counties = await getCounties();
-  return counties
-    .filter((county) => county.indexable !== false && (county.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX)
-    .map((county) => ({
-      url: `${SITE_URL}/locations/${county.slug}`,
+  const locations = await getLocations();
+  return locations
+    .filter((location) => location.indexable !== false && (location.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX)
+    .map((location) => ({
+      url: `${SITE_URL}/locations/${location.slug}`,
       changeFrequency: 'weekly' as const,
-      priority: 0.8,
+      priority: location.type === 'COUNTY' ? 0.8 : 0.75,
     }));
 }
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import ProviderLandingPage, { buildIntro, type Faq, type LinkRef } from '@/components/seo/ProviderLandingPage';
 import { absolute, locationPath, skillLocationPath, skillPath } from '@/lib/seoUrls';
 import {
@@ -66,7 +66,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SkillAreaPage({ params }: PageProps) {
   const { skillSlug, locationSlug, areaSlug } = await params;
   const data = await load(skillSlug, locationSlug, areaSlug);
-  if (!data) notFound();
+  if (!data) {
+    const [parent, possibleTown] = await Promise.all([getLocation(locationSlug), getLocation(areaSlug)]);
+    if (parent?.type === 'COUNTY' && possibleTown?.type === 'TOWN' && possibleTown.countySlug === parent.slug) {
+      permanentRedirect(skillLocationPath(skillSlug, possibleTown.slug));
+    }
+    notFound();
+  }
 
   const { skill, location, area, workers } = data;
   const [siblings, allSkills] = await Promise.all([getLocationChildren(location.slug), getSkills()]);

@@ -20,6 +20,9 @@ export type LocationBucket = {
 
 type LocatableWorker = {
   locationName?: string;
+  county?: string;
+  town?: string;
+  area?: string;
   latitude?: number | null;
   longitude?: number | null;
 };
@@ -80,12 +83,22 @@ export function canonicalLocation(locationName?: string | null): { slug: string;
   return { slug, name: titleCase(cleaned.toLowerCase()) };
 }
 
+/** Use normalized taxonomy fields before falling back to a legacy free-text address. */
+export function canonicalWorkerLocation(worker: LocatableWorker): { slug: string; name: string } | null {
+  const structured = worker.town?.trim() || worker.county?.trim();
+  if (structured) {
+    const slug = locationSlug(structured);
+    return slug ? { slug, name: structured } : null;
+  }
+  return canonicalLocation(worker.locationName);
+}
+
 /** Bucket providers by canonical location, most supply first. */
 export function groupByLocation(workers: LocatableWorker[]): LocationBucket[] {
   const buckets = new Map<string, { name: string; areas: Map<string, number>; lat: number[]; lng: number[] }>();
 
   for (const worker of workers) {
-    const place = canonicalLocation(worker.locationName);
+    const place = canonicalWorkerLocation(worker);
     if (!place) continue;
 
     let bucket = buckets.get(place.slug);
@@ -94,7 +107,7 @@ export function groupByLocation(workers: LocatableWorker[]): LocationBucket[] {
       buckets.set(place.slug, bucket);
     }
 
-    const rawArea = worker.locationName?.trim();
+    const rawArea = worker.area?.trim() || worker.locationName?.trim();
     if (rawArea) bucket.areas.set(rawArea, (bucket.areas.get(rawArea) || 0) + 1);
     if (typeof worker.latitude === 'number' && typeof worker.longitude === 'number') {
       bucket.lat.push(worker.latitude);

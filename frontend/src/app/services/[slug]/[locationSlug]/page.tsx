@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { absolute, providerPath, servicePath, skillLocationPath } from '@/lib/seoUrls';
-import { canonicalLocation, groupByLocation, MIN_INDEXABLE_PROVIDERS } from '@/lib/locations';
+import { canonicalWorkerLocation, groupByLocation, MIN_INDEXABLE_PROVIDERS } from '@/lib/locations';
 import { getOfferingWorkers, getServiceOfferings } from '@/lib/services';
 import { getSkills } from '@/lib/taxonomy';
 
@@ -25,7 +25,7 @@ async function load(slug: string, locationSlug: string) {
   return {
     offering,
     bucket,
-    workers: all.filter((worker) => canonicalLocation(worker.locationName)?.slug === locationSlug),
+    workers: all.filter((worker) => canonicalWorkerLocation(worker)?.slug === locationSlug),
     otherAreas: buckets
       .filter((b) => b.slug !== locationSlug && b.providerCount >= MIN_INDEXABLE_PROVIDERS)
       .slice(0, 10),

@@ -42,6 +42,11 @@ public class TaxonomyController {
         return ResponseEntity.ok(taxonomyService.getCounties());
     }
 
+    @GetMapping("/locations")
+    public ResponseEntity<List<TaxonomyDTO.LocationResponse>> locations() {
+        return ResponseEntity.ok(taxonomyService.getActiveCountiesAndTowns());
+    }
+
     @GetMapping("/locations/{slug}")
     public ResponseEntity<TaxonomyDTO.LocationResponse> location(@PathVariable String slug) {
         return taxonomyService.getLocationBySlug(slug)

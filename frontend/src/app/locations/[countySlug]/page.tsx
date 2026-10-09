@@ -116,9 +116,15 @@ export default async function LocationHubPage({ params }: PageProps) {
         url: canonical,
         isPartOf: { '@id': absolute('/#website') },
         about: {
-          '@type': 'Place',
+          '@type': location.type === 'COUNTY' ? 'AdministrativeArea' : 'City',
           name: location.name,
-          address: { '@type': 'PostalAddress', addressLocality: location.name, addressCountry: 'KE' },
+          address: {
+            '@type': 'PostalAddress',
+            ...(location.type === 'COUNTY'
+              ? { addressRegion: location.name }
+              : { addressLocality: location.name, addressRegion: location.countyName }),
+            addressCountry: 'KE',
+          },
           ...(location.latitude && location.longitude
             ? { geo: { '@type': 'GeoCoordinates', latitude: location.latitude, longitude: location.longitude } }
             : {}),
