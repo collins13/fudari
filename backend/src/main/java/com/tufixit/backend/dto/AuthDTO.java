@@ -118,6 +118,10 @@ public class AuthDTO {
         private Double rankingScore;
         private Boolean isFeatured;
         private String referralCode;
+        /** Most recent review with a comment, for social proof in listings. */
+        private ReviewSnippet topReview;
+        /** Median minutes from request to acceptance; null until enough jobs exist. */
+        private Integer responseMinutes;
     }
 
     @Data
@@ -143,6 +147,17 @@ public class AuthDTO {
         private Long id;
         private String name;
         private String slug;
+    }
+
+    /** One short customer quote, trimmed for listing cards. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ReviewSnippet {
+        private String comment;
+        private Integer rating;
+        private String authorName;
     }
 
     /** Admin: create a user with pre-assigned role */

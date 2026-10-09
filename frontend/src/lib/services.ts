@@ -32,7 +32,7 @@ export type ServiceWorker = {
   isVerified?: boolean;
   profileImage?: string;
   availableNow?: boolean;
-  skills?: Array<{ skillType: string; description?: string; hourlyRate?: string; services?: Array<{ name: string; slug: string }> }>;
+  skills?: Array<{ skillType: string; description?: string; hourlyRate?: string; experienceYears?: number; services?: Array<{ name: string; slug: string }> }>;
 };
 
 export type ServiceOffering = {

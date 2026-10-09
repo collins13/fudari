@@ -218,6 +218,7 @@ export default function ProviderLandingPage({
                           rating: worker.trustScore,
                           reviews: worker.totalReviews,
                           jobs: worker.totalJobsCompleted,
+                          experienceYears: worker.skills?.[0]?.experienceYears,
                           availableNow: worker.availableNow,
                           verified: worker.isVerified === true,
                           services: worker.skills?.[0]?.services?.map((service) => service.name),

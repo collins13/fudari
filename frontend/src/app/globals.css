@@ -245,12 +245,75 @@ html .text-span {
 }
 
 .tx-provider-card {
+  position: relative;
   overflow: hidden;
   border: 1px solid #e1e5e7;
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 4px 18px rgba(20, 47, 51, 0.07);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.tx-skeleton,
+.tx-skeleton:hover {
+  box-shadow: 0 4px 18px rgba(20, 47, 51, 0.07);
+  transform: none;
+}
+
+.tx-skeleton__block,
+.tx-skeleton__line,
+.tx-skeleton__pill,
+.tx-skeleton__button {
+  display: block;
+  background: linear-gradient(90deg, #eef2f3 25%, #e2e9ea 37%, #eef2f3 63%);
+  background-size: 400% 100%;
+  animation: tx-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.tx-skeleton__line {
+  height: 11px;
+  margin-top: 0.45rem;
+  border-radius: 4px;
+}
+
+.tx-skeleton__pill {
+  height: 18px;
+  border-radius: 999px;
+}
+
+.tx-skeleton__button {
+  flex: 1 1 112px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+@keyframes tx-skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-skeleton__block,
+  .tx-skeleton__line,
+  .tx-skeleton__pill,
+  .tx-skeleton__button {
+    animation: none;
+  }
+}
+
+/* The name link covers the whole card so the photo and body are tappable,
+   while the card still exposes a single named link. */
+.tx-provider-card__name a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.tx-provider-card__name a:focus-visible::after {
+  outline: 2px solid #0d5c63;
+  outline-offset: -3px;
+  border-radius: 10px;
 }
 
 .tx-provider-card:focus-within,
@@ -316,6 +379,10 @@ html .text-span {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.tx-provider-card--photo .tx-provider-card__avatar {
+  display: none;
+}
+
 /* Most providers have no photo yet, so the avatar stays small and the card
    stays information-first instead of reserving a large empty image block. */
 .tx-provider-card__avatar {
@@ -363,6 +430,24 @@ html .text-span {
 
 .tx-provider-card__location {
   color: #687579;
+}
+
+.tx-provider-card__distance {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: #eef4f5;
+  color: #0d5c63;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tx-provider-card__price-unit {
+  margin-left: 0.1rem;
+  color: #687579;
+  font-size: 0.74rem;
+  font-weight: 600;
 }
 
 .tx-provider-card__badges {
@@ -432,6 +517,41 @@ html .text-span {
   font-weight: 500;
 }
 
+.tx-provider-card__response {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #16734a;
+  font-weight: 600;
+}
+
+.tx-provider-card__quote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #d9e6e8;
+  border-radius: 0 6px 6px 0;
+  background: #f6f9fa;
+  color: #46545a;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.tx-provider-card__quote span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tx-provider-card__quote cite {
+  color: #78868b;
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
 .tx-provider-card__footer {
   display: flex;
   flex-wrap: wrap;
@@ -481,6 +601,8 @@ html .text-span {
 }
 
 .tx-provider-card__actions {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex: 1 1 230px;
   flex-wrap: wrap;
@@ -529,6 +651,65 @@ html .text-span {
     left: 8px;
     padding: 0.22rem 0.45rem;
     font-size: 0.66rem;
+  }
+}
+
+/* List view exists for comparing providers, so on phones it collapses to a
+   dense row instead of repeating the stacked banner. */
+@media (max-width: 767.98px) {
+  .card.tx-provider-card--list.tx-provider-card--photo {
+    display: flex;
+  }
+
+  /* A full-height photo column crops to a vertical sliver in a short row, so the
+     dense list uses the avatar instead. */
+  .tx-provider-card--list .tx-provider-card__media {
+    display: none;
+  }
+
+  .tx-provider-card--list.tx-provider-card--photo .tx-provider-card__avatar {
+    display: flex;
+  }
+
+  .tx-provider-card--list.tx-provider-card--photo .tx-provider-card__header {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .tx-provider-card--list .tx-provider-card__body {
+    gap: 0.35rem;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .tx-provider-card--list .tx-provider-card__services,
+  .tx-provider-card--list .tx-provider-card__availability,
+  .tx-provider-card--list .tx-provider-card__quote {
+    display: none;
+  }
+
+  .tx-provider-card--list .tx-provider-card__name {
+    font-size: 0.95rem;
+  }
+
+  .tx-provider-card--list .tx-provider-card__skill,
+  .tx-provider-card--list .tx-provider-card__location,
+  .tx-provider-card--list .tx-provider-card__facts {
+    font-size: 0.74rem;
+  }
+
+  .tx-provider-card--list .tx-provider-card__footer {
+    gap: 0.4rem;
+    padding-top: 0.5rem;
+  }
+
+  .tx-provider-card--list .tx-provider-card__badge {
+    font-size: 0.64rem;
+  }
+
+  .tx-provider-card--list .tx-provider-card__profile-action,
+  .tx-provider-card--list .tx-provider-card__whatsapp-action {
+    flex: 1 1 86px;
+    min-height: 38px;
+    font-size: 0.75rem;
   }
 }
 

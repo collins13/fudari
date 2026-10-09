@@ -501,6 +501,16 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("  → {} jobs seeded (12 completed, 3 in-progress, 6 pending/bidding, 2 cancelled/disputed)", jobs.size());
 
+        int backdated = 0;
+        for (Job job : jobs) {
+            if (job.getAcceptedAt() == null) continue;
+            // Vary the gap so the derived median is not a single repeated value.
+            long gapMinutes = 12L + (job.getId() % 7) * 18L;
+            jobRepository.backdateCreatedAt(job.getId(), job.getAcceptedAt().minusMinutes(gapMinutes));
+            backdated++;
+        }
+        log.info("  → {} job creation times backdated to precede acceptance", backdated);
+
         // ═══════════════════════════════════════════════════════════════════
         //  9. REVIEWS — for completed jobs (client → worker)
         // ═══════════════════════════════════════════════════════════════════

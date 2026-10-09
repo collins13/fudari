@@ -10,10 +10,16 @@ export type ProviderCardData = {
   image?: string;
   skill?: string;
   location?: string;
+  distanceKm?: number | null;
   price?: number;
+  /** Rates are quoted per hour unless a caller says otherwise. */
+  priceUnit?: string;
   rating?: number;
   reviews?: number;
   jobs?: number;
+  experienceYears?: number;
+  responseMinutes?: number | null;
+  review?: { comment: string; authorName?: string | null } | null;
   availableNow?: boolean;
   verified?: boolean;
   tier?: string;
@@ -24,9 +30,27 @@ type Props = {
   provider: ProviderCardData;
   variant?: 'grid' | 'list' | 'compact';
   featured?: boolean;
+  /** Set on above-the-fold cards so the photo is not lazy-loaded. */
+  priority?: boolean;
 };
 
-export default function ProviderCard({ provider, variant = 'grid', featured = false }: Props) {
+const formatDistance = (km: number) =>
+  km < 1 ? `${Math.round(km * 1000)} m away` : `${km < 10 ? km.toFixed(1) : Math.round(km)} km away`;
+
+const formatResponse = (minutes: number) => {
+  if (minutes < 60) return `Replies in ~${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `Replies in ~${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  const days = Math.round(hours / 24);
+  return `Replies in ~${days} ${days === 1 ? 'day' : 'days'}`;
+};
+
+export default function ProviderCard({
+  provider,
+  variant = 'grid',
+  featured = false,
+  priority = false,
+}: Props) {
   const initial = provider.name.trim().charAt(0).toUpperCase() || 'F';
   const hasPhoto = Boolean(provider.image) && !isGeneratedAvatar(provider.image);
   const whatsappHref = whatsappBotLink(
@@ -51,6 +75,7 @@ export default function ProviderCard({ provider, variant = 'grid', featured = fa
                 : '(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 340px'
             }
             className="tx-photo-cover"
+            priority={priority}
           />
           {featured && (
             <span className="tx-provider-card__featured">
@@ -62,15 +87,20 @@ export default function ProviderCard({ provider, variant = 'grid', featured = fa
 
       <div className="card-body tx-provider-card__body">
         <div className="tx-provider-card__header">
-          {!hasPhoto && (
-            <span className="tx-provider-card__avatar">
-              {provider.image ? (
-                <Image src={provider.image} alt="" fill sizes="64px" className="tx-photo-cover" unoptimized />
-              ) : (
-                <span aria-hidden="true">{initial}</span>
-              )}
-            </span>
-          )}
+          <span className="tx-provider-card__avatar">
+            {provider.image ? (
+              <Image
+                src={provider.image}
+                alt=""
+                fill
+                sizes="64px"
+                className="tx-photo-cover"
+                unoptimized={isGeneratedAvatar(provider.image)}
+              />
+            ) : (
+              <span aria-hidden="true">{initial}</span>
+            )}
+          </span>
 
           <div className="tx-provider-card__identity">
             <h3 className="tx-provider-card__name">
@@ -80,6 +110,9 @@ export default function ProviderCard({ provider, variant = 'grid', featured = fa
             {provider.location && (
               <p className="tx-provider-card__location">
                 <i className="fa-solid fa-location-dot" aria-hidden="true"></i> {provider.location}
+                {typeof provider.distanceKm === 'number' && (
+                  <span className="tx-provider-card__distance">{formatDistance(provider.distanceKm)}</span>
+                )}
               </p>
             )}
           </div>
@@ -117,18 +150,40 @@ export default function ProviderCard({ provider, variant = 'grid', featured = fa
                 </span>
               ) : null}
               {provider.jobs ? <span>{provider.jobs} jobs done</span> : null}
+              {provider.experienceYears ? <span>{provider.experienceYears} yrs experience</span> : null}
             </>
           ) : (
-            <span>New on Fudari</span>
+            <>
+              <span>New on Fudari</span>
+              {provider.experienceYears ? <span>{provider.experienceYears} yrs experience</span> : null}
+            </>
+          )}
+          {typeof provider.responseMinutes === 'number' && (
+            <span className="tx-provider-card__response">
+              <i className="fa-regular fa-clock" aria-hidden="true"></i>
+              {formatResponse(provider.responseMinutes)}
+            </span>
           )}
         </div>
+
+        {provider.review?.comment && (
+          <blockquote className="tx-provider-card__quote">
+            <span>&ldquo;{provider.review.comment}&rdquo;</span>
+            {provider.review.authorName && <cite>{provider.review.authorName}</cite>}
+          </blockquote>
+        )}
 
         <div className="tx-provider-card__footer">
           <div className="tx-provider-card__terms">
             <span className="tx-provider-card__price">
-              {provider.price && provider.price > 0
-                ? `From KES ${provider.price.toLocaleString()}`
-                : 'Ask for price'}
+              {provider.price && provider.price > 0 ? (
+                <>
+                  From KES {provider.price.toLocaleString()}
+                  <span className="tx-provider-card__price-unit">{provider.priceUnit ?? '/hr'}</span>
+                </>
+              ) : (
+                'Ask for price'
+              )}
             </span>
             {typeof provider.availableNow === 'boolean' && (
               <span className={`tx-provider-card__availability${provider.availableNow ? ' is-available' : ''}`}>

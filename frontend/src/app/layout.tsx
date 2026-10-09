@@ -15,12 +15,15 @@ const wixMadefor = localFont({
   display: 'swap',
 });
 
+// Decorative accent face only, and four times the size of the body font, so it
+// is kept off the critical path rather than preloaded on every route.
 const caveat = localFont({
   src: '../fonts/caveat.woff2',
   weight: '400 700',
   style: 'normal',
   variable: '--font-caveat',
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {

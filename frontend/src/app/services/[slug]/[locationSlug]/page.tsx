@@ -193,6 +193,7 @@ export default async function ServiceLocationPage({ params }: PageProps) {
                         rating: worker.trustScore,
                         reviews: worker.totalReviews,
                         jobs: worker.totalJobsCompleted,
+                        experienceYears: worker.skills?.[0]?.experienceYears,
                         availableNow: worker.availableNow,
                         verified: worker.isVerified === true,
                       }}

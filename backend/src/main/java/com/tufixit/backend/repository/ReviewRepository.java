@@ -28,4 +28,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     /** Trust Score AI: rating distribution */
     @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.reviewedUser.id = :userId GROUP BY r.rating")
     List<Object[]> getRatingDistribution(@Param("userId") Long userId);
+
+    /**
+     * Commented client reviews for several providers at once, so listing pages do
+     * not issue one query per provider.
+     */
+    @Query("SELECT r FROM Review r JOIN FETCH r.reviewer WHERE r.reviewedUser.id IN :userIds "
+            + "AND r.comment IS NOT NULL AND r.isClientReview = true ORDER BY r.createdAt DESC")
+    List<Review> findCommentedReviewsForUsers(@Param("userIds") List<Long> userIds);
 }

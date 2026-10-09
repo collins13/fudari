@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 import { workersAPI, categoriesAPI, apiErrorMessage } from '@/lib/api';
 import { KENYA_MAJOR_TOWNS, matchSymptomToSkills, skillLabelBilingual, skillLabelSwahili, SKILL_LABELS_KE } from '@/lib/kenya';
 import {
@@ -544,11 +545,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             </div>
           </div>
           {loadingArtisans ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <p className="text-muted mt-2">Finding someone near you…</p>
+            <div className="row g-4" aria-busy="true" aria-live="polite">
+              <span className="visually-hidden">Finding someone near you</span>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div className="col-md-6 col-lg-4 col-xl-3" key={`sk-${i}`}>
+                  <ProviderCardSkeleton />
+                </div>
+              ))}
             </div>
           ) : featuredArtisans.length === 0 ? (
             <div className="text-center py-5">
@@ -740,7 +743,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
       {/* ===== ABOUT / FAQ ===== */}
       <section className="bg-white border-top py-5">
         <div className="container py-4">
-          <div className="row g-5">
+          <div className="row gy-5 g-lg-5">
             <div className="col-lg-7">
               <h2 className="fw-semibold mb-3">Get Started with Fudari</h2>
               <p className="text-muted">

@@ -1,9 +1,11 @@
 package com.tufixit.backend.service;
 
 import com.tufixit.backend.dto.AuthDTO;
+import com.tufixit.backend.entity.Review;
 import com.tufixit.backend.entity.ServiceOffering;
 import com.tufixit.backend.entity.User;
 import com.tufixit.backend.entity.WorkerSkill;
+import com.tufixit.backend.repository.JobRepository;
 import com.tufixit.backend.repository.ReviewRepository;
 import com.tufixit.backend.repository.ServiceOfferingRepository;
 import com.tufixit.backend.repository.UserRepository;
@@ -15,11 +17,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +37,7 @@ public class WorkerService {
     private final WorkerSkillRepository workerSkillRepository;
     private final ServiceOfferingRepository serviceOfferingRepository;
     private final ReviewRepository reviewRepository;
+    private final JobRepository jobRepository;
     private final RankingService rankingService;
 
     /** Availability goes stale so an artisan who forgot to switch it off is not shown as free. */
@@ -197,6 +203,9 @@ public class WorkerService {
                     .collect(Collectors.toList());
         }
 
+        attachTopReviews(results);
+        attachResponseTimes(results);
+
         return results;
     }
 
@@ -357,6 +366,62 @@ public class WorkerService {
 
     private AuthDTO.UserDTO mapToUserDTO(User user) {
         return mapToUserDTOWithSkills(user);
+    }
+
+    private static final int REVIEW_SNIPPET_MAX_CHARS = 120;
+
+    /** Adds one recent customer quote per provider using a single extra query. */
+    private void attachTopReviews(List<AuthDTO.UserDTO> results) {
+        if (results.isEmpty()) return;
+
+        List<Long> ids = results.stream().map(AuthDTO.UserDTO::getId).collect(Collectors.toList());
+        Map<Long, AuthDTO.ReviewSnippet> byUser = new HashMap<>();
+
+        for (Review review : reviewRepository.findCommentedReviewsForUsers(ids)) {
+            Long userId = review.getReviewedUser().getId();
+            if (byUser.containsKey(userId)) continue;
+
+            String comment = review.getComment() == null ? "" : review.getComment().trim();
+            if (comment.isEmpty()) continue;
+            if (comment.length() > REVIEW_SNIPPET_MAX_CHARS) {
+                comment = comment.substring(0, REVIEW_SNIPPET_MAX_CHARS).trim() + "…";
+            }
+
+            byUser.put(userId, AuthDTO.ReviewSnippet.builder()
+                    .comment(comment)
+                    .rating(review.getRating())
+                    .authorName(review.getReviewer() == null ? null : review.getReviewer().getFirstName())
+                    .build());
+        }
+
+        results.forEach(dto -> dto.setTopReview(byUser.get(dto.getId())));
+    }
+
+    /** Below this a median would be noise rather than a claim we can stand behind. */
+    private static final int MIN_RESPONSE_SAMPLES = 3;
+
+    private void attachResponseTimes(List<AuthDTO.UserDTO> results) {
+        if (results.isEmpty()) return;
+
+        List<Long> ids = results.stream().map(AuthDTO.UserDTO::getId).collect(Collectors.toList());
+        Map<Long, List<Long>> minutesByUser = new HashMap<>();
+
+        for (Object[] row : jobRepository.findAcceptanceTimesForWorkers(ids)) {
+            Long userId = (Long) row[0];
+            LocalDateTime created = (LocalDateTime) row[1];
+            LocalDateTime accepted = (LocalDateTime) row[2];
+            long minutes = Duration.between(created, accepted).toMinutes();
+            if (minutes < 0) continue;
+            minutesByUser.computeIfAbsent(userId, k -> new ArrayList<>()).add(minutes);
+        }
+
+        results.forEach(dto -> {
+            List<Long> samples = minutesByUser.get(dto.getId());
+            if (samples == null || samples.size() < MIN_RESPONSE_SAMPLES) return;
+            samples.sort(Long::compareTo);
+            long median = samples.get(samples.size() / 2);
+            dto.setResponseMinutes((int) Math.max(1, median));
+        });
     }
 
     /**

@@ -5,7 +5,9 @@ import com.tufixit.backend.entity.WorkerSkill;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -157,4 +159,19 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     /** Sum of agreed prices for completed estate jobs (for commission calculation). */
     @Query("SELECT COALESCE(SUM(CAST(j.agreedPrice AS int)), 0) FROM Job j WHERE j.estateId = :estateId AND j.status = 'COMPLETED' AND j.agreedPrice IS NOT NULL")
     long sumAgreedPriceByEstateId(@Param("estateId") Long estateId);
+
+    /**
+     * Request and acceptance timestamps for several providers at once, used to
+     * derive a typical response time without a query per provider.
+     */
+    @Query("SELECT j.assignedWorker.id, j.createdAt, j.acceptedAt FROM Job j "
+            + "WHERE j.assignedWorker.id IN :workerIds AND j.acceptedAt IS NOT NULL AND j.createdAt IS NOT NULL")
+    List<Object[]> findAcceptanceTimesForWorkers(@Param("workerIds") List<Long> workerIds);
+
+    /** Seeding only: @CreatedDate stamps inserts with now, which would place seeded
+     *  acceptances before their job existed. */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Job j SET j.createdAt = :createdAt WHERE j.id = :id")
+    void backdateCreatedAt(@Param("id") Long id, @Param("createdAt") java.time.LocalDateTime createdAt);
 }

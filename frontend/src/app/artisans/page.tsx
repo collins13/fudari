@@ -13,6 +13,7 @@ import { profileImageFor } from '@/lib/avatar';
 import { providerPath } from '@/lib/seoUrls';
 import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
 import ProviderCard from '@/components/ProviderCard';
+import ProviderCardSkeleton from '@/components/ProviderCardSkeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,9 @@ interface Artisan {
   longitude: number | null;
   availableNow: boolean;
   distanceKm: number | null;
+  experienceYears: number;
+  responseMinutes: number | null;
+  review: { comment: string; authorName?: string | null } | null;
   isVerified: boolean;
 }
 
@@ -97,6 +101,11 @@ function mapWorkerToArtisan(w: any): Artisan {
     longitude: typeof w.longitude === 'number' ? w.longitude : null,
     availableNow: w.availableNow === true,
     distanceKm: null,
+    experienceYears: Number(primarySkill?.experienceYears) || 0,
+    responseMinutes: typeof w.responseMinutes === 'number' ? w.responseMinutes : null,
+    review: w.topReview?.comment
+      ? { comment: w.topReview.comment, authorName: w.topReview.authorName }
+      : null,
     isVerified: w.isVerified === true,
   };
 }
@@ -111,12 +120,6 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function formatDistance(km: number | null) {
-  if (km === null) return null;
-  if (km < 1) return `${Math.round(km * 1000)} m away`;
-  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km away`;
 }
 
 function renderStars(rating: number) {
@@ -711,9 +714,25 @@ function ArtisansContent() {
               </div>
 
               {loading && (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status"></div>
-                  <p className="text-muted mt-3">Loading {tab === 'providers' ? 'pros' : 'listings'}...</p>
+                <div aria-busy="true" aria-live="polite">
+                  <span className="visually-hidden">
+                    Loading {tab === 'providers' ? 'pros' : 'listings'}
+                  </span>
+                  {viewMode === 'list' ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div className="mb-4" key={`sk-${i}`}>
+                        <ProviderCardSkeleton variant="list" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="row g-4">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div className="col-md-6 col-lg-4" key={`sk-${i}`}>
+                          <ProviderCardSkeleton />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -750,20 +769,25 @@ function ArtisansContent() {
                     <h5 className="fw-bold mb-0">Featured Pros</h5>
                   </div>
                   <div className="row g-3">
-                    {featuredArtisans.map((artisan) => (
+                    {featuredArtisans.map((artisan, i) => (
                       <div key={`feat-${artisan.id}`} className="col-12 col-md-6 col-xl-4">
                         <ProviderCard
                           featured
+                          priority={i === 0}
                           provider={{
                             name: artisan.name,
                             href: artisan.href,
                             image: artisan.image,
                             skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
-                            location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                            location: artisan.location,
+                            distanceKm: artisan.distanceKm,
                             price: artisan.price,
                             rating: artisan.rating,
                             reviews: artisan.reviews,
                             jobs: artisan.totalJobsCompleted,
+                            experienceYears: artisan.experienceYears,
+                            responseMinutes: artisan.responseMinutes,
+                            review: artisan.review,
                             availableNow: artisan.availableNow,
                             verified: artisan.isVerified,
                           }}
@@ -803,21 +827,26 @@ function ArtisansContent() {
               {/* Providers — List view */}
               {!loading && tab === 'providers' && viewMode === 'list' && (
                 <div>
-                  {pagedArtisans.map((artisan) => (
+                  {pagedArtisans.map((artisan, i) => (
                     <div key={artisan.id} className="mb-4">
                       <ProviderCard
                         variant="list"
                         featured={artisan.isFeatured}
+                        priority={i === 0}
                         provider={{
                           name: artisan.name,
                           href: artisan.href,
                           image: artisan.image,
                           skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
-                          location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                          location: artisan.location,
+                          distanceKm: artisan.distanceKm,
                           price: artisan.price,
                           rating: artisan.rating,
                           reviews: artisan.reviews,
                           jobs: artisan.totalJobsCompleted,
+                          experienceYears: artisan.experienceYears,
+                          responseMinutes: artisan.responseMinutes,
+                          review: artisan.review,
                           availableNow: artisan.availableNow,
                           verified: artisan.isVerified,
                         }}
@@ -830,20 +859,25 @@ function ArtisansContent() {
               {/* Providers — Grid view */}
               {!loading && tab === 'providers' && viewMode === 'grid' && (
                 <div className="row g-4">
-                  {pagedArtisans.map((artisan) => (
+                  {pagedArtisans.map((artisan, i) => (
                     <div key={artisan.id} className="col-md-6 col-lg-4">
                       <ProviderCard
                         featured={artisan.isFeatured}
+                        priority={i === 0}
                         provider={{
                           name: artisan.name,
                           href: artisan.href,
                           image: artisan.image,
                           skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
-                          location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                          location: artisan.location,
+                          distanceKm: artisan.distanceKm,
                           price: artisan.price,
                           rating: artisan.rating,
                           reviews: artisan.reviews,
                           jobs: artisan.totalJobsCompleted,
+                          experienceYears: artisan.experienceYears,
+                          responseMinutes: artisan.responseMinutes,
+                          review: artisan.review,
                           availableNow: artisan.availableNow,
                           verified: artisan.isVerified,
                         }}
