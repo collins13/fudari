@@ -139,11 +139,6 @@ export default function RootLayout({
     <html lang="en-KE" className={`${wixMadefor.variable} ${caveat.variable}`}>
       <head>
         <meta name="theme-color" content="#0D5C63" />
-        {/* Geo meta for local SEO */}
-        <meta name="geo.region" content="KE" />
-        <meta name="geo.placename" content="Nairobi, Kenya" />
-        <meta name="geo.position" content="-1.286389;36.817223" />
-        <meta name="ICBM" content="-1.286389, 36.817223" />
         {/* Critical CSS — route-specific plugin CSS is loaded by the route that needs it */}
         <link rel="stylesheet" href="/liston/plugins/bootstrap/css/bootstrap.min.css" />
         <link rel="stylesheet" href="/liston/plugins/fontawesome/css/all.min.css" />

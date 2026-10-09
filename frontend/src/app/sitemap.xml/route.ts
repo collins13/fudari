@@ -9,13 +9,11 @@ export const dynamic = 'force-dynamic';
 const SECTIONS = ['static', 'skills', 'locations', 'services', 'service-locations', 'providers', 'estates'];
 
 export async function GET() {
-  const now = new Date().toISOString();
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${SECTIONS.map(
   (section) => `  <sitemap>
     <loc>${SITE_URL}/sitemaps/${section}.xml</loc>
-    <lastmod>${now}</lastmod>
   </sitemap>`,
 ).join('\n')}
 </sitemapindex>`;

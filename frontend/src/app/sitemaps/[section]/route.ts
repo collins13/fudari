@@ -26,11 +26,10 @@ function toXml(entries: MetadataRoute.Sitemap): string {
   const urls = entries
     .map((entry) => {
       const lastMod = entry.lastModified
-        ? new Date(entry.lastModified).toISOString()
-        : new Date().toISOString();
+        ? `\n    <lastmod>${new Date(entry.lastModified).toISOString()}</lastmod>`
+        : '';
       return `  <url>
-    <loc>${entry.url}</loc>
-    <lastmod>${lastMod}</lastmod>
+    <loc>${entry.url}</loc>${lastMod}
     <changefreq>${entry.changeFrequency ?? 'weekly'}</changefreq>
     <priority>${(entry.priority ?? 0.5).toFixed(2)}</priority>
   </url>`;

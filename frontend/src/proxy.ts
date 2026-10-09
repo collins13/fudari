@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PRIMARY_HOST = 'fudari.co';
 const WWW_HOST = 'www.fudari.co';
+const NOINDEX_PREFIXES = ['/dashboard', '/chat', '/complete-profile', '/track'];
+const NOINDEX_PATHS = new Set(['/login', '/register', '/forgot-password']);
+
+function isPrivateOrUtilityPath(pathname: string) {
+  return NOINDEX_PATHS.has(pathname) || NOINDEX_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') || '';
@@ -20,7 +28,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (isPrivateOrUtilityPath(request.nextUrl.pathname)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
+  return response;
 }
 
 export const config = {

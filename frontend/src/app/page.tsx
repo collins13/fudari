@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import HomeClient, { type HomeInitialData } from './HomeClient';
 import { serverGet } from '@/lib/serverApi';
 import {
@@ -10,6 +11,14 @@ import {
 // Categories and featured pros are fetched here rather than in the browser so the
 // HTML crawlers receive contains real trade names and provider listings.
 export const revalidate = 600;
+
+export const metadata: Metadata = {
+  title: {
+    absolute: 'FUDARI | local service professionals kenya | hire a fundi nairobi | plumbers in kenya',
+  },
+  description:
+    'local service professionals kenya. hire a fundi nairobi and plumbers in kenya for repairs. ID-verified pros, clear prices, pay on completion across Kenya today.',
+};
 
 const FAQ = [
   {

@@ -54,22 +54,20 @@ export function providerCompleteness(worker: SitemapWorker): number {
 }
 
 export async function staticEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   return [
-    { url: SITE_URL, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
-    { url: `${SITE_URL}/artisans`, lastModified: now, changeFrequency: 'daily', priority: 0.95 },
-    { url: `${SITE_URL}/services`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${SITE_URL}/locations`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${SITE_URL}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
-    { url: `${SITE_URL}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: SITE_URL, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${SITE_URL}/artisans`, changeFrequency: 'daily', priority: 0.95 },
+    { url: `${SITE_URL}/services`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${SITE_URL}/locations`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${SITE_URL}/pricing`, changeFrequency: 'monthly', priority: 0.75 },
+    { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 }
 
 /** Skill hubs plus every skill x location pair that clears the supply threshold. */
 export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const [skills, counts] = await Promise.all([getSkills(), getSkillLocationCounts()]);
   const indexableSkills = skills.filter((skill) => skill.indexable !== false);
   const slugs = new Set(indexableSkills.map((skill) => skill.slug));
@@ -78,7 +76,6 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
     .filter((skill) => (skill.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX)
     .map((skill) => ({
       url: `${SITE_URL}/artisans/${skill.slug}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     }));
@@ -91,7 +88,6 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
     )
     .map((entry) => ({
       url: `${SITE_URL}/artisans/${entry.skillSlug}/${entry.locationSlug}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.95,
     }));
@@ -108,7 +104,6 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
 
     return [{
       url: `${SITE_URL}${skillLocationPath(entry.skillSlug, entry.parentSlug, entry.locationSlug)}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     }];
@@ -118,20 +113,17 @@ export async function skillEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export async function locationEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const counties = await getCounties();
   return counties
     .filter((county) => county.indexable !== false && (county.providerCount || 0) >= MIN_PROVIDERS_FOR_INDEX)
     .map((county) => ({
       url: `${SITE_URL}/locations/${county.slug}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     }));
 }
 
 export async function serviceEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const [offerings, workers] = await Promise.all([
     getServiceOfferings(),
     fetchJson<SitemapWorker>('/workers/search'),
@@ -147,7 +139,6 @@ export async function serviceEntries(): Promise<MetadataRoute.Sitemap> {
     })
     .map((offering) => ({
       url: `${SITE_URL}/services/${offering.slug}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.85,
     }));
@@ -155,7 +146,6 @@ export async function serviceEntries(): Promise<MetadataRoute.Sitemap> {
 
 /** Service x location pages backed by enough live supply to remain indexable. */
 export async function serviceLocationEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const [offerings, workers] = await Promise.all([
     getServiceOfferings(),
     fetchJson<SitemapWorker>('/workers/search'),
@@ -172,7 +162,6 @@ export async function serviceLocationEntries(): Promise<MetadataRoute.Sitemap> {
         .filter((location) => location.providerCount >= MIN_INDEXABLE_PROVIDERS)
         .map((location) => ({
           url: `${SITE_URL}${servicePath(offering.slug, location.slug)}`,
-          lastModified: now,
           changeFrequency: 'weekly' as const,
           priority: 0.9,
         }));
@@ -180,27 +169,24 @@ export async function serviceLocationEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export async function providerEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const workers = await fetchJson<SitemapWorker>('/workers/search');
   return workers
     // Thin profiles are noindex, so listing them would only waste crawl budget.
     .filter((worker) => providerCompleteness(worker) >= 0.6)
     .map((worker) => ({
       url: `${SITE_URL}${providerPath(worker)}`,
-      lastModified: worker.updatedAt ? new Date(worker.updatedAt) : now,
+      lastModified: worker.updatedAt ? new Date(worker.updatedAt) : undefined,
       changeFrequency: 'weekly' as const,
       priority: worker.vettingLevel === 'PRO' ? 0.8 : worker.vettingLevel === 'VERIFIED' ? 0.7 : 0.6,
     }));
 }
 
 export async function estateEntries(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const estates = await fetchJson<{ slug?: string }>('/estates/public');
   return estates
     .filter((estate) => estate.slug)
     .map((estate) => ({
       url: `${SITE_URL}/estate/${estate.slug}`,
-      lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     }));

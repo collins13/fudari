@@ -209,7 +209,7 @@ export default function EstateBookingPage() {
             style={{ color: estate.brandPrimaryColor || '#0D5C63' }}>
             <i className="fa-solid fa-building me-1"></i> Estate Services
           </div>
-          <h2 className="display-5 fw-bold mb-2">{estate.name}</h2>
+          <h1 className="display-5 fw-bold mb-2">{estate.name}</h1>
           <p className="lead opacity-75 mb-0">
             {estate.brandWelcomeMessage || (
               <><i className="fa-solid fa-location-dot me-1"></i>{estate.area} — Book trusted artisans for your home</>

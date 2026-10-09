@@ -106,7 +106,7 @@ async function getEstateJsonLd(slug: string): Promise<string | null> {
         },
       ],
     };
-    return JSON.stringify(schema);
+    return JSON.stringify(schema).replace(/</g, '\\u003c');
   } catch {
     return null;
   }

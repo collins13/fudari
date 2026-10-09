@@ -73,16 +73,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = absolute(locationPath(location.slug));
 
   return {
-    title,
+    title: { absolute: title },
     description,
+    keywords: [
+      `fundis ${location.name.toLowerCase()}`,
+      `service providers ${location.name.toLowerCase()}`,
+      `local services ${location.name.toLowerCase()}`,
+    ],
     alternates: { canonical },
     openGraph: { title, description, url: canonical, type: 'website' },
+    twitter: { card: 'summary_large_image', title, description },
     ...(location.latitude && location.longitude
       ? {
           other: {
             'geo.region': 'KE',
             'geo.placename': location.name,
             'geo.position': `${location.latitude};${location.longitude}`,
+            ICBM: `${location.latitude}, ${location.longitude}`,
           },
         }
       : {}),

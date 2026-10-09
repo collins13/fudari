@@ -44,12 +44,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? ` Typical cost KES ${offering.priceFromKes.toLocaleString()}–${offering.priceToKes.toLocaleString()}.`
       : '';
   const description = `${bucket.providerCount} providers in ${bucket.name} offer ${offering.name.toLowerCase()}.${price} Compare ratings, agree a price up front and pay on completion.`;
+  const canonical = absolute(servicePath(offering.slug, bucket.slug));
 
   return {
-    title,
+    title: { absolute: title },
     description,
-    alternates: { canonical: absolute(servicePath(offering.slug, bucket.slug)) },
-    openGraph: { title, description, url: absolute(servicePath(offering.slug, bucket.slug)), type: 'website' },
+    keywords: [
+      `${offering.name.toLowerCase()} ${bucket.name.toLowerCase()}`,
+      `${offering.name.toLowerCase()} kenya`,
+      `hire ${offering.name.toLowerCase()} ${bucket.name.toLowerCase()}`,
+    ],
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: 'website' },
+    twitter: { card: 'summary_large_image', title, description },
+    ...(bucket.geo
+      ? {
+          other: {
+            'geo.region': 'KE',
+            'geo.placename': bucket.name,
+            'geo.position': `${bucket.geo.lat};${bucket.geo.lng}`,
+            ICBM: `${bucket.geo.lat}, ${bucket.geo.lng}`,
+          },
+        }
+      : {}),
     ...(workers.length >= MIN_INDEXABLE_PROVIDERS && offering.indexable !== false
       ? {}
       : { robots: { index: false, follow: true } }),

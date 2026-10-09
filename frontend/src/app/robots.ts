@@ -13,13 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: ['/', '/artisans/', '/artisan/', '/services/', '/locations/', '/estate/'],
         disallow: [
-          '/dashboard/',
-          '/login',
-          '/register',
-          '/forgot-password',
-          '/complete-profile/',
-          '/chat/',
-          '/track/',
           '/api/',
           // Filter URLs duplicate the landing pages and canonicalise away.
           '/artisans?',

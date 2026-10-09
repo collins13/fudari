@@ -247,11 +247,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
           <div className="hero-header-subtitle text-center text-white text-uppercase mb-3">
             Verified Service Providers Across Kenya
           </div>
-          <h1 className="display-1 fw-bold hero-header_title text-capitalize text-white text-center mb-4">
-            Get It <span className="font-caveat text-span">Fixed Today</span> — Nairobi and Countrywide
+          <h1 className="display-1 fw-bold hero-header_title text-white text-center mb-4">
+            Find trusted local service professionals kenya
           </h1>
-          <p className="lead mb-2 mb-md-3 text-center text-white">
-            Verified pros. Real reviews. No login required.
+          <p className="lead mb-2 mb-md-3 text-center text-white col-lg-10 mx-auto">
+            Fudari helps you connect with ID-verified service professionals for home repairs and more. Search by
+            skill and location, review ratings and starting prices, then contact a professional by phone or
+            WhatsApp. No account is required.
           </p>
           {/* Trust indicators — only factual platform guarantees, plus live rating when we have one */}
           <div className="tx-hero-trust d-flex justify-content-center gap-3 gap-md-4 flex-wrap mb-3 mb-md-5">
@@ -432,16 +434,22 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
             <div className="col-sm-10 col-lg-8">
               <div className="section-header text-center mb-5" data-aos="fade-down">
                 <div className="d-inline-block font-caveat fs-1 fw-medium section-header__subtitle text-capitalize text-primary">
-                  Categories
+                  Home Services
                 </div>
-                <h2 className="display-5 fw-semibold mb-3 section-header__title text-capitalize">
-                  Browse by Category
+                <h2 className="display-5 fw-semibold mb-3 section-header__title">
+                  Browse verified home repair services across Kenya
                 </h2>
-                <div className="sub-title fs-16">
-                  Find the right person for any job.{' '}
-                  <span className="text-primary fw-semibold">
-                    {categories.length > 0 ? `${categories.length} categories available.` : 'Verified pros across Kenya.'}
-                  </span>
+                <h3 className="h5 fw-semibold mb-3">Explore plumbing, electrical and other skilled trades</h3>
+                <div className="sub-title fs-16 text-start text-md-center">
+                  <p>
+                    Browse plumbing, electrical, bathroom supply, cleaning, carpentry, painting, welding and other
+                    home services in Nairobi, Mombasa and Nakuru. Search local service professionals kenya to find a
+                    suitable pro for your job.
+                  </p>
+                  <p className="mb-0">
+                    Need a repair in the capital? Explore options when you want to hire a fundi nairobi residents can
+                    contact directly. Fudari also helps you find plumbers in kenya and electricians for household jobs.
+                  </p>
                 </div>
               </div>
             </div>
@@ -504,7 +512,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                   Easy Steps
                 </div>
                 <h2 className="display-5 fw-semibold mb-3 section-header__title text-capitalize">
-                  How FUDARI Works
+                  How to hire a fundi nairobi with confidence
                 </h2>
                 <div className="sub-title fs-16">From search to job done — no account needed, no upfront payment.</div>
               </div>
@@ -518,8 +526,8 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                   <i className="fs-50 fa-solid fa-magnifying-glass text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h3 className="fs-20 fw-semibold">Search &amp; Find</h3>
-                  <p>Browse ID-verified pros by skill and location. See real ratings, completed jobs, and starting prices.</p>
+                  <h3 className="fs-20 fw-semibold">Check ratings, completed jobs and starting prices</h3>
+                  <p>Browse professionals by skill and location. Check available profiles, ratings and starting prices.</p>
                 </div>
               </div>
             </div>
@@ -530,8 +538,8 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                   <i className="fs-50 fa-solid fa-calendar-check text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h3 className="fs-20 fw-semibold">Book &amp; Connect</h3>
-                  <p>Call, WhatsApp, or book online — no account needed. They confirm within minutes via SMS.</p>
+                  <h3 className="fs-20 fw-semibold">Agree on the price before work begins</h3>
+                  <p>Call or WhatsApp to discuss the job and agree on the price before work begins.</p>
                 </div>
               </div>
             </div>
@@ -542,8 +550,8 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                   <i className="fs-50 fa-solid fa-star text-primary"></i>
                 </div>
                 <div className="step-desc">
-                  <h3 className="fs-20 fw-semibold">Track &amp; Rate</h3>
-                  <p>Track your job with a booking code. Pay on completion. Rate to help others find great pros.</p>
+                  <h3 className="fs-20 fw-semibold">Track your booking and pay after the work is complete</h3>
+                  <p>Use your booking code to confirm job progress, pay when work is complete and leave a rating.</p>
                 </div>
               </div>
             </div>
@@ -561,12 +569,12 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                 <div className="d-inline-block font-caveat fs-1 fw-medium section-header__subtitle text-capitalize text-primary">
                   Top Rated
                 </div>
-                <h2 className="display-5 fw-semibold mb-3 section-header__title text-capitalize">
-                  Featured Pros
+                <h2 className="display-5 fw-semibold mb-3 section-header__title">
+                  Featured Professionals
                 </h2>
                 <div className="sub-title fs-16">
-                  Our highest-rated pros ready to serve you.{' '}
-                  <span className="text-primary fw-semibold">Book today.</span>
+                  Explore highly rated professionals available for selected jobs in Nairobi. Review each profile to
+                  check the provider&apos;s services, location, customer ratings and starting price before making contact.
                 </div>
               </div>
             </div>
@@ -823,7 +831,13 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
         <div className="container py-4">
           <div className="row g-5">
             <div className="col-lg-7">
-              <h2 className="fw-semibold mb-3">How to Get It Fixed Today in Nairobi and Countrywide</h2>
+              <h2 className="fw-semibold mb-3">Get Started with Fudari</h2>
+              <p className="text-muted">
+                Find home repair services in Kenya with a straightforward search. Call Fudari on{' '}
+                <a href="tel:+254703954539">+254 703 954 539</a> or visit{' '}
+                <a href="https://fudari.co/">fudari.co</a>.
+              </p>
+              <h3 className="h5 fw-semibold mt-4 mb-2">Trusted help for jobs across Kenya</h3>
               <p className="text-muted">
                 FUDARI exists for the moment something breaks and you need it fixed today. Describe
                 the problem in plain English or Kiswahili &mdash; &ldquo;tap is leaking&rdquo;,
@@ -844,7 +858,7 @@ export default function HomeClient({ initial }: { initial: HomeInitialData }) {
                 is finished &mdash; never upfront.
               </p>
 
-              <h3 className="h5 fw-semibold mt-4 mb-2">Services you can book</h3>
+              <h3 className="h5 fw-semibold mt-4 mb-2">Find plumbers in kenya for reliable home repairs</h3>
               <p className="text-muted">
                 Home and property work covers plumbing, electrical, carpentry, masonry, tiling,
                 painting, welding, roofing, solar, HVAC, appliance repair, CCTV, locksmithing,

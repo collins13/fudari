@@ -49,14 +49,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const indexable = isIndexable(workers, skill.indexable !== false && location.indexable !== false);
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: skill.keywords?.map((keyword) => `${keyword} ${location.name.toLowerCase()}`),
     alternates: { canonical },
     openGraph: { title, description, url: canonical, type: 'website' },
     twitter: { card: 'summary_large_image', title, description },
     ...(location.latitude && location.longitude
-      ? { other: { 'geo.region': 'KE', 'geo.placename': location.name, 'geo.position': `${location.latitude};${location.longitude}` } }
+      ? {
+          other: {
+            'geo.region': 'KE',
+            'geo.placename': location.name,
+            'geo.position': `${location.latitude};${location.longitude}`,
+            ICBM: `${location.latitude}, ${location.longitude}`,
+          },
+        }
       : {}),
     ...(indexable ? {} : { robots: { index: false, follow: true } }),
   };
