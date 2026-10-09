@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ProviderCard from '@/components/ProviderCard';
+import { profileImageFor } from '@/lib/avatar';
 import { absolute, servicePath, skillPath, skillLocationPath, providerPath } from '@/lib/seoUrls';
 import { skillLabel } from '@/lib/kenya';
 import { groupByLocation, MIN_INDEXABLE_PROVIDERS } from '@/lib/locations';
@@ -159,19 +161,22 @@ export default async function ServicePage({ params }: PageProps) {
               <div className="row g-3">
                 {workers.slice(0, 24).map((worker) => (
                   <div className="col-md-6 col-lg-4" key={worker.id}>
-                    <article className="border h-100 p-4 bg-white">
-                      <h3 className="h5 mb-2">
-                        <Link href={providerPath(worker)}>{worker.firstName} {worker.lastName}</Link>
-                      </h3>
-                      <p className="text-muted small mb-3">{worker.area || worker.town || worker.locationName || 'Kenya'}</p>
-                      <div className="small text-muted">
-                        {worker.totalReviews
-                          ? `${worker.trustScore?.toFixed(1) || '0.0'} from ${worker.totalReviews} reviews`
-                          : worker.totalJobsCompleted
-                            ? `${worker.totalJobsCompleted} jobs completed`
-                            : 'View profile and availability'}
-                      </div>
-                    </article>
+                    <ProviderCard
+                      variant="compact"
+                      provider={{
+                        name: `${worker.firstName} ${worker.lastName}`,
+                        href: providerPath(worker),
+                        image: profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id),
+                        skill: offering.name,
+                        location: worker.area || worker.town || worker.locationName || 'Kenya',
+                        price: worker.skills?.[0]?.hourlyRate ? Number(worker.skills[0].hourlyRate) : undefined,
+                        rating: worker.trustScore,
+                        reviews: worker.totalReviews,
+                        jobs: worker.totalJobsCompleted,
+                        availableNow: worker.availableNow,
+                        verified: worker.isVerified === true,
+                      }}
+                    />
                   </div>
                 ))}
               </div>

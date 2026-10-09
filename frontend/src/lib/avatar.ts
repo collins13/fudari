@@ -57,12 +57,13 @@ export function profileImageFor(
 
 /**
  * The API returns worker photos as the path `/api/workers/{id}/photo`, which has to be
- * resolved against the API origin rather than the site origin.
+ * resolved against the API origin. Any other absolute path is a site asset and must
+ * stay on the site origin.
  */
 export function resolveProfileImage(src: string | null | undefined): string {
   const value = (src || '').trim();
   if (!value) return '';
-  if (!value.startsWith('/')) return value;
+  if (!value.startsWith('/api/')) return value;
   return `${apiOrigin()}${value}`;
 }
 

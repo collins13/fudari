@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense, type ReactElement } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
@@ -9,8 +9,10 @@ import Footer from '@/components/Footer';
 import { workersAPI, listingsAPI, categoriesAPI, apiErrorMessage } from '@/lib/api';
 import { skillTypeToLabel, vettingToPackage, getPackageBadgeClass, packageLabel } from '@/lib/skills';
 import { skillLabelBilingual, skillLabelSwahili, skillIcon } from '@/lib/kenya';
-import { resolveProfileImage } from '@/lib/avatar';
+import { profileImageFor } from '@/lib/avatar';
+import { providerPath } from '@/lib/seoUrls';
 import PredictiveMatchPanel from '@/components/PredictiveMatchPanel';
+import ProviderCard from '@/components/ProviderCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +27,7 @@ interface WorkerSkillInfo {
 
 interface Artisan {
   id: number;
+  href: string;
   name: string;
   skill: string;
   skillType: string;
@@ -42,6 +45,7 @@ interface Artisan {
   longitude: number | null;
   availableNow: boolean;
   distanceKm: number | null;
+  isVerified: boolean;
 }
 
 interface Listing {
@@ -75,6 +79,7 @@ function mapWorkerToArtisan(w: any): Artisan {
   const primarySkill: WorkerSkillInfo | undefined = w.skills?.[0];
   return {
     id: w.id,
+    href: providerPath(w, primarySkill?.skillType ? skillTypeToLabel(primarySkill.skillType) : undefined),
     name: `${w.firstName} ${w.lastName}`,
     skill: primarySkill ? skillTypeToLabel(primarySkill.skillType) : 'General',
     skillType: primarySkill?.skillType || '',
@@ -83,7 +88,7 @@ function mapWorkerToArtisan(w: any): Artisan {
     reviews: w.totalReviews || 0,
     location: w.locationName || 'Kenya',
     price: primarySkill?.hourlyRate ? parseFloat(primarySkill.hourlyRate) : 0,
-    image: resolveProfileImage(w.profileImage),
+    image: profileImageFor(w.profileImage, `${w.firstName} ${w.lastName}`, w.id),
     bio: primarySkill?.description || '',
     rankingScore: w.rankingScore || 0,
     isFeatured: w.isFeatured || false,
@@ -92,6 +97,7 @@ function mapWorkerToArtisan(w: any): Artisan {
     longitude: typeof w.longitude === 'number' ? w.longitude : null,
     availableNow: w.availableNow === true,
     distanceKm: null,
+    isVerified: w.isVerified === true,
   };
 }
 
@@ -121,30 +127,6 @@ function renderStars(rating: number) {
   const empty = 5 - Math.ceil(rating);
   for (let i = 0; i < empty; i++) stars.push(<i key={`e${i}`} className="fa-regular fa-star text-warning"></i>);
   return stars;
-}
-
-function getAvailability(availableNow: boolean) {
-  return availableNow
-    ? { label: 'Available now', color: '#22c55e' }
-    : { label: 'Check availability', color: '#94a3b8' };
-}
-
-function TrustFacts({ pkg, jobs, rating, reviews }: { pkg: string; jobs: number; rating: number; reviews: number }) {
-  const facts: ReactElement[] = [];
-  if (pkg === 'Gold' || pkg === 'Silver')
-    facts.push(<span key="v"><i className="fa-solid fa-shield-halved text-success me-1"></i>Verified ID</span>);
-  if (jobs > 0)
-    facts.push(<span key="j">{jobs} jobs done</span>);
-  if (reviews > 0)
-    facts.push(<span key="r"><i className="fa-solid fa-star text-warning me-1"></i>{rating.toFixed(1)} ({reviews})</span>);
-  if (facts.length === 0)
-    facts.push(<span key="n" className="text-muted">New here</span>);
-  return (
-    <div className="d-flex flex-wrap align-items-center gap-1 mb-2" style={{ fontSize: '0.72rem', color: '#6c757d' }}>
-      {facts.reduce<ReactElement[]>((acc, el, i) =>
-        i === 0 ? [el] : [...acc, <span key={`d${i}`} className="text-muted mx-1">•</span>, el], [])}
-    </div>
-  );
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -769,48 +751,23 @@ function ArtisansContent() {
                   </div>
                   <div className="row g-3">
                     {featuredArtisans.map((artisan) => (
-                      <div key={`feat-${artisan.id}`} className="col-md-4">
-                        <div className="card border-2 border-warning shadow-sm h-100 rounded-4 overflow-hidden position-relative">
-                          <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
-                          <div style={{ position: 'relative', height: 180 }}>
-                            {artisan.image ? (
-                              <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" />
-                            ) : (
-                              <div className="d-flex align-items-center justify-content-center w-100 h-100"
-                                style={{ background: 'linear-gradient(135deg, #f6d365, #fda085)' }}>
-                                <span className="text-white fw-bold" style={{ fontSize: 48 }}>{artisan.name[0]}</span>
-                              </div>
-                            )}
-                            <span className="badge text-bg-warning position-absolute top-0 start-0 m-2">
-                              <i className="fa-solid fa-crown me-1"></i>Pro
-                            </span>
-                            <span className="badge text-bg-dark position-absolute top-0 end-0 m-2" style={{ fontSize: 11 }}>
-                              Score: {artisan.rankingScore.toFixed(1)}
-                            </span>
-                          </div>
-                          <div className="card-body">
-                            <h6 className="card-title fw-semibold mb-1">{artisan.name}</h6>
-                            <p className="text-primary small mb-1">
-                              <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
-                              {skillLabelSwahili(artisan.skillType) && (
-                                <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
-                              )}
-                            </p>
-                            {(() => { const av = getAvailability(artisan.availableNow); return (
-                              <div className="d-flex align-items-center gap-1 mb-1">
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
-                                <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
-                              </div>
-                            ); })()}
-                            <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
-                            <p className="text-muted small mb-0">
-                              <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
-                              {formatDistance(artisan.distanceKm) && (
-                                <span className="ms-1 fw-medium text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
+                      <div key={`feat-${artisan.id}`} className="col-12 col-md-6 col-xl-4">
+                        <ProviderCard
+                          featured
+                          provider={{
+                            name: artisan.name,
+                            href: artisan.href,
+                            image: artisan.image,
+                            skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
+                            location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                            price: artisan.price,
+                            rating: artisan.rating,
+                            reviews: artisan.reviews,
+                            jobs: artisan.totalJobsCompleted,
+                            availableNow: artisan.availableNow,
+                            verified: artisan.isVerified,
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
@@ -847,66 +804,24 @@ function ArtisansContent() {
               {!loading && tab === 'providers' && viewMode === 'list' && (
                 <div>
                   {pagedArtisans.map((artisan) => (
-                    <div key={artisan.id} className="card border-0 shadow-sm overflow-hidden rounded-4 mb-4 card-hover card-hover-bg position-relative">
-                      <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
-                      <div className="card-body p-0">
-                        <div className="g-0 row">
-                          <div className="col-lg-5 col-md-5 col-xl-4 position-relative">
-                            <div className="card-image-hover dark-overlay h-100 overflow-hidden position-relative" style={{ minHeight: 200 }}>
-                              {artisan.image ? (
-                                <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 40vw" className="tx-photo-cover" />
-                              ) : (
-                                <div className="d-flex align-items-center justify-content-center h-100 w-100"
-                                  style={{ minHeight: 200, background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-                                  <span className="text-white fw-bold" style={{ fontSize: 56 }}>{artisan.name[0]}</span>
-                                </div>
-                              )}
-                              <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
-                                {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                                {packageLabel(artisan.package)}
-                              </span>
-                              {artisan.package !== 'Bronze' && (
-                                <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
-                                  <i className="fa-solid fa-shield-halved me-1"></i>Verified
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="col-lg-7 col-md-7 col-xl-8 p-3 p-lg-4">
-                            <div className="d-flex flex-column h-100">
-                              {(() => { const av = getAvailability(artisan.availableNow); return (
-                                <div className="d-flex align-items-center gap-1 mb-2">
-                                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
-                                  <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
-                                </div>
-                              ); })()}
-                              <h4 className="fs-18 fw-semibold mb-0">
-                                {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-2" title="Featured Gold pro"></i>}
-                                {artisan.name}
-                              </h4>
-                              <p className="text-primary mt-1 mb-1">
-                                <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
-                                {skillLabelSwahili(artisan.skillType) && (
-                                  <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
-                                )}
-                              </p>
-                              <p className="mt-1 fs-15 text-muted">{artisan.bio}</p>
-                              <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
-                              <div className="d-flex flex-wrap gap-2 mt-auto z-1 align-items-center">
-                                <span className="d-flex gap-2 align-items-center fs-13 fw-semibold text-muted">
-                                  <i className="fa-solid fa-location-dot"></i>{artisan.location}
-                                  {formatDistance(artisan.distanceKm) && (
-                                    <span className="text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
-                                  )}
-                                </span>
-                                {artisan.price > 0 && (
-                                  <strong className="text-primary ms-auto">From KES {artisan.price.toLocaleString()}</strong>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    <div key={artisan.id} className="mb-4">
+                      <ProviderCard
+                        variant="list"
+                        featured={artisan.isFeatured}
+                        provider={{
+                          name: artisan.name,
+                          href: artisan.href,
+                          image: artisan.image,
+                          skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
+                          location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                          price: artisan.price,
+                          rating: artisan.rating,
+                          reviews: artisan.reviews,
+                          jobs: artisan.totalJobsCompleted,
+                          availableNow: artisan.availableNow,
+                          verified: artisan.isVerified,
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
@@ -917,64 +832,22 @@ function ArtisansContent() {
                 <div className="row g-4">
                   {pagedArtisans.map((artisan) => (
                     <div key={artisan.id} className="col-md-6 col-lg-4">
-                      <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden card-hover card-hover-bg position-relative">
-                        <Link href={`/artisan/${artisan.id}`} className="stretched-link"></Link>
-                        <div style={{ position: 'relative', height: 200 }}>
-                          {artisan.image ? (
-                            <Image src={artisan.image} alt={artisan.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="tx-photo-cover" loading="lazy" />
-                          ) : (
-                            <div className="d-flex align-items-center justify-content-center w-100 h-100"
-                              style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
-                              <span className="text-white fw-bold" style={{ fontSize: 48 }}>{artisan.name[0]}</span>
-                            </div>
-                          )}
-                          <span className={`badge position-absolute top-0 start-0 m-2 ${getPackageBadgeClass(artisan.package)}`}>
-                            {artisan.package === 'Gold' && <i className="fa-solid fa-crown me-1"></i>}
-                            {packageLabel(artisan.package)}
-                          </span>
-                          {artisan.package !== 'Bronze' && (
-                            <span className="badge bg-success position-absolute bottom-0 end-0 m-2" style={{ fontSize: 10 }}>
-                              <i className="fa-solid fa-shield-halved me-1"></i>Verified
-                            </span>
-                          )}
-                        </div>
-                        <div className="card-body">
-                          <h6 className="card-title fw-semibold mb-1">
-                            {artisan.isFeatured && <i className="fa-solid fa-crown text-warning me-1"></i>}
-                            {artisan.name}
-                            {artisan.package !== 'Bronze' && (
-                              <i className="fa-solid fa-circle-check text-success ms-1" style={{fontSize:'0.75rem'}} title="Verified by FUDARI"></i>
-                            )}
-                          </h6>
-                          <p className="text-primary small mb-1">
-                            <i className="fa-solid fa-screwdriver-wrench me-1"></i>{artisan.skill}
-                            {skillLabelSwahili(artisan.skillType) && (
-                              <span className="text-muted"> &middot; {skillLabelSwahili(artisan.skillType)}</span>
-                            )}
-                          </p>
-                          <p className="text-muted small mb-1">
-                            <i className="fa-solid fa-location-dot me-1"></i>{artisan.location}
-                            {formatDistance(artisan.distanceKm) && (
-                              <span className="ms-1 fw-medium text-dark">&middot; {formatDistance(artisan.distanceKm)}</span>
-                            )}
-                          </p>
-                          {(() => { const av = getAvailability(artisan.availableNow); return (
-                            <div className="d-flex align-items-center gap-1 mb-1">
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: av.color, display: 'inline-block', flexShrink: 0 }}></span>
-                              <span className="small fw-medium" style={{ color: av.color }}>{av.label}</span>
-                            </div>
-                          ); })()}
-                          <TrustFacts pkg={artisan.package} jobs={artisan.totalJobsCompleted} rating={artisan.rating} reviews={artisan.reviews} />
-                          <div className="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
-                            {artisan.price > 0 ? (
-                              <strong className="text-primary">From KES {artisan.price.toLocaleString()}</strong>
-                            ) : (
-                              <span className="text-muted small">Ask for a quote</span>
-                            )}
-                            <span className="btn btn-primary btn-sm rounded-5 z-1" aria-hidden="true">View</span>
-                          </div>
-                        </div>
-                      </div>
+                      <ProviderCard
+                        featured={artisan.isFeatured}
+                        provider={{
+                          name: artisan.name,
+                          href: artisan.href,
+                          image: artisan.image,
+                          skill: `${artisan.skill}${skillLabelSwahili(artisan.skillType) ? ` · ${skillLabelSwahili(artisan.skillType)}` : ''}`,
+                          location: `${artisan.location}${formatDistance(artisan.distanceKm) ? ` · ${formatDistance(artisan.distanceKm)}` : ''}`,
+                          price: artisan.price,
+                          rating: artisan.rating,
+                          reviews: artisan.reviews,
+                          jobs: artisan.totalJobsCompleted,
+                          availableNow: artisan.availableNow,
+                          verified: artisan.isVerified,
+                        }}
+                      />
                     </div>
                   ))}
                 </div>

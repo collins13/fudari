@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useSyncExternalStore } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
 import PWAInstallButton from '@/components/PWAInstallButton';
@@ -18,6 +18,16 @@ const NAV_LINKS = [
   { href: '/pricing', label: 'Pricing' },
 ];
 
+const THEME_EVENT = 'fudari:theme';
+
+const subscribeTheme = (onChange: () => void) => {
+  window.addEventListener(THEME_EVENT, onChange);
+  return () => window.removeEventListener(THEME_EVENT, onChange);
+};
+
+const readTheme = () =>
+  document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+
 export default function Navbar({ transparent = false }: NavbarProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -25,11 +35,13 @@ export default function Navbar({ transparent = false }: NavbarProps) {
 
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => 'light' as const);
 
   // Apply saved theme on mount
   useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'light';
+    const saved = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   // Track scroll only when transparent (so the header darkens after hero)
@@ -48,6 +60,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
     const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-bs-theme', next);
     localStorage.setItem('theme', next);
+    window.dispatchEvent(new Event(THEME_EVENT));
   };
 
   const onSearchSubmit = (e: React.FormEvent) => {
@@ -63,7 +76,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
   const onDark = transparent && !scrolled;
 
   const navClass = useMemo(() => {
-    const base = 'tx-navbar navbar navbar-expand-lg sticky-top';
+    const base = 'tx-navbar navbar navbar-expand-xl sticky-top';
     if (transparent) {
       return `${base} ${scrolled ? 'tx-navbar--solid' : 'tx-navbar--transparent'}`;
     }
@@ -84,7 +97,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           </Link>
 
           {/* Right cluster (always visible) */}
-          <div className="d-flex order-lg-2 align-items-center gap-2">
+          <div className="d-flex order-xl-2 align-items-center gap-2">
             <span className="d-none d-md-inline-flex">
               <PWAInstallButton variant="compact" />
             </span>
@@ -93,10 +106,10 @@ export default function Navbar({ transparent = false }: NavbarProps) {
               type="button"
               onClick={toggleTheme}
               className="tx-icon-btn"
-              aria-label="Toggle theme"
-              title="Toggle theme"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             >
-              <i className="fa-solid fa-moon"></i>
+              <i className={theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'}></i>
             </button>
 
             {user ? (
@@ -167,27 +180,27 @@ export default function Navbar({ transparent = false }: NavbarProps) {
 
           {/* Center: links + (desktop) search */}
           <div className="collapse navbar-collapse" id="txNavMenu">
-            <ul className="navbar-nav m-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+            <ul className="navbar-nav m-auto mb-2 mb-xl-0 align-items-xl-center gap-xl-1">
               {NAV_LINKS.map((l) => (
                 <li className="nav-item" key={l.href}>
                   <Link
                     href={l.href}
                     className={`nav-link tx-nav-link ${isActive(l.href) ? 'is-active' : ''}`}
+                    aria-current={isActive(l.href) ? 'page' : undefined}
                   >
                     {l.label}
                   </Link>
                 </li>
               ))}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link tx-nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   For Pros
-                </a>
+                </button>
                 <ul className="dropdown-menu shadow border-0 rounded-3 mt-2">
                   <li><Link className="dropdown-item" href="/register">Join as a Pro</Link></li>
                   <li><Link className="dropdown-item" href="/login">Pro Login</Link></li>
@@ -198,7 +211,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
             </ul>
 
             {!transparent && (
-              <form className="tx-quick-search d-none d-lg-flex" onSubmit={onSearchSubmit} role="search">
+              <form className="tx-quick-search d-none d-xl-flex" onSubmit={onSearchSubmit} role="search">
                 <i className="fa-solid fa-magnifying-glass"></i>
                 <input
                   type="search"
@@ -228,6 +241,14 @@ export default function Navbar({ transparent = false }: NavbarProps) {
         .tx-navbar {
           padding-block: 0.75rem;
           transition: background 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+        }
+        /* At full size the wordmark plus the action cluster exceeds a small
+           phone's width, which wrapped the navbar onto two rows. */
+        @media (max-width: 575.98px) {
+          .tx-navbar .navbar-brand svg {
+            height: clamp(18px, 5.2vw, 30px);
+            width: auto;
+          }
         }
         @media (max-width: 575px) {
           /* Keep user dropdown inside the viewport on small phones */
@@ -438,12 +459,12 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           background: currentColor;
           border-radius: 2px;
         }
-        @media (max-width: 991.98px) {
+        @media (max-width: 1199.98px) {
           .tx-toggler { display: inline-flex; }
         }
         .tx-navbar--transparent .tx-toggler { color: #fff; }
 
-        @media (max-width: 991.98px) {
+        @media (max-width: 1199.98px) {
           .tx-navbar .navbar-collapse {
             margin-top: 0.75rem;
             background: #fff;

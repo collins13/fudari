@@ -1,8 +1,10 @@
 import { profileImageFor } from './avatar';
+import { providerPath } from './seoUrls';
 import { skillTypeToLabel, vettingToPackage } from './skills';
 
 export interface FeaturedArtisan {
   id: number;
+  href: string;
   name: string;
   skill: string;
   skillType: string;
@@ -14,6 +16,7 @@ export interface FeaturedArtisan {
   image: string;
   totalJobsCompleted: number;
   availableNow: boolean;
+  isVerified: boolean;
 }
 
 export interface CategoryItem {
@@ -52,6 +55,7 @@ export function toFeaturedArtisan(w: any): FeaturedArtisan {
   const fullName = `${w.firstName} ${w.lastName}`;
   return {
     id: w.id,
+    href: providerPath(w, skill?.skillType ? skillTypeToLabel(skill.skillType) : undefined),
     name: fullName,
     skill: skill?.skillType ? skillTypeToLabel(skill.skillType) : 'General',
     skillType: skill?.skillType || '',
@@ -63,5 +67,6 @@ export function toFeaturedArtisan(w: any): FeaturedArtisan {
     image: profileImageFor(w.profileImage, fullName, w.id),
     totalJobsCompleted: w.totalJobsCompleted || 0,
     availableNow: w.availableNow === true,
+    isVerified: w.isVerified === true,
   };
 }

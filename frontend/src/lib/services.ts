@@ -29,6 +29,8 @@ export type ServiceWorker = {
   totalReviews?: number;
   totalJobsCompleted?: number;
   vettingLevel?: string;
+  isVerified?: boolean;
+  profileImage?: string;
   availableNow?: boolean;
   skills?: Array<{ skillType: string; description?: string; hourlyRate?: string; services?: Array<{ name: string; slug: string }> }>;
 };

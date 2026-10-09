@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ProviderCard from '@/components/ProviderCard';
+import { profileImageFor } from '@/lib/avatar';
 import { providerPath, absolute } from '@/lib/seoUrls';
 import { skillLabel } from '@/lib/kenya';
 import type { ServiceWorker } from '@/lib/services';
@@ -50,7 +52,7 @@ export function buildIntro(
     return `No ${skill.pluralName.toLowerCase()} are listed in ${place} yet. Try a nearby area, or browse other services below.`;
   }
 
-  const verified = workers.filter((w) => w.vettingLevel === 'VERIFIED' || w.vettingLevel === 'PRO').length;
+  const verified = workers.filter((worker) => worker.isVerified === true).length;
   const jobs = workers.reduce((sum, w) => sum + (w.totalJobsCompleted || 0), 0);
   const reviews = workers.reduce((sum, w) => sum + (w.totalReviews || 0), 0);
   const availableNow = workers.filter((w) => w.availableNow).length;
@@ -68,45 +70,6 @@ export function buildIntro(
   if (reviews) parts.push(`${reviews} customer reviews.`);
   parts.push('Compare profiles, agree a price up front and pay on completion.');
   return parts.join(' ');
-}
-
-function ProviderCard({ worker }: { worker: ServiceWorker }) {
-  const name = `${worker.firstName} ${worker.lastName}`;
-  const primary = worker.skills?.[0];
-  const services = primary?.services?.slice(0, 3) || [];
-
-  return (
-    <article className="border h-100 p-4 bg-white">
-      <div className="d-flex justify-content-between align-items-start mb-2">
-        <h3 className="h5 mb-0">
-          <Link href={providerPath(worker)}>{name}</Link>
-        </h3>
-        {(worker.vettingLevel === 'VERIFIED' || worker.vettingLevel === 'PRO') && (
-          <span className="badge text-bg-success">Verified</span>
-        )}
-      </div>
-      {primary?.skillType && <p className="text-primary small mb-2">{skillLabel(primary.skillType)}</p>}
-      <p className="text-muted small mb-2">{worker.area || worker.town || worker.locationName || 'Kenya'}</p>
-      {services.length > 0 && (
-        <div className="d-flex flex-wrap gap-1 mb-2">
-          {services.map((service) => (
-            <span key={service.slug} className="badge text-bg-light border fw-normal">{service.name}</span>
-          ))}
-        </div>
-      )}
-      <div className="small text-muted mb-3">
-        {worker.totalReviews
-          ? `${worker.trustScore?.toFixed(1) || '0.0'} from ${worker.totalReviews} reviews`
-          : worker.totalJobsCompleted
-            ? `${worker.totalJobsCompleted} jobs completed`
-            : 'View profile and availability'}
-        {primary?.hourlyRate ? ` · from KES ${primary.hourlyRate}` : ''}
-      </div>
-      <Link href={providerPath(worker)} className="btn btn-sm btn-outline-primary rounded-5">
-        View profile
-      </Link>
-    </article>
-  );
 }
 
 function LinkBlock({ title, links }: { title: string; links: LinkRef[] }) {
@@ -243,7 +206,23 @@ export default function ProviderLandingPage({
                 <div className="row g-3">
                   {workers.slice(0, 24).map((worker) => (
                     <div className="col-md-6 col-lg-4" key={worker.id}>
-                      <ProviderCard worker={worker} />
+                      <ProviderCard
+                        variant="compact"
+                        provider={{
+                          name: `${worker.firstName} ${worker.lastName}`,
+                          href: providerPath(worker),
+                          image: profileImageFor(worker.profileImage, `${worker.firstName} ${worker.lastName}`, worker.id),
+                          skill: worker.skills?.[0]?.skillType ? skillLabel(worker.skills[0].skillType) : skill.name,
+                          location: worker.area || worker.town || worker.locationName || 'Kenya',
+                          price: worker.skills?.[0]?.hourlyRate ? Number(worker.skills[0].hourlyRate) : undefined,
+                          rating: worker.trustScore,
+                          reviews: worker.totalReviews,
+                          jobs: worker.totalJobsCompleted,
+                          availableNow: worker.availableNow,
+                          verified: worker.isVerified === true,
+                          services: worker.skills?.[0]?.services?.map((service) => service.name),
+                        }}
+                      />
                     </div>
                   ))}
                 </div>

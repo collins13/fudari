@@ -151,26 +151,26 @@ public class DataSeeder implements CommandLineRunner {
         // ═══════════════════════════════════════════════════════════════════
         //  4. WORKER/ARTISAN USERS (15) — mix of PRO, BASIC, FREE
         // ═══════════════════════════════════════════════════════════════════
-        // {first, last, phone, email, location, lat, lon, vettingLevel, trustScore, jobsCompleted, totalReviews}
+        // {first, last, phone, email, location, lat, lon, vettingLevel, trustScore, jobsCompleted, totalReviews, profileImage}
         String[][] workerData = {
             // PRO artisans (5)
-            {"Samuel",  "Mwangi",    "+254722000001", "samuel.mwangi@fudari.co",   "Westlands, Nairobi",     "-1.2674", "36.8115", "PRO",      "4.8", "87", "42"},
-            {"Joseph",  "Ochieng",   "+254722000002", "joseph.ochieng@fudari.co",  "Industrial Area, Nairobi","-1.3107", "36.8569", "PRO",      "4.9", "124","68"},
-            {"Mary",    "Akinyi",    "+254722000003", "mary.akinyi@fudari.co",     "Kilimani, Nairobi",      "-1.2889", "36.7885", "PRO",      "4.7", "95", "51"},
-            {"David",   "Kimani",    "+254722000004", "david.kimani@fudari.co",    "Nyali, Mombasa",         "-4.0231", "39.7148", "PRO",      "4.6", "63", "35"},
-            {"Esther",  "Wanjiru",   "+254722000005", "esther.wanjiru@fudari.co",  "Ngong Road, Nairobi",    "-1.3010", "36.7700", "PRO",      "4.8", "78", "44"},
+            {"Samuel",  "Mwangi",    "+254722000001", "samuel.mwangi@fudari.co",   "Westlands, Nairobi",     "-1.2674", "36.8115", "PRO",      "4.8", "87", "42", "/liston/images/avatar/01.jpg"},
+            {"Joseph",  "Ochieng",   "+254722000002", "joseph.ochieng@fudari.co",  "Industrial Area, Nairobi","-1.3107", "36.8569", "PRO",      "4.9", "124","68", "/liston/images/avatar/02.jpg"},
+            {"Mary",    "Akinyi",    "+254722000003", "mary.akinyi@fudari.co",     "Kilimani, Nairobi",      "-1.2889", "36.7885", "PRO",      "4.7", "95", "51", "/liston/images/avatar/03.jpg"},
+            {"David",   "Kimani",    "+254722000004", "david.kimani@fudari.co",    "Nyali, Mombasa",         "-4.0231", "39.7148", "PRO",      "4.6", "63", "35", "/liston/images/avatar/04.jpg"},
+            {"Esther",  "Wanjiru",   "+254722000005", "esther.wanjiru@fudari.co",  "Ngong Road, Nairobi",    "-1.3010", "36.7700", "PRO",      "4.8", "78", "44", "/liston/images/avatar/05.jpg"},
             // VERIFIED/BASIC artisans (5)
-            {"Patrick",  "Mutua",    "+254722000006", "patrick.mutua@fudari.co",   "Eastleigh, Nairobi",     "-1.2729", "36.8459", "VERIFIED", "4.3", "32", "18"},
-            {"Hannah",   "Njeri",    "+254722000007", "hannah.njeri@fudari.co",    "Kisumu CBD",             "-0.0917", "34.7680", "VERIFIED", "4.5", "41", "23"},
-            {"Daniel",   "Kiptoo",   "+254722000008", "daniel.kiptoo@fudari.co",   "Eldoret Town",           "0.5143",  "35.2698", "VERIFIED", "4.1", "19", "11"},
-            {"Catherine","Nyambura", "+254722000009", "catherine.nyambura@fudari.co","South C, Nairobi",      "-1.3100", "36.8270", "VERIFIED", "4.4", "27", "15"},
-            {"Michael",  "Wafula",   "+254722000010", "michael.wafula@fudari.co",  "Ruiru, Kiambu",          "-1.1485", "36.9609", "VERIFIED", "4.2", "22", "12"},
+            {"Patrick",  "Mutua",    "+254722000006", "patrick.mutua@fudari.co",   "Eastleigh, Nairobi",     "-1.2729", "36.8459", "VERIFIED", "4.3", "32", "18", "/liston/images/avatar/06.jpg"},
+            {"Hannah",   "Njeri",    "+254722000007", "hannah.njeri@fudari.co",    "Kisumu CBD",             "-0.0917", "34.7680", "VERIFIED", "4.5", "41", "23", "/liston/images/avatar/07.jpg"},
+            {"Daniel",   "Kiptoo",   "+254722000008", "daniel.kiptoo@fudari.co",   "Eldoret Town",           "0.5143",  "35.2698", "VERIFIED", "4.1", "19", "11", "/liston/images/avatar/01.jpg"},
+            {"Catherine","Nyambura", "+254722000009", "catherine.nyambura@fudari.co","South C, Nairobi",      "-1.3100", "36.8270", "VERIFIED", "4.4", "27", "15", "/liston/images/avatar/03.jpg"},
+            {"Michael",  "Wafula",   "+254722000010", "michael.wafula@fudari.co",  "Ruiru, Kiambu",          "-1.1485", "36.9609", "VERIFIED", "4.2", "22", "12", "/liston/images/avatar/02.jpg"},
             // STANDARD/FREE artisans (5)
-            {"John",    "Kariuki",   "+254722000011", "john.kariuki@fudari.co",    "Thika Town",             "-1.0396", "37.0900", "STANDARD", "3.8", "8",  "5"},
-            {"Agnes",   "Jepkoech",  "+254722000012", "agnes.jepkoech@fudari.co",  "Nakuru Town",            "-0.3031", "36.0800", "STANDARD", "4.0", "11", "7"},
-            {"Robert",  "Omondi",    "+254722000013", "robert.omondi@fudari.co",   "Mombasa CBD",            "-4.0435", "39.6682", "STANDARD", "3.5", "5",  "3"},
-            {"Sharon",  "Cherop",    "+254722000014", "sharon.cherop@fudari.co",   "Ruaka, Kiambu",          "-1.2070", "36.7810", "STANDARD", "0.0", "0",  "0"},
-            {"Vincent", "Ndirangu",  "+254722000015", "vincent.ndirangu@fudari.co","Rongai, Kajiado",        "-1.3962", "36.7588", "STANDARD", "3.2", "3",  "2"},
+            {"John",    "Kariuki",   "+254722000011", "john.kariuki@fudari.co",    "Thika Town",             "-1.0396", "37.0900", "STANDARD", "3.8", "8",  "5", "/liston/images/avatar/04.jpg"},
+            {"Agnes",   "Jepkoech",  "+254722000012", "agnes.jepkoech@fudari.co",  "Nakuru Town",            "-0.3031", "36.0800", "STANDARD", "4.0", "11", "7", "/liston/images/avatar/05.jpg"},
+            {"Robert",  "Omondi",    "+254722000013", "robert.omondi@fudari.co",   "Mombasa CBD",            "-4.0435", "39.6682", "STANDARD", "3.5", "5",  "3", "/liston/images/avatar/06.jpg"},
+            {"Sharon",  "Cherop",    "+254722000014", "sharon.cherop@fudari.co",   "Ruaka, Kiambu",          "-1.2070", "36.7810", "STANDARD", "0.0", "0",  "0", ""},
+            {"Vincent", "Ndirangu",  "+254722000015", "vincent.ndirangu@fudari.co","Rongai, Kajiado",        "-1.3962", "36.7588", "STANDARD", "3.2", "3",  "2", "/liston/images/avatar/07.jpg"},
         };
 
         List<User> workers = new ArrayList<>();
@@ -188,6 +188,7 @@ public class DataSeeder implements CommandLineRunner {
                     .trustScore(Double.parseDouble(d[8]))
                     .totalJobsCompleted(Integer.parseInt(d[9]))
                     .totalReviews(Integer.parseInt(d[10]))
+                    .profileImage(d[11].isEmpty() ? null : d[11])
                     .locationName(d[4])
                     .latitude(Double.parseDouble(d[5]))
                     .longitude(Double.parseDouble(d[6]))
